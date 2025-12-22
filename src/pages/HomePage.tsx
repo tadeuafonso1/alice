@@ -552,6 +552,8 @@ export const HomePage: React.FC = () => {
     const fetchAndProcessMessages = useCallback(async () => {
         if (!liveChatId) return;
 
+        const isFirstPoll = nextPageTokenRef.current === null;
+
         try {
             const response = await supabase.functions.invoke('youtube-chat-fetch', {
                 body: { liveChatId, pageToken: nextPageTokenRef.current },
@@ -573,10 +575,16 @@ export const HomePage: React.FC = () => {
             }
 
             if (data && data.items) {
-                for (const item of data.items) {
-                    const author = item.authorDetails.displayName;
-                    const text = item.snippet.displayMessage;
-                    await handleSendMessageRef.current(author, text);
+                // Se for a primeira busca desta sessão, apenas pegamos o token de próxima página
+                // e ignoramos as mensagens anteriores para evitar repetir comandos já executados.
+                if (!isFirstPoll) {
+                    for (const item of data.items) {
+                        const author = item.authorDetails.displayName;
+                        const text = item.snippet.displayMessage;
+                        await handleSendMessageRef.current(author, text);
+                    }
+                } else {
+                    console.log("Sessão iniciada: Histórico ignorado. Pronto para as próximas mensagens.");
                 }
                 nextPageTokenRef.current = data.nextPageToken;
             }
