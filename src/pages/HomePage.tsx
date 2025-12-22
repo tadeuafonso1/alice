@@ -358,6 +358,12 @@ export const HomePage: React.FC = () => {
     const handleSendMessage = useCallback(async (author: string, text: string) => {
         if (!text.trim()) return;
 
+        // Normalização do autor: remove o @ inicial caso venha da API do YouTube
+        // para evitar mensagens com @@ (ex: @@usuario)
+        if (author.startsWith('@')) {
+            author = author.substring(1);
+        }
+
         const userMessage: Message = { author, text, type: 'user' };
         setMessages(prev => [...prev, userMessage]);
 
