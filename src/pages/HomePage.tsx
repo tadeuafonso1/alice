@@ -92,10 +92,45 @@ export const HomePage: React.FC = () => {
         }
     };
 
-    const addBotMessage = useCallback((text: string) => {
+    const sendToYouTubeChat = useCallback(async (text: string) => {
+        if (!liveChatId || !session?.provider_token) {
+            console.warn("Cannot send to YouTube: Missing liveChatId or provider_token", { liveChatId, hasToken: !!session?.provider_token });
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase.functions.invoke('youtube-chat-send', {
+                body: { liveChatId, messageText: text },
+                headers: {
+                    'x-youtube-token': session.provider_token,
+                },
+            });
+
+            if (data && data.success === false) {
+                const errorText = `[Erro YouTube] ${data.error}`;
+                setMessages(prev => [...prev, { author: appSettings.botName, text: errorText, type: 'bot' }]);
+                return;
+            }
+
+            if (error) {
+                console.error('Error sending message to YouTube:', error);
+                const errorText = `[Erro YouTube] Falha na rede/servidor: ${error.message}`;
+                setMessages(prev => [...prev, { author: appSettings.botName, text: errorText, type: 'bot' }]);
+            }
+        } catch (error: any) {
+            console.error('Error sending message to YouTube:', error);
+            const errorText = `[Erro YouTube] Exceção: ${error.message}`;
+            setMessages(prev => [...prev, { author: appSettings.botName, text: errorText, type: 'bot' }]);
+        }
+    }, [liveChatId, session?.provider_token, appSettings.botName]);
+
+    const addBotMessage = useCallback((text: string, sendToYouTube: boolean = false) => {
         const botMessage: Message = { author: appSettings.botName, text, type: 'bot' };
         setMessages(prev => [...prev, botMessage]);
-    }, [appSettings.botName]);
+        if (sendToYouTube) {
+            sendToYouTubeChat(text);
+        }
+    }, [appSettings.botName, sendToYouTubeChat]);
 
     const sendBotMessage = useCallback((messageKey: keyof MessageSettings, replacements?: Record<string, string | number>) => {
         const messageSetting = appSettings.messages[messageKey];
@@ -111,7 +146,7 @@ export const HomePage: React.FC = () => {
                     text = text.replace(new RegExp(`{${key}}`, 'g'), strValue);
                 });
             }
-            addBotMessage(text);
+            addBotMessage(text, true);
         }
     }, [appSettings.messages, addBotMessage]);
 
@@ -387,7 +422,7 @@ export const HomePage: React.FC = () => {
                 const nickname = parts.length > 1 ? parts.slice(1).join(' ') : undefined;
 
                 if (!nickname) {
-                    addBotMessage(`@${author}, você precisa fornecer um apelido para entrar na fila. Ex: ${commands.join.command} SeuApelido`);
+                    addBotMessage(`@${author}, você precisa fornecer um apelido para entrar na fila. Ex: ${commands.join.command} SeuApelido`, true);
                     return;
                 }
 
@@ -409,7 +444,7 @@ export const HomePage: React.FC = () => {
                     }
 
                     if (baseMessage.enabled) {
-                        addBotMessage(noticeText);
+                        addBotMessage(noticeText, true);
                     }
 
                 } catch (error) {
@@ -435,7 +470,7 @@ export const HomePage: React.FC = () => {
             if (isUserInQueue || isUserPlaying) {
                 const newNickname = text.trim().split(' ').slice(1).join(' ');
                 if (!newNickname) {
-                    addBotMessage(`@${author}, você precisa fornecer um apelido. Ex: ${commands.nick.command} MeuApelido`);
+                    addBotMessage(`@${author}, você precisa fornecer um apelido. Ex: ${commands.nick.command} MeuApelido`, true);
                     return;
                 }
 
@@ -498,7 +533,7 @@ export const HomePage: React.FC = () => {
             const customCommand = customCommands.find(c => c.command.toLowerCase() === commandText);
             if (customCommand) {
                 const response = customCommand.response.replace(/{user}/g, author);
-                addBotMessage(response);
+                addBotMessage(response, true);
             }
         }
     }, [adminName, queue, playingUsers, isTimerActive, timeoutMinutes, addBotMessage, appSettings, warningSentUsers, handleNextUser, activateTimer, deactivateTimer, sendBotMessage]);
@@ -609,7 +644,7 @@ export const HomePage: React.FC = () => {
             const { error } = await supabase.auth.linkIdentity({
                 provider: 'google',
                 options: {
-                    scopes: 'https://www.googleapis.com/auth/youtube.readonly',
+                    scopes: 'https://www.googleapis.com/auth/youtube.force-ssl',
                     redirectTo: window.location.origin,
                 }
             });
@@ -623,6 +658,21 @@ export const HomePage: React.FC = () => {
 
     // Função para desvincular conta Google
     const handleDisconnectGoogle = async () => {
+        // Se o usuário logou diretamente com o Google, não dá para apenas "desvincular", tem que fazer logout.
+        const isGoogleLogin = session?.user?.app_metadata?.provider === 'google';
+
+        if (isGoogleLogin) {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                console.error('Erro ao sair:', error);
+                addBotMessage("Erro ao desconectar. Tente limpar o cache do navegador.");
+            } else {
+                // Redireciona para o login após sair
+                window.location.reload();
+            }
+            return;
+        }
+
         const googleIdentity = session?.user?.identities?.find(id => id.provider === 'google');
         if (!googleIdentity) {
             addBotMessage("Nenhuma conta Google vinculada para desvincular.");
@@ -636,7 +686,10 @@ export const HomePage: React.FC = () => {
             await supabase.auth.refreshSession();
         } catch (error: any) {
             console.error('Erro ao desvincular Google:', error);
-            addBotMessage(`Erro ao desvincular conta Google: ${error.message || 'Erro desconhecido'}.`);
+            // Se der erro ao desvincular, tenta forçar o logout como fallback
+            addBotMessage(`Erro ao desvincular: ${error.message}. Tentando sair da conta...`);
+            await supabase.auth.signOut();
+            window.location.reload();
         }
     };
 
