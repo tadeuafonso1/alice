@@ -1,5 +1,5 @@
 {
-  "name": "OBOT MARCIA",
+  "name": "Alice",
   "description": "Uma aplicação web que simula um sistema de fila para chat ao vivo do YouTube. Usuários podem entrar em uma fila, e um administrador pode gerenciar a fila, incluindo avançar para o próximo usuário e lidar com participantes inativos.",
   "requestFramePermissions": []
 }
