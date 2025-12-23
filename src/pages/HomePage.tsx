@@ -71,6 +71,7 @@ export const HomePage: React.FC = () => {
     // Estado para a conexão com o YouTube
     const [liveChatId, setLiveChatId] = useState<string>('');
     const [channelTitle, setChannelTitle] = useState<string>('');
+    const [canAutoConnect, setCanAutoConnect] = useState(true);
     const [settingsId, setSettingsId] = useState<number | null>(null);
     const [isPolling, setIsPolling] = useState(false);
     const [isFindingChat, setIsFindingChat] = useState(false);
@@ -569,6 +570,7 @@ export const HomePage: React.FC = () => {
     const stopPolling = useCallback(() => {
         if (!isPolling) return;
         setIsPolling(false);
+        setCanAutoConnect(false);
         addBotMessage("Desconectado do chat do YouTube.");
     }, [isPolling, addBotMessage]);
 
@@ -630,6 +632,7 @@ export const HomePage: React.FC = () => {
             return;
         }
         setIsFindingChat(true);
+        setCanAutoConnect(true);
         addBotMessage("Buscando sua transmissão ao vivo ativa...");
         try {
             const response = await supabase.functions.invoke('youtube-find-live-chat', {
@@ -742,10 +745,10 @@ export const HomePage: React.FC = () => {
 
     // Auto-conectar quando encontrar o liveChatId
     useEffect(() => {
-        if (liveChatId && !isPolling) {
+        if (liveChatId && !isPolling && canAutoConnect) {
             startPolling();
         }
-    }, [liveChatId, isPolling, startPolling]);
+    }, [liveChatId, isPolling, canAutoConnect, startPolling]);
 
     useEffect(() => {
         if (isPolling) {
