@@ -8,7 +8,7 @@ import { PlayingDisplay } from '@/components/PlayingDisplay';
 import { SettingsModal } from '@/components/SettingsModal';
 import { ManualQueueControl } from '@/components/ManualQueueControl';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings } from '@/types';
-import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon } from '@/components/Icons';
+import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon } from '@/components/Icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/src/contexts/SessionContext';
 import { useTheme } from '@/src/contexts/ThemeContext';
@@ -65,6 +65,7 @@ export const HomePage: React.FC = () => {
     const [isTimerActive, setIsTimerActive] = useState<boolean>(true);
     const [timeoutMinutes, setTimeoutMinutes] = useState<number>(5);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isChatVisible, setIsChatVisible] = useState(true);
     const [appSettings, setAppSettings] = useState<AppSettings>(defaultSettings);
     const [warningSentUsers, setWarningSentUsers] = useState<Set<string>>(new Set());
 
@@ -974,12 +975,27 @@ export const HomePage: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white dark:bg-gray-800/50 rounded-lg shadow-2xl flex flex-col h-[75vh]">
-                            <ChatWindow messages={messages} currentUser={currentUser} />
-                            <MessageInput
-                                onSendMessage={(text) => handleSendMessage(adminName, text)}
-                                commands={appSettings.commands}
-                            />
+                        <div className="bg-white dark:bg-gray-800/50 rounded-lg shadow-2xl flex flex-col transition-all duration-500 ease-in-out overflow-hidden" style={{ height: isChatVisible ? '75vh' : 'auto' }}>
+                            <button
+                                onClick={() => setIsChatVisible(!isChatVisible)}
+                                className="w-full flex items-center justify-between p-4 bg-gray-50/50 dark:bg-gray-700/30 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+                            >
+                                <div className="flex items-center gap-2 font-semibold">
+                                    <BotIcon className="w-5 h-5 text-cyan-500" />
+                                    <span>Chat da Alice</span>
+                                </div>
+                                {isChatVisible ? <ChevronDownIcon className="w-5 h-5 text-gray-400" /> : <ChevronUpIcon className="w-5 h-5 text-gray-400" />}
+                            </button>
+
+                            {isChatVisible && (
+                                <div className="flex flex-col flex-grow overflow-hidden">
+                                    <ChatWindow messages={messages} currentUser={currentUser} />
+                                    <MessageInput
+                                        onSendMessage={(text) => handleSendMessage(adminName, text)}
+                                        commands={appSettings.commands}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
