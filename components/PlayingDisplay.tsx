@@ -13,12 +13,12 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
 }) => {
     return (
         <div className="bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl flex flex-col h-full overflow-hidden">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#162036] flex items-center justify-between">
-                <h2 className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] flex items-center gap-2 mx-auto">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#162036] flex items-center justify-between gap-2 overflow-hidden">
+                <h2 className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] flex items-center gap-2 flex-shrink-0">
                     <Gamepad2Icon className="w-4 h-4 text-lime-400" />
-                    Jogando Agora
+                    <span className="hidden sm:inline">Jogando Agora</span>
                 </h2>
-                <span className="bg-lime-500/10 text-lime-400 text-[10px] font-black px-2 py-0.5 rounded-full border border-lime-500/20 uppercase tracking-tighter">
+                <span className="bg-lime-500/10 text-lime-400 text-[10px] font-black px-2 py-0.5 rounded-full border border-lime-500/20 uppercase tracking-tighter flex-shrink-0">
                     On-line
                 </span>
             </div>

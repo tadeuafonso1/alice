@@ -157,35 +157,37 @@ const QueueItem: React.FC<{
 export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, isTimerActive, timeoutMinutes, adminName, onMoveToPlaying, onRemoveUser, onMoveToTop, onNext, onReset }) => {
     return (
         <div className="bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl flex flex-col h-full overflow-hidden">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#162036] flex items-center justify-between gap-4">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#162036] flex items-center justify-between gap-2 overflow-hidden">
                 <h2 className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] flex items-center gap-2 flex-shrink-0">
                     <UsersIcon className="w-4 h-4 text-cyan-400" />
-                    Usuários na Fila
+                    <span className="hidden sm:inline">Fila</span>
                 </h2>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 min-w-0">
                     {onNext && (
                         <button
                             onClick={onNext}
-                            className="bg-cyan-500 hover:bg-cyan-400 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shadow-lg active:scale-95 flex items-center gap-2"
+                            className="bg-cyan-500 hover:bg-cyan-400 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shadow-lg active:scale-95 flex items-center gap-1.5 flex-shrink-0"
+                            title="Próximo"
                         >
                             <SkipForwardIcon className="w-3 h-3" />
-                            Próximo
+                            <span className="hidden md:inline">Próximo</span>
                         </button>
                     )}
                     {onReset && (
                         <button
                             onClick={onReset}
-                            className="bg-transparent border border-gray-600 hover:border-gray-400 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center gap-2"
+                            className="bg-transparent border border-gray-600 hover:border-gray-400 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1.5 flex-shrink-0"
+                            title="Resetar"
                         >
                             <RefreshCwIcon className="w-3 h-3" />
-                            Resetar
+                            <span className="hidden md:inline">Resetar</span>
                         </button>
                     )}
                 </div>
 
-                <span className="bg-cyan-500/10 text-cyan-400 text-[10px] font-black px-2 py-0.5 rounded-full border border-cyan-500/20 uppercase tracking-tighter flex-shrink-0">
-                    {queue.length} Total
+                <span className="bg-cyan-500/10 text-cyan-400 text-sm font-black px-4 py-1 rounded-full border border-cyan-500/20 uppercase tracking-tighter flex-shrink-0">
+                    {queue.length} <span className="hidden lg:inline">Total</span>
                 </span>
             </div>
 
