@@ -18,7 +18,7 @@ const defaultSettings: AppSettings = {
     commands: {
         join: { command: '!entrar', enabled: true },
         leave: { command: '!sair', enabled: true },
-        position: { command: '!posicao', enabled: true },
+        position: { command: '!posição', enabled: true },
         nick: { command: '!nick', enabled: true },
         next: { command: '!proximo', enabled: true },
         timerOn: { command: '!timer on', enabled: true },
@@ -83,6 +83,7 @@ export const HomePage: React.FC = () => {
             setAdminName(session.user.user_metadata.full_name);
         } else if (session?.user?.email) {
             setCurrentUser(session.user.email);
+            setAdminName(session.user.email);
         }
     }, [session]);
 
