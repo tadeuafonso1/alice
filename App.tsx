@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useSession } from './src/contexts/SessionContext';
 import { LoginPage } from './src/pages/LoginPage';
 import { HomePage } from './src/pages/HomePage';
+import { CommandsPage } from './src/pages/CommandsPage';
 import { PrivacyPolicyPage } from './src/pages/PrivacyPolicyPage';
 import { TermsOfServicePage } from './src/pages/TermsOfServicePage';
 
@@ -17,13 +18,10 @@ const AppRoutes: React.FC = () => {
         );
     }
 
-    if (!session) {
-        return <LoginPage />;
-    }
-
     return (
         <Routes>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={session ? <HomePage /> : <LoginPage />} />
+            <Route path="/comandos" element={<CommandsPage />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/terms" element={<TermsOfServicePage />} />
         </Routes>

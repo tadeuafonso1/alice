@@ -9,9 +9,10 @@ import {
     LogOutIcon,
     SunIcon,
     MoonIcon,
-    SkipForwardIcon,
     RefreshCwIcon,
-    TimerIcon
+    TimerIcon,
+    GlobeIcon,
+    CopyIcon
 } from './Icons';
 
 interface SidebarProps {
@@ -105,7 +106,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {/* Bottom Section */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#0f111a]">
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#0f111a] space-y-2">
+                {isOpen && (
+                    <div className="mb-4 p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-cyan-500 mb-2">Página de Comandos</p>
+                        <div className="flex gap-2">
+                            <a
+                                href="/comandos"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white p-2 rounded-lg text-xs font-bold transition-all shadow-lg shadow-cyan-900/20 active:scale-95"
+                            >
+                                <GlobeIcon className="w-3.5 h-3.5" />
+                                Visualizar
+                            </a>
+                            <button
+                                onClick={() => {
+                                    const url = `${window.location.origin}/comandos`;
+                                    navigator.clipboard.writeText(url);
+                                    alert('Link copiado para a área de transferência!');
+                                }}
+                                className="p-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-all active:scale-95"
+                                title="Copiar Link"
+                            >
+                                <CopyIcon className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {!isOpen && (
+                    <button
+                        onClick={() => {
+                            const url = `${window.location.origin}/comandos`;
+                            navigator.clipboard.writeText(url);
+                        }}
+                        className="w-full flex items-center justify-center p-3 text-cyan-500 hover:bg-cyan-500/10 rounded-xl transition-all mb-2"
+                        title="Copiar Link de Comandos"
+                    >
+                        <GlobeIcon className="w-5 h-5" />
+                    </button>
+                )}
+
                 <div className="flex flex-col gap-1">
                     <button
                         onClick={onSignOut}
