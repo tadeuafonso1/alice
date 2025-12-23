@@ -411,7 +411,8 @@ export const HomePage: React.FC = () => {
         const userMessage: Message = { author, text, type: 'user' };
         setMessages(prev => [...prev, userMessage]);
 
-        const commandText = text.trim().toLowerCase();
+        const normalizeText = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const commandText = normalizeText(text.trim());
         const { commands, customCommands } = appSettings;
 
         const now = Date.now();
@@ -503,7 +504,7 @@ export const HomePage: React.FC = () => {
                     setQueue(prev => prev.filter(u => u.user !== author));
                 }
             }
-        } else if (commands.position.enabled && commandText === commands.position.command) {
+        } else if (commands.position.enabled && (commandText === normalizeText(commands.position.command) || commandText === '!posicao' || commandText === '!posição')) {
             const queueIndex = queue.findIndex(u => u.user === author);
             if (queueIndex !== -1) {
                 const pos = queueIndex + 1;
@@ -580,7 +581,7 @@ export const HomePage: React.FC = () => {
                 sendBotMessage('playingListEmpty');
             }
         } else {
-            const customCommand = customCommands.find(c => c.command.toLowerCase() === commandText);
+            const customCommand = customCommands.find(c => normalizeText(c.command) === commandText);
             if (customCommand) {
                 const response = customCommand.response.replace(/{user}/g, author);
                 addBotMessage(response, true);

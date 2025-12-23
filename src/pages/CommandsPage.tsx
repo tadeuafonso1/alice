@@ -78,7 +78,7 @@ export const CommandsPage: React.FC = () => {
                             <CommandCard
                                 icon={<ChevronRightIcon className="w-6 h-6" />}
                                 title="Ver Minha Posição"
-                                command="!posicao"
+                                command="!posição"
                                 description="Verifica em qual lugar da fila você está no momento."
                                 colorClass="bg-cyan-500"
                             />
