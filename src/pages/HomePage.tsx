@@ -233,24 +233,32 @@ export const HomePage: React.FC = () => {
     }, [adminName]);
 
     const handleSettingsSave = async (newSettings: AppSettings) => {
+        console.log("Tentando salvar configurações:", newSettings, "ID atual:", settingsId);
         setAppSettings(newSettings);
         try {
             const { error } = await supabase
                 .from('settings')
                 .upsert({
-                    id: settingsId || 1, // Use 1 as default fallback
+                    id: settingsId || 1,
                     settings_data: newSettings
                 });
-            if (error) throw error;
 
-            // If we didn't have an ID before, fetch it now
+            if (error) {
+                console.error("Erro no upsert de configurações:", error);
+                throw error;
+            }
+
+            addBotMessage("Configurações salvas com sucesso!");
+
+            // Se não tínhamos ID, busca agora
             if (!settingsId) {
                 const { data } = await supabase.from('settings').select('id').single();
                 if (data) setSettingsId(data.id);
             }
-        } catch (error) {
-            console.error("Failed to save settings to Supabase", error);
-            addBotMessageRef.current("Erro ao salvar configurações no banco de dados.");
+        } catch (error: any) {
+            console.error("Failed to save settings to Supabase:", error);
+            const msg = error.message || "Erro desconhecido";
+            addBotMessage(`Erro ao salvar configurações: ${msg}`);
         }
     };
 
