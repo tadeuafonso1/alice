@@ -694,40 +694,42 @@ export const HomePage: React.FC = () => {
         }
     };
 
-    // Função para desvincular conta Google
     const handleDisconnectGoogle = async () => {
-        // Se o usuário logou diretamente com o Google, não dá para apenas "desvincular", tem que fazer logout.
-        const isGoogleLogin = session?.user?.app_metadata?.provider === 'google';
-
-        if (isGoogleLogin) {
-            const { error } = await supabase.auth.signOut();
-            if (error) {
-                console.error('Erro ao sair:', error);
-                addBotMessage("Erro ao desconectar. Tente limpar o cache do navegador.");
-            } else {
-                // Redireciona para o login após sair
-                window.location.reload();
-            }
-            return;
-        }
-
         const googleIdentity = session?.user?.identities?.find(id => id.provider === 'google');
+
         if (!googleIdentity) {
             addBotMessage("Nenhuma conta Google vinculada para desvincular.");
             return;
         }
+
         try {
             const { error } = await supabase.auth.unlinkIdentity(googleIdentity);
             if (error) throw error;
+
             addBotMessage("Conta Google desvinculada com sucesso!");
-            // Force refresh session
-            await supabase.auth.refreshSession();
+
+            // Se o usuário logou diretamente com o Google, a sessão primária foi removida.
+            // É necessário sair e logar novamente por outro método.
+            const isGoogleLogin = session?.user?.app_metadata?.provider === 'google';
+
+            if (isGoogleLogin) {
+                await supabase.auth.signOut();
+                window.location.reload();
+            } else {
+                // Se logado por outro método (ex: e-mail), apenas refresca a sessão para atualizar os dados do usuário.
+                await supabase.auth.refreshSession();
+            }
         } catch (error: any) {
             console.error('Erro ao desvincular Google:', error);
-            // Se der erro ao desvincular, tenta forçar o logout como fallback
-            addBotMessage(`Erro ao desvincular: ${error.message}. Tentando sair da conta...`);
-            await supabase.auth.signOut();
-            window.location.reload();
+            const msg = error.message || "Erro desconhecido";
+            addBotMessage(`Erro ao desvincular: ${msg}`);
+
+            // Fallback: se falhar o unlink mas for um login Google, tenta pelo menos deslogar
+            const isGoogleLogin = session?.user?.app_metadata?.provider === 'google';
+            if (isGoogleLogin) {
+                await supabase.auth.signOut();
+                window.location.reload();
+            }
         }
     };
 
