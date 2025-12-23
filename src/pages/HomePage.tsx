@@ -687,7 +687,8 @@ export const HomePage: React.FC = () => {
             if (error) throw error;
         } catch (error: any) {
             console.error('Erro ao conectar Google:', error);
-            addBotMessage(`Erro ao conectar conta Google: ${error.message || JSON.stringify(error) || 'Erro desconhecido'}. Tente novamente.`);
+            const msg = error.message || JSON.stringify(error) || 'Erro desconhecido';
+            addBotMessage(`Erro ao conectar conta Google: ${msg}. Verifique se você já não tem outra conta vinculada.`);
             setIsConnectingGoogle(false);
         }
     };
@@ -737,6 +738,14 @@ export const HomePage: React.FC = () => {
     // Auto-buscar live quando o usuário faz login
     const hasAutoSearchedRef = useRef(false);
     useEffect(() => {
+        // Refresh session if we just came back from a redirect (identities might have changed)
+        const checkSession = async () => {
+            if (window.location.hash || window.location.search.includes('code=')) {
+                await supabase.auth.refreshSession();
+            }
+        };
+        checkSession();
+
         if (session?.provider_token && !liveChatId && !isFindingChat && !hasAutoSearchedRef.current) {
             hasAutoSearchedRef.current = true;
             handleFindLiveChat();
