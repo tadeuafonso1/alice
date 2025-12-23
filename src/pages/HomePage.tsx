@@ -710,7 +710,7 @@ export const HomePage: React.FC = () => {
 
             // Se o usuário logou diretamente com o Google, a sessão primária foi removida.
             // É necessário sair e logar novamente por outro método.
-            const isGoogleLogin = session?.user?.app_metadata?.provider === 'google';
+            const isGoogleLogin = session?.user?.app_metadata?.provider === 'google' && session?.user?.identities?.length === 1;
 
             if (isGoogleLogin) {
                 await supabase.auth.signOut();
