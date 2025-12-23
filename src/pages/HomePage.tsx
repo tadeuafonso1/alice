@@ -18,7 +18,7 @@ const defaultSettings: AppSettings = {
     commands: {
         join: { command: '!entrar', enabled: true },
         leave: { command: '!sair', enabled: true },
-        position: { command: '!posição', enabled: true },
+        position: { command: '!posicao', enabled: true },
         nick: { command: '!nick', enabled: true },
         next: { command: '!proximo', enabled: true },
         timerOn: { command: '!timer on', enabled: true },
@@ -134,6 +134,11 @@ export const HomePage: React.FC = () => {
         }
     }, [appSettings.botName, sendToYouTubeChat]);
 
+    const addBotMessageRef = useRef(addBotMessage);
+    useEffect(() => {
+        addBotMessageRef.current = addBotMessage;
+    });
+
     const sendBotMessage = useCallback((messageKey: keyof MessageSettings, replacements?: Record<string, string | number>) => {
         const messageSetting = appSettings.messages[messageKey];
         if (messageSetting && messageSetting.enabled) {
@@ -217,28 +222,32 @@ export const HomePage: React.FC = () => {
 
             } catch (error) {
                 console.error("Error fetching initial data:", error);
-                addBotMessage("Erro ao carregar dados do banco de dados.");
+                addBotMessageRef.current("Erro ao carregar dados do banco de dados.");
             }
         };
 
         fetchData();
-    }, [addBotMessage, adminName]);
+    }, [adminName]);
 
     const handleSettingsSave = async (newSettings: AppSettings) => {
         setAppSettings(newSettings);
         try {
-            if (settingsId === null) {
-                console.warn("No settings ID found, cannot update.");
-                return;
-            }
             const { error } = await supabase
                 .from('settings')
-                .update({ settings_data: newSettings })
-                .eq('id', settingsId);
+                .upsert({
+                    id: settingsId || 1, // Use 1 as default fallback
+                    settings_data: newSettings
+                });
             if (error) throw error;
+
+            // If we didn't have an ID before, fetch it now
+            if (!settingsId) {
+                const { data } = await supabase.from('settings').select('id').single();
+                if (data) setSettingsId(data.id);
+            }
         } catch (error) {
             console.error("Failed to save settings to Supabase", error);
-            addBotMessage("Erro ao salvar configurações no banco de dados.");
+            addBotMessageRef.current("Erro ao salvar configurações no banco de dados.");
         }
     };
 
@@ -603,10 +612,10 @@ export const HomePage: React.FC = () => {
             }
         } catch (error: any) {
             console.error('Erro ao buscar mensagens do YouTube:', error);
-            addBotMessage(`Erro ao conectar com o chat do YouTube: ${error.message}`);
+            addBotMessageRef.current(`Erro ao conectar com o chat do YouTube: ${error.message}`);
             stopPolling();
         }
-    }, [liveChatId, addBotMessage, stopPolling]);
+    }, [liveChatId, stopPolling]);
 
     const startPolling = useCallback(() => {
         if (isPolling || !liveChatId) return;
