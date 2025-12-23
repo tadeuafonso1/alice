@@ -34,7 +34,7 @@ const translations = {
     userJoined: 'Usuário entrou na fila',
     joinWithTimer: 'Aviso ao entrar com timer ativo',
     userPosition: 'Posição do usuário na fila',
-    userIsPlaying: 'Usuário está jogando (comando !posicao)',
+    userIsPlaying: 'Usuário está jogando (comando !posição)',
     notInQueue: 'Usuário não está na fila',
     userLeft: 'Usuário saiu da fila',
     userNicknameUpdated: 'Apelido do usuário atualizado',
@@ -68,7 +68,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
-  
+
   const handleGeneralInputChange = (key: GeneralKey, value: string) => {
     setLocalSettings(prev => ({
       ...prev,
@@ -126,7 +126,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
     onSave(localSettings);
     onClose();
   };
-  
+
   const handleReset = () => {
     onReset();
     onClose();
@@ -165,7 +165,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
       </div>
     );
   };
-  
+
   const renderCommandSetting = (key: CommandKey) => {
     const commandSetting = localSettings.commands[key];
     return (
@@ -214,91 +214,91 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
         </header>
 
         <main className="p-6 overflow-y-auto space-y-6 bg-gray-50 dark:bg-gray-800/50">
-            <section>
-                <h3 className="text-lg font-semibold mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">Geral</h3>
-                <div className="space-y-4">
-                     <div>
-                        <label htmlFor="botName" className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                            Nome do Bot
-                        </label>
-                        <input
-                            id="botName"
-                            type="text"
-                            value={localSettings.botName}
-                            onChange={(e) => handleGeneralInputChange('botName', e.target.value)}
-                            className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm"
-                        />
-                    </div>
-                </div>
-            </section>
-            
-            <section>
-                <button onClick={() => toggleSection('commands')} className="w-full flex items-center justify-between text-lg font-semibold mb-2 border-b border-gray-200 dark:border-gray-700 pb-2 focus:outline-none">
-                    <span>Comandos Padrão</span>
-                    {openSections.commands ? <ChevronUpIcon className="w-5 h-5" /> : <ChevronDownIcon className="w-5 h-5" />}
-                </button>
-                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${openSections.commands ? 'max-h-[2000px] opacity-100 pt-2' : 'max-h-0 opacity-0'}`}>
-                    <div className="space-y-4">
-                        {Object.keys(localSettings.commands).map((key) => renderCommandSetting(key as CommandKey))}
-                    </div>
-                </div>
-            </section>
-            
-            <section>
-                <button onClick={() => toggleSection('messages')} className="w-full flex items-center justify-between text-lg font-semibold mb-2 border-b border-gray-200 dark:border-gray-700 pb-2 focus:outline-none">
-                    <span>Mensagens do Bot</span>
-                    {openSections.messages ? <ChevronUpIcon className="w-5 h-5" /> : <ChevronDownIcon className="w-5 h-5" />}
-                </button>
-                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${openSections.messages ? 'max-h-[2000px] opacity-100 pt-2' : 'max-h-0 opacity-0'}`}>
-                    <div className="space-y-4">
-                        {Object.keys(localSettings.messages).map((key) => renderMessageSetting(key as MessageKey))}
-                    </div>
-                </div>
-            </section>
+          <section>
+            <h3 className="text-lg font-semibold mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">Geral</h3>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="botName" className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  Nome do Bot
+                </label>
+                <input
+                  id="botName"
+                  type="text"
+                  value={localSettings.botName}
+                  onChange={(e) => handleGeneralInputChange('botName', e.target.value)}
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm"
+                />
+              </div>
+            </div>
+          </section>
 
-            <section>
-                <button onClick={() => toggleSection('customCommands')} className="w-full flex items-center justify-between text-lg font-semibold mb-2 border-b border-gray-200 dark:border-gray-700 pb-2 focus:outline-none">
-                    <span>Comandos Personalizados</span>
-                    {openSections.customCommands ? <ChevronUpIcon className="w-5 h-5" /> : <ChevronDownIcon className="w-5 h-5" />}
-                </button>
-                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${openSections.customCommands ? 'max-h-[2000px] opacity-100 pt-2' : 'max-h-0 opacity-0'}`}>
-                    <div className="space-y-4">
-                        {localSettings.customCommands.map((cmd, index) => (
-                            <div key={index} className="p-4 bg-gray-100 dark:bg-gray-900/50 rounded-md space-y-2 relative">
-                                <button onClick={() => removeCustomCommand(index)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500">
-                                    <TrashIcon className="w-5 h-5" />
-                                </button>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Comando (ex: !social)</label>
-                                    <input
-                                        type="text"
-                                        value={cmd.command}
-                                        onChange={(e) => handleCustomCommandChange(index, 'command', e.target.value)}
-                                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Resposta do Bot</label>
-                                    <textarea
-                                        value={cmd.response}
-                                        onChange={(e) => handleCustomCommandChange(index, 'response', e.target.value)}
-                                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm"
-                                        rows={2}
-                                    />
-                                </div>
-                            </div>
-                        ))}
-                        <button onClick={addCustomCommand} className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                            Adicionar Comando
-                        </button>
+          <section>
+            <button onClick={() => toggleSection('commands')} className="w-full flex items-center justify-between text-lg font-semibold mb-2 border-b border-gray-200 dark:border-gray-700 pb-2 focus:outline-none">
+              <span>Comandos Padrão</span>
+              {openSections.commands ? <ChevronUpIcon className="w-5 h-5" /> : <ChevronDownIcon className="w-5 h-5" />}
+            </button>
+            <div className={`transition-all duration-500 ease-in-out overflow-hidden ${openSections.commands ? 'max-h-[2000px] opacity-100 pt-2' : 'max-h-0 opacity-0'}`}>
+              <div className="space-y-4">
+                {Object.keys(localSettings.commands).map((key) => renderCommandSetting(key as CommandKey))}
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <button onClick={() => toggleSection('messages')} className="w-full flex items-center justify-between text-lg font-semibold mb-2 border-b border-gray-200 dark:border-gray-700 pb-2 focus:outline-none">
+              <span>Mensagens do Bot</span>
+              {openSections.messages ? <ChevronUpIcon className="w-5 h-5" /> : <ChevronDownIcon className="w-5 h-5" />}
+            </button>
+            <div className={`transition-all duration-500 ease-in-out overflow-hidden ${openSections.messages ? 'max-h-[2000px] opacity-100 pt-2' : 'max-h-0 opacity-0'}`}>
+              <div className="space-y-4">
+                {Object.keys(localSettings.messages).map((key) => renderMessageSetting(key as MessageKey))}
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <button onClick={() => toggleSection('customCommands')} className="w-full flex items-center justify-between text-lg font-semibold mb-2 border-b border-gray-200 dark:border-gray-700 pb-2 focus:outline-none">
+              <span>Comandos Personalizados</span>
+              {openSections.customCommands ? <ChevronUpIcon className="w-5 h-5" /> : <ChevronDownIcon className="w-5 h-5" />}
+            </button>
+            <div className={`transition-all duration-500 ease-in-out overflow-hidden ${openSections.customCommands ? 'max-h-[2000px] opacity-100 pt-2' : 'max-h-0 opacity-0'}`}>
+              <div className="space-y-4">
+                {localSettings.customCommands.map((cmd, index) => (
+                  <div key={index} className="p-4 bg-gray-100 dark:bg-gray-900/50 rounded-md space-y-2 relative">
+                    <button onClick={() => removeCustomCommand(index)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500">
+                      <TrashIcon className="w-5 h-5" />
+                    </button>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Comando (ex: !social)</label>
+                      <input
+                        type="text"
+                        value={cmd.command}
+                        onChange={(e) => handleCustomCommandChange(index, 'command', e.target.value)}
+                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm"
+                      />
                     </div>
-                </div>
-            </section>
-             <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 text-center">
-                Variáveis disponíveis: {'{user}'}, {'{position}'}, {'{join}'}, {'{minutes}'}, {'{nickname}'}
-            </p>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Resposta do Bot</label>
+                      <textarea
+                        value={cmd.response}
+                        onChange={(e) => handleCustomCommandChange(index, 'response', e.target.value)}
+                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <button onClick={addCustomCommand} className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                  Adicionar Comando
+                </button>
+              </div>
+            </div>
+          </section>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 text-center">
+            Variáveis disponíveis: {'{user}'}, {'{position}'}, {'{join}'}, {'{minutes}'}, {'{nickname}'}
+          </p>
         </main>
-        
+
         <footer className="flex items-center justify-end gap-4 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50">
           <button
             onClick={handleReset}

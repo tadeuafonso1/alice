@@ -70,6 +70,7 @@ export const HomePage: React.FC = () => {
 
     // Estado para a conexão com o YouTube
     const [liveChatId, setLiveChatId] = useState<string>('');
+    const [settingsId, setSettingsId] = useState<number | null>(null);
     const [isPolling, setIsPolling] = useState(false);
     const [isFindingChat, setIsFindingChat] = useState(false);
     const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
@@ -156,11 +157,12 @@ export const HomePage: React.FC = () => {
             try {
                 const { data: settingsData, error: settingsError } = await supabase
                     .from('settings')
-                    .select('settings_data')
+                    .select('id, settings_data')
                     .single();
 
                 if (settingsError) throw settingsError;
                 if (settingsData) {
+                    setSettingsId(settingsData.id);
                     const dbSettings = settingsData.settings_data as Partial<AppSettings>;
                     const mergedSettings: AppSettings = JSON.parse(JSON.stringify(defaultSettings));
 
@@ -224,10 +226,14 @@ export const HomePage: React.FC = () => {
     const handleSettingsSave = async (newSettings: AppSettings) => {
         setAppSettings(newSettings);
         try {
+            if (settingsId === null) {
+                console.warn("No settings ID found, cannot update.");
+                return;
+            }
             const { error } = await supabase
                 .from('settings')
                 .update({ settings_data: newSettings })
-                .eq('id', 1);
+                .eq('id', settingsId);
             if (error) throw error;
         } catch (error) {
             console.error("Failed to save settings to Supabase", error);
