@@ -70,6 +70,7 @@ export const HomePage: React.FC = () => {
 
     // Estado para a conexão com o YouTube
     const [liveChatId, setLiveChatId] = useState<string>('');
+    const [channelTitle, setChannelTitle] = useState<string>('');
     const [settingsId, setSettingsId] = useState<number | null>(null);
     const [isPolling, setIsPolling] = useState(false);
     const [isFindingChat, setIsFindingChat] = useState(false);
@@ -619,9 +620,10 @@ export const HomePage: React.FC = () => {
 
     const startPolling = useCallback(() => {
         if (isPolling || !liveChatId) return;
-        addBotMessage(`Conectando ao chat ID: ${liveChatId}...`);
+        const displayName = channelTitle || "seu canal";
+        addBotMessage(`Conectado ao chat do ${displayName}!`);
         setIsPolling(true);
-    }, [isPolling, liveChatId, addBotMessage]);
+    }, [isPolling, liveChatId, channelTitle, addBotMessage]);
 
     const handleFindLiveChat = async () => {
         if (!session?.provider_token) {
@@ -655,7 +657,10 @@ export const HomePage: React.FC = () => {
 
             if (data.liveChatId) {
                 setLiveChatId(data.liveChatId);
-                addBotMessage("ID do chat ao vivo encontrado e preenchido!");
+                if (data.channelTitle) {
+                    setChannelTitle(data.channelTitle);
+                }
+                addBotMessage(`ID do chat ao vivo encontrado! (Canal: ${data.channelTitle || 'YouTube'})`);
             } else {
                 addBotMessage(data.error || "Não foi possível encontrar uma transmissão ativa.");
             }
