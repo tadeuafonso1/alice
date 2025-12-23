@@ -10,31 +10,16 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [theme, setTheme] = useState<Theme>(() => {
-        if (typeof window !== 'undefined' && window.localStorage) {
-            const storedTheme = window.localStorage.getItem('theme');
-            if (storedTheme === 'light' || storedTheme === 'dark') {
-                return storedTheme as Theme;
-            }
-            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                return 'dark';
-            }
-        }
-        return 'light';
-    });
+    const [theme] = useState<Theme>('dark');
 
     useEffect(() => {
         const root = window.document.documentElement;
-        if (theme === 'dark') {
-            root.classList.add('dark');
-        } else {
-            root.classList.remove('dark');
-        }
-        localStorage.setItem('theme', theme);
-    }, [theme]);
+        root.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+    }, []);
 
     const toggleTheme = () => {
-        setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+        // Theme is now permanently dark
     };
 
     const value = {

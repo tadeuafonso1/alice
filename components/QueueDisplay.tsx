@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UsersIcon, ArrowRightCircleIcon, TrashIcon, CopyIcon, CheckIcon, ArrowUpCircleIcon } from './Icons';
+import { UsersIcon, ArrowRightCircleIcon, TrashIcon, CopyIcon, CheckIcon, ArrowUpCircleIcon, SkipForwardIcon, RefreshCwIcon } from './Icons';
 import type { QueueUser } from '../types';
 
 interface QueueDisplayProps {
@@ -11,41 +11,23 @@ interface QueueDisplayProps {
     onMoveToPlaying: (user: string) => void;
     onRemoveUser: (user: string) => void;
     onMoveToTop: (user: string) => void;
+    onNext?: () => void;
+    onReset?: () => void;
 }
 
-const TimerBar: React.FC<{ startTime: number; timeoutMinutes: number }> = ({ startTime, timeoutMinutes }) => {
-    const [timeLeft, setTimeLeft] = useState(timeoutMinutes * 60);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const now = Date.now();
-            const elapsedSeconds = Math.floor((now - startTime) / 1000);
-            const remaining = (timeoutMinutes * 60) - elapsedSeconds;
-            setTimeLeft(Math.max(0, remaining));
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [startTime, timeoutMinutes]);
-
-    const totalSeconds = timeoutMinutes * 60;
-    const percentage = (timeLeft / totalSeconds) * 100;
+const TimerBar: React.FC<{ timeLeft: number; totalSeconds: number }> = ({ timeLeft, totalSeconds }) => {
+    const percentage = Math.max(0, Math.min(100, (timeLeft / totalSeconds) * 100));
 
     let barColor = 'bg-cyan-500';
     if (percentage < 50) barColor = 'bg-yellow-500';
     if (percentage < 25) barColor = 'bg-red-500';
 
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-
     return (
-        <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 mt-2 relative">
+        <div className="w-full bg-gray-800/50 rounded-full h-1.5 mt-2 overflow-hidden">
             <div
-                className={`h-2.5 rounded-full transition-all duration-500 ${barColor}`}
+                className={`h-full transition-all duration-1000 ease-linear ${barColor}`}
                 style={{ width: `${percentage}%` }}
             ></div>
-            <span className="absolute -top-1 right-2 text-xs text-gray-500 dark:text-gray-400 font-mono">
-                {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-            </span>
         </div>
     );
 };
@@ -61,6 +43,22 @@ const QueueItem: React.FC<{
     onMoveToTop: () => void;
 }> = ({ queueUser, index, isTimerActive, startTime, timeoutMinutes, onMoveToPlaying, onRemoveUser, onMoveToTop }) => {
     const [isCopied, setIsCopied] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(timeoutMinutes * 60);
+
+    useEffect(() => {
+        if (!isTimerActive || !startTime) return;
+
+        const updateTimer = () => {
+            const now = Date.now();
+            const elapsedSeconds = Math.floor((now - startTime) / 1000);
+            const remaining = (timeoutMinutes * 60) - elapsedSeconds;
+            setTimeLeft(Math.max(0, remaining));
+        };
+
+        updateTimer(); // Initial call
+        const interval = setInterval(updateTimer, 1000);
+        return () => clearInterval(interval);
+    }, [isTimerActive, startTime, timeoutMinutes]);
 
     const handleCopy = () => {
         if (queueUser.nickname) {
@@ -70,79 +68,128 @@ const QueueItem: React.FC<{
         }
     };
 
-    const getRankStyles = (idx: number) => {
-        switch (idx) {
-            case 0: // 1st Place - Green
-                return "border-l-4 border-lime-500 bg-lime-50/50 dark:bg-lime-900/10";
-            case 1: // 2nd Place - Yellow
-                return "border-l-4 border-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/10";
-            case 2: // 3rd Place - Red
-                return "border-l-4 border-red-500 bg-red-50/50 dark:bg-red-900/10";
-            default:
-                return "bg-gray-100 dark:bg-gray-700/80 border-l-4 border-transparent";
-        }
+    const getRankColor = (idx: number) => {
+        if (idx === 0) return "text-yellow-400";
+        if (idx === 1) return "text-gray-300";
+        if (idx === 2) return "text-orange-400";
+        return "text-gray-500";
+    };
+
+    const formatTime = (seconds: number) => {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
     };
 
     return (
-        <div className={`flex flex-col p-3 rounded-md gap-2 ${getRankStyles(index)}`}>
+        <div className="group bg-[#1e2947]/40 hover:bg-[#1e2947]/60 border border-gray-800 hover:border-gray-700 p-4 rounded-xl transition-all">
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <span className="text-cyan-500 dark:text-cyan-400 font-bold text-lg flex-shrink-0 w-8 text-center">{index + 1}</span>
+                    <span className={`font-black text-xl italic flex-shrink-0 w-8 ${getRankColor(index)}`}>
+                        #{index + 1}
+                    </span>
                     <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-800 dark:text-gray-200 truncate">{queueUser.user}</p>
-                        {queueUser.nickname && <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{queueUser.nickname}</p>}
+                        <p className="font-bold text-white truncate text-base">{queueUser.user}</p>
+
+                        <div className="flex items-center gap-4 mt-1">
+                            {queueUser.nickname ? (
+                                <div className="flex items-center gap-2">
+                                    <p className="text-sm text-cyan-400 font-semibold truncate">
+                                        {queueUser.nickname}
+                                    </p>
+                                    <button
+                                        onClick={handleCopy}
+                                        className="hover:bg-cyan-500/20 p-1.5 rounded-md transition-colors group"
+                                        title="Copiar Apelido"
+                                    >
+                                        {isCopied ? (
+                                            <CheckIcon className="w-4 h-4 text-lime-400" />
+                                        ) : (
+                                            <CopyIcon className="w-4 h-4 text-cyan-500/70 group-hover:text-cyan-400" />
+                                        )}
+                                    </button>
+                                </div>
+                            ) : (
+                                <p className="text-[10px] text-gray-500 uppercase font-medium">Na fila de espera</p>
+                            )}
+
+                            {/* Timer Moved Here */}
+                            {isTimerActive && (
+                                <div className="font-mono text-xl font-black text-white tracking-widest pl-2 border-l-2 border-gray-700">
+                                    {formatTime(timeLeft)}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {index > 0 && (
                         <button
                             onClick={onMoveToTop}
-                            className="text-gray-400 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-200 p-1"
-                            title={`Mover ${queueUser.user} para o topo da fila`}
+                            className="bg-gray-800 hover:bg-cyan-600 text-gray-400 hover:text-white p-2 rounded-lg transition-all"
+                            title="Mover para o topo"
                         >
-                            <ArrowUpCircleIcon className="w-6 h-6" />
-                        </button>
-                    )}
-                    {queueUser.nickname && (
-                        <button
-                            onClick={handleCopy}
-                            className="text-gray-400 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-200 p-1"
-                            title={`Copiar apelido: ${queueUser.nickname}`}
-                        >
-                            {isCopied ? <CheckIcon className="w-5 h-5 text-lime-500" /> : <CopyIcon className="w-5 h-5" />}
+                            <ArrowUpCircleIcon className="w-4 h-4" />
                         </button>
                     )}
                     <button
                         onClick={onMoveToPlaying}
-                        className="text-gray-400 dark:text-gray-400 hover:text-lime-500 dark:hover:text-lime-400 transition-colors duration-200 p-1"
-                        title={`Mover ${queueUser.user} para 'Jogando Agora'`}
+                        className="bg-gray-800 hover:bg-lime-600 text-gray-400 hover:text-white p-2 rounded-lg transition-all"
+                        title="Subir para o Jogo"
                     >
-                        <ArrowRightCircleIcon className="w-6 h-6" />
+                        <ArrowRightCircleIcon className="w-4 h-4" />
                     </button>
                     <button
                         onClick={onRemoveUser}
-                        className="text-gray-400 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200 p-1"
-                        title={`Remover ${queueUser.user} da fila`}
+                        className="bg-gray-800 hover:bg-red-600 text-gray-400 hover:text-white p-2 rounded-lg transition-all"
+                        title="Remover"
                     >
-                        <TrashIcon className="w-5 h-5" />
+                        <TrashIcon className="w-4 h-4" />
                     </button>
                 </div>
             </div>
-            {isTimerActive && startTime && <TimerBar startTime={startTime} timeoutMinutes={timeoutMinutes} />}
+            {isTimerActive && <TimerBar timeLeft={timeLeft} totalSeconds={timeoutMinutes * 60} />}
         </div>
     );
 };
 
-
-export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, isTimerActive, timeoutMinutes, adminName, onMoveToPlaying, onRemoveUser, onMoveToTop }) => {
+export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, isTimerActive, timeoutMinutes, adminName, onMoveToPlaying, onRemoveUser, onMoveToTop, onNext, onReset }) => {
     return (
-        <div className="bg-white dark:bg-gray-800/50 rounded-lg shadow-2xl p-6 h-full flex flex-col">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <UsersIcon className="text-cyan-500 dark:text-cyan-400" />
-                Fila Atual ({queue.length})
-            </h2>
-            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 flex-grow scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+        <div className="bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl flex flex-col h-full overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#162036] flex items-center justify-between gap-4">
+                <h2 className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] flex items-center gap-2 flex-shrink-0">
+                    <UsersIcon className="w-4 h-4 text-cyan-400" />
+                    Usuários na Fila
+                </h2>
+
+                <div className="flex items-center gap-3">
+                    {onNext && (
+                        <button
+                            onClick={onNext}
+                            className="bg-cyan-500 hover:bg-cyan-400 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shadow-lg active:scale-95 flex items-center gap-2"
+                        >
+                            <SkipForwardIcon className="w-3 h-3" />
+                            Próximo
+                        </button>
+                    )}
+                    {onReset && (
+                        <button
+                            onClick={onReset}
+                            className="bg-transparent border border-gray-600 hover:border-gray-400 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center gap-2"
+                        >
+                            <RefreshCwIcon className="w-3 h-3" />
+                            Resetar
+                        </button>
+                    )}
+                </div>
+
+                <span className="bg-cyan-500/10 text-cyan-400 text-[10px] font-black px-2 py-0.5 rounded-full border border-cyan-500/20 uppercase tracking-tighter flex-shrink-0">
+                    {queue.length} Total
+                </span>
+            </div>
+
+            <div className="p-6 space-y-3 overflow-y-auto custom-scrollbar flex-grow bg-gray-100 dark:bg-[#0f111a]">
                 {queue.length > 0 ? (
                     queue.map((queueUser, index) => (
                         <QueueItem
@@ -158,8 +205,9 @@ export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, i
                         />
                     ))
                 ) : (
-                    <div className="flex items-center justify-center h-full">
-                        <p className="text-gray-400 dark:text-gray-500 italic text-center">A fila está vazia.</p>
+                    <div className="flex flex-col items-center justify-center h-full gap-4 py-20 grayscale opacity-40">
+                        <UsersIcon className="w-16 h-16 text-gray-500" />
+                        <p className="text-gray-500 font-bold uppercase tracking-wider text-xs">Fila está vazia por enquanto</p>
                     </div>
                 )}
             </div>

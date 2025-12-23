@@ -1,17 +1,18 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { AdminPanel } from '@/components/AdminPanel';
 import { ChatWindow } from '@/components/ChatWindow';
 import { MessageInput } from '@/components/MessageInput';
 import { QueueDisplay } from '@/components/QueueDisplay';
 import { PlayingDisplay } from '@/components/PlayingDisplay';
 import { SettingsModal } from '@/components/SettingsModal';
-import { ManualQueueControl } from '@/components/ManualQueueControl';
+import { YouTubeSettings } from '@/components/YouTubeSettings';
+import { TimerSettings } from '@/components/TimerSettings';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings } from '@/types';
-import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon } from '@/components/Icons';
+import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, UsersIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon } from '@/components/Icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/src/contexts/SessionContext';
 import { useTheme } from '@/src/contexts/ThemeContext';
+import { Sidebar } from '@/components/Sidebar';
 
 const defaultSettings: AppSettings = {
     botName: 'Alice',
@@ -78,7 +79,12 @@ export const HomePage: React.FC = () => {
     const [isFindingChat, setIsFindingChat] = useState(false);
     const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
     const nextPageTokenRef = useRef<string | null>(null);
+    const consecutiveErrorsRef = useRef<number>(0);
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Layout State
+    const [activeTab, setActiveTab] = useState('dashboard');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     useEffect(() => {
         if (session?.user?.user_metadata?.full_name) {
@@ -98,8 +104,14 @@ export const HomePage: React.FC = () => {
     };
 
     const sendToYouTubeChat = useCallback(async (text: string) => {
-        if (!liveChatId || !session?.provider_token) {
-            console.warn("Cannot send to YouTube: Missing liveChatId or provider_token", { liveChatId, hasToken: !!session?.provider_token });
+        if (!liveChatId) return;
+
+        // Busca a sessão mais recente para garantir o token
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const token = currentSession?.provider_token;
+
+        if (!token) {
+            console.warn("Cannot send to YouTube: Missing provider_token");
             return;
         }
 
@@ -107,7 +119,7 @@ export const HomePage: React.FC = () => {
             const { data, error } = await supabase.functions.invoke('youtube-chat-send', {
                 body: { liveChatId, messageText: text },
                 headers: {
-                    'x-youtube-token': session.provider_token,
+                    'x-youtube-token': token,
                 },
             });
 
@@ -609,6 +621,7 @@ export const HomePage: React.FC = () => {
             }
 
             if (data && data.items) {
+                consecutiveErrorsRef.current = 0; // Reset errors on success
                 // Se for a primeira busca desta sessão, apenas pegamos o token de próxima página
                 // e ignoramos as mensagens anteriores para evitar repetir comandos já executados.
                 if (!isFirstPoll) {
@@ -623,9 +636,33 @@ export const HomePage: React.FC = () => {
                 nextPageTokenRef.current = data.nextPageToken;
             }
         } catch (error: any) {
-            console.error('Erro ao buscar mensagens do YouTube:', error);
-            addBotMessageRef.current(`Erro ao conectar com o chat do YouTube: ${error.message}`);
-            stopPolling();
+            consecutiveErrorsRef.current += 1;
+            console.error(`Erro ao buscar mensagens do YouTube (Falha ${consecutiveErrorsRef.current}/3):`, error);
+
+            // Se atingir 3 erros consecutivos, desconecta. Caso contrário, apenas aguarda o próximo intervalo.
+            if (consecutiveErrorsRef.current >= 3) {
+                addBotMessageRef.current(`Erro persistente ao conectar com o chat: ${error.message}. Desconectando para poupar sua conta.`);
+                stopPolling();
+            } else {
+                // Erros silenciosos nos logs, mas não para o usuário ainda para não poluir o chat
+                console.warn("Houve um erro temporário na busca de mensagens. Tentando novamente em breve...");
+
+                // Tentativa de Auto-Refresh se o erro parecer ser de token (401/403 ou mensagens específicas)
+                if (error.message.includes('401') || error.message.includes('403') || error.message.includes('Auth') || error.message.includes('token')) {
+                    console.log("Erro de autenticação detectado. Tentando renovar a sessão...");
+                    try {
+                        const { error: refreshError } = await supabase.auth.refreshSession();
+                        if (refreshError) {
+                            console.error("Falha ao renovar sessão:", refreshError);
+                        } else {
+                            console.log("Sessão renovada com sucesso! Tentando reconexão na próxima rodada.");
+                            consecutiveErrorsRef.current = 0; // Se renovou, damos mais uma chance
+                        }
+                    } catch (e) {
+                        console.error("Erro ao tentar refreshSession:", e);
+                    }
+                }
+            }
         }
     }, [liveChatId, stopPolling]);
 
@@ -636,8 +673,23 @@ export const HomePage: React.FC = () => {
     }, [isPolling, liveChatId, addBotMessage]);
 
     const handleFindLiveChat = async () => {
-        if (!session?.provider_token) {
-            addBotMessage("Erro: Token de acesso do Google não encontrado. Tente fazer login novamente.");
+        // Busca a sessão mais recente diretamente do Supabase para evitar closures estáticas
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+
+        if (!currentSession?.provider_token) {
+            const identities = currentSession?.user?.identities?.map(id => id.provider).join(', ') || 'nenhuma';
+            console.warn("Token do Google ausente. Identidades vinculadas:", identities);
+
+            // Se tiver identidade Google mas sem token, tenta limpar e pede reconexão
+            const hasGoogleIdentity = currentSession?.user?.identities?.some(id => id.provider === 'google');
+
+            if (hasGoogleIdentity) {
+                addBotMessage("A sessão com o YouTube expirou. Por favor, clique no botão 'Reconectar YouTube' na aba de configurações ou no ícone do cabeçalho para renovar o acesso.");
+                // Opcional: Poderíamos chamar handleReconnectGoogle() aqui, mas o navegador pode bloquear o popup/redirecionamento se não for clique direto.
+                // Melhor instruir o usuário.
+            } else {
+                addBotMessage(`Erro: Nenhuma conta do YouTube vinculada. Identidades: ${identities}.`);
+            }
             return;
         }
         setIsFindingChat(true);
@@ -646,7 +698,7 @@ export const HomePage: React.FC = () => {
         try {
             const response = await supabase.functions.invoke('youtube-find-live-chat', {
                 headers: {
-                    'Authorization': `Bearer ${session.provider_token}`,
+                    'Authorization': `Bearer ${currentSession.provider_token}`,
                 },
             });
 
@@ -741,6 +793,42 @@ export const HomePage: React.FC = () => {
         }
     };
 
+    // Função para reconectar conta Google (Refresh de Token manual)
+    const handleReconnectGoogle = async () => {
+        setIsConnectingGoogle(true);
+        const googleIdentity = session?.user?.identities?.find(id => id.provider === 'google');
+
+        if (googleIdentity) {
+            try {
+                // 1. Tenta desvincular
+                await supabase.auth.unlinkIdentity(googleIdentity);
+            } catch (err) {
+                console.warn("Erro ao desvincular antes de reconectar (pode já estar desvinculado):", err);
+            }
+        }
+
+        // 2. Vincula novamente
+        try {
+            const { error } = await supabase.auth.linkIdentity({
+                provider: 'google',
+                options: {
+                    scopes: 'https://www.googleapis.com/auth/youtube.force-ssl',
+                    redirectTo: window.location.origin,
+                    queryParams: {
+                        prompt: 'consent', // Força o consentimento para garantir refresh token
+                        access_type: 'offline'
+                    }
+                }
+            });
+            if (error) throw error;
+        } catch (error: any) {
+            console.error('Erro ao reconectar Google:', error);
+            const msg = error.message || "Erro desconhecido";
+            addBotMessage(`Erro ao renovar conexão: ${msg}`);
+            setIsConnectingGoogle(false);
+        }
+    };
+
     // Verificar se Google está conectado
     const googleIdentity = session?.user?.identities?.find(id => id.provider === 'google');
     const googleConnected = !!googleIdentity;
@@ -779,8 +867,9 @@ export const HomePage: React.FC = () => {
     useEffect(() => {
         if (isPolling) {
             nextPageTokenRef.current = null;
+            consecutiveErrorsRef.current = 0;
             fetchAndProcessMessages();
-            pollingIntervalRef.current = setInterval(fetchAndProcessMessages, 7000);
+            pollingIntervalRef.current = setInterval(fetchAndProcessMessages, 12000); // 12 segundos para poupar cota da API
 
             return () => {
                 if (pollingIntervalRef.current) {
@@ -908,64 +997,261 @@ export const HomePage: React.FC = () => {
 
 
     return (
-        <>
-            <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans p-4 md:p-6 lg:p-8 transition-colors duration-300 flex flex-col">
-                <div className="flex-grow">
-                    <header className="text-center mb-8">
-                        <div className="flex justify-between items-center max-w-4xl mx-auto h-12">
-                            <div className="flex-1 flex justify-start">
-                                <div className="flex items-center gap-2">
+        <div className="flex justify-center min-h-screen bg-[#F3F4F6] dark:bg-[#0F172A] transition-colors duration-300">
+            <div className="flex w-full max-w-[1800px]">
+                <Sidebar
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    isOpen={isSidebarOpen}
+                    setIsOpen={setIsSidebarOpen}
+                    theme={theme}
+                    toggleTheme={toggleTheme}
+                    onSignOut={handleSignOut}
+                />
+
+                <main className="flex-grow flex flex-col h-screen overflow-hidden">
+                    {/* Header */}
+                    <header className="h-20 bg-white dark:bg-[#131b2e] border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-8 sticky top-0 z-40 flex-shrink-0">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">
+                                {activeTab === 'dashboard' ? 'Painel De Controle' :
+                                    activeTab === 'settings' ? 'Configurações' :
+                                        activeTab === 'commands' ? 'Comandos do Bot' :
+                                            activeTab === 'youtube' ? 'Conexão YouTube' :
+                                                activeTab === 'timer' ? 'Timer' : 'Alice Bot'}
+                            </h2>
+                            <p className="text-[10px] text-gray-500 font-medium">
+                                {activeTab === 'dashboard' ? 'Gerencie sua fila e interação com o bot.' :
+                                    activeTab === 'settings' ? 'Personalize o comportamento da Alice.' :
+                                        activeTab === 'youtube' ? 'Gerencie a conexão com o chat da live.' :
+                                            activeTab === 'timer' ? 'Configuração de inatividade automática.' :
+                                                'Painel administrativo.'}
+                            </p>
+                        </div>
+
+
+                        <div className="flex items-center gap-6">
+                            {/* YouTube Controls */}
+                            <div className={`hidden md:flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300 border ${isPolling ? 'bg-red-500/5 border-red-500/20' : 'bg-gray-50 dark:bg-[#162036] border-gray-200 dark:border-gray-800'}`}>
+                                {googleConnected ? (
+                                    <>
+                                        <div className="flex items-center gap-3">
+                                            <div className="relative">
+                                                <div className={`p-1.5 rounded-lg ${isPolling ? 'bg-red-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
+                                                    <YoutubeIcon className="w-4 h-4" />
+                                                </div>
+                                                {isPolling && (
+                                                    <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 ring-2 ring-white dark:ring-[#0f111a]"></span>
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="flex flex-col">
+                                                <span className={`text-[10px] font-black uppercase tracking-wider ${isPolling ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                    {isPolling ? 'Ao Vivo' : 'YouTube'}
+                                                </span>
+                                                <span className="text-[10px] font-medium text-gray-400">
+                                                    {isPolling ? 'Sincronizado' : 'Conectado'}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 mx-2"></div>
+
+                                        {isPolling ? (
+                                            <button
+                                                onClick={stopPolling}
+                                                className="p-1.5 hover:bg-red-50 text-red-500 hover:text-red-600 dark:hover:bg-red-500/10 rounded-lg transition-colors group"
+                                                title="Parar Sincronização"
+                                            >
+                                                <svg className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+                                                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                                                </svg>
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={handleFindLiveChat}
+                                                disabled={isFindingChat}
+                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all
+                                                    ${isFindingChat
+                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                        : 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 active:scale-95'
+                                                    }`}
+                                            >
+                                                {isFindingChat ? (
+                                                    <RefreshCwIcon className="w-3 h-3 animate-spin" />
+                                                ) : (
+                                                    <RefreshCwIcon className="w-3 h-3" />
+                                                )}
+                                                {isFindingChat ? 'Buscando...' : 'Sincronizar'}
+                                            </button>
+                                        )}
+                                    </>
+                                ) : (
                                     <button
-                                        onClick={() => setIsSettingsOpen(true)}
-                                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                                        aria-label="Abrir configurações"
+                                        onClick={() => setActiveTab('youtube')}
+                                        className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors py-1 px-2"
                                     >
-                                        <SettingsIcon className="w-7 h-7" />
+                                        <YoutubeIcon className="w-4 h-4 grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100" />
+                                        <span className="text-[10px] font-bold uppercase tracking-wider">Conectar YouTube</span>
                                     </button>
-                                </div>
+                                )}
                             </div>
 
-                            <div className="flex-1 flex justify-center">
-                                <div className="flex items-center gap-3">
-                                    <BotIcon className="w-10 h-10 text-cyan-500" />
-                                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 dark:text-white whitespace-rap">
-                                        Alice
-                                    </h1>
-                                </div>
-                            </div>
+                            <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-800 hidden md:block"></div>
 
-                            <div className="flex-1 flex justify-end items-center gap-2">
-                                <button
-                                    onClick={toggleTheme}
-                                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                                    aria-label="Mudar tema"
-                                >
-                                    {theme === 'light' ? <MoonIcon className="w-7 h-7" /> : <SunIcon className="w-7 h-7" />}
-                                </button>
-                                <button
-                                    onClick={handleSignOut}
-                                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                                    aria-label="Sair"
-                                    title="Sair"
-                                >
-                                    <LogOutIcon className="w-7 h-7" />
-                                </button>
+                            <div className="flex items-center gap-4">
+                                <div className="flex flex-col items-end">
+                                    <span className="text-xs font-bold text-gray-900 dark:text-white">{currentUser}</span>
+                                    <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Administrador</span>
+                                </div>
+                                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-black shadow-lg border-2 border-gray-800 overflow-hidden">
+                                    {currentUser.charAt(0).toUpperCase()}
+                                </div>
                             </div>
                         </div>
-                        <p className="text-gray-500 dark:text-gray-400 mt-2">Uma simulação de um bot de fila para chat do YouTube.</p>
                     </header>
 
-                    <div className="max-w-7xl mx-auto flex flex-col gap-6">
-                        <div className="flex flex-col gap-6">
-                            <AdminPanel
-                                isTimerActive={isTimerActive}
-                                onToggleTimer={handleToggleTimer}
-                                timeoutMinutes={timeoutMinutes}
-                                setTimeoutMinutes={setTimeoutMinutes}
-                                onNext={handleNextUser}
-                                onReset={() => handleSendMessage(adminName, appSettings.commands.reset.command)}
-                                isPolling={isPolling}
-                                stopPolling={stopPolling}
+                    <div className="p-6 md:p-10 max-w-[1600px] mx-auto w-full flex-grow overflow-y-auto custom-scrollbar">
+                        {activeTab === 'dashboard' && (
+
+                            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-[calc(100vh-140px)]">
+                                {/* Column 1: Queue */}
+                                <div className="xl:col-span-1 h-full overflow-hidden">
+                                    <QueueDisplay
+                                        queue={queue}
+                                        userTimers={userTimers}
+                                        isTimerActive={isTimerActive}
+                                        timeoutMinutes={timeoutMinutes}
+                                        adminName={adminName}
+                                        onMoveToPlaying={handleMoveToPlaying}
+                                        onRemoveUser={(user) => handleRemoveUsersFromQueue([user], 'admin')}
+                                        onMoveToTop={handleMoveToTop}
+                                        onNext={handleNextUser}
+                                        onReset={() => handleSendMessage(adminName, appSettings.commands.reset.command)}
+                                    />
+                                </div>
+
+                                {/* Column 2: Playing */}
+                                <div className="xl:col-span-1 h-full overflow-hidden">
+                                    <PlayingDisplay
+                                        playingUsers={playingUsers}
+                                        onRemoveUser={handleRemovePlayingUser}
+                                    />
+                                </div>
+
+                                {/* Column 3: Chat */}
+                                <div className="xl:col-span-1 h-full overflow-hidden">
+                                    <div className={`bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl overflow-hidden flex flex-col transition-all duration-300 h-full`}>
+                                        <div
+                                            className="p-4 bg-gray-50 dark:bg-[#162036] border-b border-gray-200 dark:border-gray-800 flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-[#1f2937] transition-colors flex-shrink-0"
+                                            onClick={() => setIsChatVisible(!isChatVisible)}
+                                        >
+                                            <div className="flex items-center gap-2 font-black text-gray-900 dark:text-white text-[10px] uppercase tracking-[0.2em]">
+                                                <MessageSquareIcon className="w-4 h-4 text-cyan-400" />
+                                                <span>Chat Alice</span>
+                                            </div>
+                                            <button className="text-gray-400 hover:text-cyan-500 transition-colors">
+                                                {isChatVisible ? <ChevronDownIcon className="w-4 h-4" /> : <ChevronUpIcon className="w-4 h-4" />}
+                                            </button>
+                                        </div>
+                                        {isChatVisible && (
+                                            <div className="flex-grow overflow-hidden flex flex-col bg-gray-100 dark:bg-[#0f111a]">
+                                                <ChatWindow messages={messages} currentUser={currentUser} />
+                                                <MessageInput
+                                                    onSendMessage={(text) => handleSendMessage(adminName, text)}
+                                                    commands={appSettings.commands}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+
+                        {activeTab === 'settings' && (
+                            <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-800">
+                                <div className="mb-8 overflow-hidden rounded-xl bg-gradient-to-r from-cyan-600 to-blue-700 p-8 text-white relative">
+                                    <div className="relative z-10">
+                                        <h3 className="text-2xl font-bold mb-2">Configurações Gerais</h3>
+                                        <p className="text-cyan-100 opacity-90">Personalize o nome do bot, comandos e mensagens automáticas.</p>
+                                    </div>
+                                    <BotIcon className="absolute -right-10 -bottom-10 w-64 h-64 text-white opacity-10 rotate-12" />
+                                </div>
+
+                                <div className="space-y-12">
+                                    <section>
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="p-2 bg-cyan-500/10 rounded-lg">
+                                                <BotIcon className="w-6 h-6 text-cyan-500" />
+                                            </div>
+                                            <h4 className="text-lg font-bold text-gray-900 dark:text-white">Identidade do Bot</h4>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-500 dark:text-[#8bcbd5] mb-2">Nome do Bot no Chat</label>
+                                                <input
+                                                    type="text"
+                                                    value={appSettings.botName}
+                                                    onChange={(e) => handleSettingsSave({ ...appSettings, botName: e.target.value })}
+                                                    className="w-full bg-gray-50 dark:bg-[#0F172A] dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 focus:ring-2 focus:ring-cyan-500 outline-none transition-all"
+                                                />
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <div className="p-6 bg-cyan-50 dark:bg-cyan-900/10 border border-cyan-100 dark:border-cyan-500/20 rounded-2xl flex items-start gap-4">
+                                        <div className="p-2 bg-white dark:bg-[#1E293B] rounded-lg shadow-sm">
+                                            <SettingsIcon className="w-6 h-6 text-cyan-500" />
+                                        </div>
+                                        <div>
+                                            <h5 className="font-bold text-cyan-900 dark:text-cyan-100 mb-1">Dica de Configuração</h5>
+                                            <p className="text-sm text-cyan-800 dark:text-cyan-200 opacity-80">
+                                                As alterações feitas aqui são salvas automaticamente na nuvem vinculada à sua conta.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <SettingsModal
+                                        isOpen={true}
+                                        onClose={() => setActiveTab('dashboard')}
+                                        settings={appSettings}
+                                        onSave={handleSettingsSave}
+                                        onReset={() => handleSettingsSave(defaultSettings)}
+                                        isInline={true}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'commands' && (
+                            <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-800">
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="p-3 bg-cyan-500/10 rounded-xl">
+                                        <MessageSquareIcon className="w-8 h-8 text-cyan-500" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-bold">Personalização de Comandos</h3>
+                                        <p className="text-gray-500 dark:text-gray-400">Configure o que os usuários digitam no chat.</p>
+                                    </div>
+                                </div>
+                                <SettingsModal
+                                    isOpen={true}
+                                    onClose={() => setActiveTab('dashboard')}
+                                    settings={appSettings}
+                                    onSave={handleSettingsSave}
+                                    onReset={() => handleSettingsSave(defaultSettings)}
+                                    isInline={true}
+                                    initialTab="commands"
+                                />
+                            </div>
+                        )}
+
+                        {activeTab === 'youtube' && (
+                            <YouTubeSettings
                                 googleConnected={googleConnected}
                                 googleEmail={googleEmail}
                                 onConnectGoogle={handleConnectGoogle}
@@ -973,70 +1259,38 @@ export const HomePage: React.FC = () => {
                                 onDisconnectGoogle={handleDisconnectGoogle}
                                 onFindLiveChat={handleFindLiveChat}
                                 isFindingChat={isFindingChat}
+                                isPolling={isPolling}
+                                stopPolling={stopPolling}
+                                onReconnectGoogle={handleReconnectGoogle}
                             />
-                            <ManualQueueControl onAddUser={handleAddUserManually} />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <QueueDisplay
-                                    queue={queue}
-                                    userTimers={userTimers}
-                                    isTimerActive={isTimerActive}
-                                    timeoutMinutes={timeoutMinutes}
-                                    adminName={adminName}
-                                    onMoveToPlaying={handleMoveToPlaying}
-                                    onRemoveUser={(user) => handleRemoveUsersFromQueue([user], 'admin')}
-                                    onMoveToTop={handleMoveToTop}
-                                />
-                                <PlayingDisplay
-                                    playingUsers={playingUsers}
-                                    onRemoveUser={handleRemovePlayingUser}
-                                />
-                            </div>
-                        </div>
+                        )}
 
-                        <div className="bg-white dark:bg-gray-800/50 rounded-lg shadow-2xl flex flex-col transition-all duration-500 ease-in-out overflow-hidden" style={{ height: isChatVisible ? '75vh' : 'auto' }}>
-                            <button
-                                onClick={() => setIsChatVisible(!isChatVisible)}
-                                className="w-full flex items-center justify-between p-4 bg-gray-50/50 dark:bg-gray-700/30 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
-                            >
-                                <div className="flex items-center gap-2 font-semibold">
-                                    <BotIcon className="w-5 h-5 text-cyan-500" />
-                                    <span>Chat da Alice</span>
-                                </div>
-                                {isChatVisible ? <ChevronDownIcon className="w-5 h-5 text-gray-400" /> : <ChevronUpIcon className="w-5 h-5 text-gray-400" />}
-                            </button>
+                        {activeTab === 'timer' && (
+                            <TimerSettings
+                                isTimerActive={isTimerActive}
+                                onToggleTimer={handleToggleTimer}
+                                timeoutMinutes={timeoutMinutes}
+                                setTimeoutMinutes={setTimeoutMinutes}
+                            />
+                        )}
+                    </div>
 
-                            {isChatVisible && (
-                                <div className="flex flex-col flex-grow overflow-hidden">
-                                    <ChatWindow messages={messages} currentUser={currentUser} />
-                                    <MessageInput
-                                        onSendMessage={(text) => handleSendMessage(adminName, text)}
-                                        commands={appSettings.commands}
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-                <footer className="text-center py-4 mt-8">
-                    <div className="flex justify-center items-center gap-4">
-                        <Link to="/privacy" className="text-sm text-gray-500 dark:text-gray-400 hover:underline">
-                            Política de Privacidade
-                        </Link>
-                        <span className="text-gray-400 dark:text-gray-600">|</span>
-                        <Link to="/terms" className="text-sm text-gray-500 dark:text-gray-400 hover:underline">
-                            Termos de Serviço
-                        </Link>
-                    </div>
-                </footer>
-            </div>
-            <SettingsModal
-                isOpen={isSettingsOpen}
-                onClose={() => setIsSettingsOpen(false)}
-                settings={appSettings}
-                onSave={handleSettingsSave}
-                onReset={() => handleSettingsSave(defaultSettings)}
-            />
-        </>
+                    <footer className="py-6 border-t border-gray-200 dark:border-gray-800 text-center bg-white dark:bg-[#131b2e] flex-shrink-0">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            © 2025 Alice Bot • Desenvolvido com ❤️ para streamers
+                        </p>
+                    </footer>
+                </main>
+
+                <SettingsModal
+                    isOpen={isSettingsOpen}
+                    onClose={() => setIsSettingsOpen(false)}
+                    settings={appSettings}
+                    onSave={handleSettingsSave}
+                    onReset={() => handleSettingsSave(defaultSettings)}
+                />
+            </div >
+        </div >
     );
 };
 
