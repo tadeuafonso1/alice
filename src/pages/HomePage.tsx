@@ -693,7 +693,7 @@ export const HomePage: React.FC = () => {
             setIsConnectingGoogle(false);
         }
     };
-
+    // Função para desvincular conta Google - Atualizado em 2025-12-23
     const handleDisconnectGoogle = async () => {
         const googleIdentity = session?.user?.identities?.find(id => id.provider === 'google');
 
