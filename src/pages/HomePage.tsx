@@ -741,19 +741,25 @@ export const HomePage: React.FC = () => {
     // Auto-buscar live quando o usuário faz login
     const hasAutoSearchedRef = useRef(false);
     useEffect(() => {
-        // Refresh session if we just came back from a redirect (identities might have changed)
-        const checkSession = async () => {
+        const initSession = async () => {
+            // Refresh session if we just came back from a redirect (identities might have changed)
             if (window.location.hash || window.location.search.includes('code=')) {
+                console.log("Detectado redirect de autenticação, atualizando sessão...");
                 await supabase.auth.refreshSession();
             }
-        };
-        checkSession();
 
-        if (session?.provider_token && !liveChatId && !isFindingChat && !hasAutoSearchedRef.current) {
-            hasAutoSearchedRef.current = true;
-            handleFindLiveChat();
-        }
-    }, [session?.provider_token, liveChatId, isFindingChat]);
+            // Busca a sessão atualizada para garantir que o provider_token esteja lá
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+
+            if (currentSession?.provider_token && !liveChatId && !isFindingChat && !hasAutoSearchedRef.current) {
+                console.log("Iniciando auto-busca de live chat...");
+                hasAutoSearchedRef.current = true;
+                handleFindLiveChat();
+            }
+        };
+
+        initSession();
+    }, [liveChatId, isFindingChat]); // Removido session do array para evitar loops infinitos, usando getSession interno
 
     // Auto-conectar quando encontrar o liveChatId
     useEffect(() => {
@@ -957,6 +963,8 @@ export const HomePage: React.FC = () => {
                                 onConnectGoogle={handleConnectGoogle}
                                 isConnectingGoogle={isConnectingGoogle}
                                 onDisconnectGoogle={handleDisconnectGoogle}
+                                onFindLiveChat={handleFindLiveChat}
+                                isFindingChat={isFindingChat}
                             />
                             <ManualQueueControl onAddUser={handleAddUserManually} />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

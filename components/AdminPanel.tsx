@@ -16,6 +16,8 @@ interface AdminPanelProps {
     onConnectGoogle: () => void;
     isConnectingGoogle: boolean;
     onDisconnectGoogle: () => void;
+    onFindLiveChat: () => void;
+    isFindingChat: boolean;
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
@@ -32,6 +34,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     onConnectGoogle,
     isConnectingGoogle,
     onDisconnectGoogle,
+    onFindLiveChat,
+    isFindingChat,
 }) => {
     const [isOpen, setIsOpen] = useState(true);
 
@@ -104,13 +108,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                             Desconectar Chat
                                         </button>
                                     ) : (
-                                        <button
-                                            onClick={onDisconnectGoogle}
-                                            className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-white hover:bg-gray-500 border border-gray-500 rounded-md transition-colors"
-                                            title="Desvincular conta Google"
-                                        >
-                                            Desvincular
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={onFindLiveChat}
+                                                disabled={isFindingChat}
+                                                className="px-3 py-1.5 text-sm font-medium text-cyan-600 hover:text-white hover:bg-cyan-600 border border-cyan-600 rounded-md transition-colors flex items-center gap-2"
+                                                title="Tentar conectar ao chat do YouTube"
+                                            >
+                                                {isFindingChat ? (
+                                                    <div className="w-4 h-4 border-2 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
+                                                ) : (
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                    </svg>
+                                                )}
+                                                {isFindingChat ? 'Buscando...' : 'Conectar Chat'}
+                                            </button>
+                                            <button
+                                                onClick={onDisconnectGoogle}
+                                                className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-white hover:bg-gray-500 border border-gray-500 rounded-md transition-colors"
+                                                title="Desvincular conta Google"
+                                            >
+                                                Desvincular
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             </div>
