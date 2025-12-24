@@ -98,7 +98,7 @@ export const LoginPage: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-black uppercase tracking-widest text-white bg-cyan-600 hover:bg-cyan-500 active:scale-90 active:brightness-110 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50"
+                                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-lg text-sm font-black uppercase tracking-widest text-white bg-cyan-600 hover:bg-cyan-500 active:scale-90 active:brightness-110 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50"
                             >
                                 {loading ? 'Entrando...' : 'Entrar'}
                             </button>

@@ -56,7 +56,7 @@ export const ManualQueueControl: React.FC<ManualQueueControlProps> = ({ onAddUse
                     </div>
                     <button
                         type="submit"
-                        className="w-full flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white font-black uppercase tracking-widest text-xs py-4 rounded-xl transition-all shadow-lg hover:shadow-cyan-500/20 active:scale-90 active:brightness-110 disabled:opacity-30"
+                        className="w-full flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white font-black uppercase tracking-widest text-xs py-4 rounded-full transition-all shadow-lg hover:shadow-cyan-500/20 active:scale-90 active:brightness-110 disabled:opacity-30"
                         disabled={!username.trim()}
                     >
                         <PlusCircleIcon className="w-5 h-5" />

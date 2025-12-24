@@ -167,7 +167,7 @@ export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, i
                     {onNext && (
                         <button
                             onClick={onNext}
-                            className="bg-cyan-500 hover:bg-cyan-400 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-lg active:scale-90 active:brightness-110 flex items-center gap-1.5 flex-shrink-0"
+                            className="bg-cyan-500 hover:bg-cyan-400 text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-lg active:scale-90 active:brightness-110 flex items-center gap-1.5 flex-shrink-0"
                             title="Próximo"
                         >
                             <SkipForwardIcon className="w-3 h-3" />
@@ -177,7 +177,7 @@ export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, i
                     {onReset && (
                         <button
                             onClick={onReset}
-                            className="bg-transparent border border-gray-600 hover:border-gray-400 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all active:scale-90 flex items-center gap-1.5 flex-shrink-0"
+                            className="bg-transparent border border-gray-600 hover:border-gray-400 text-white px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all active:scale-90 flex items-center gap-1.5 flex-shrink-0"
                             title="Resetar"
                         >
                             <RefreshCwIcon className="w-3 h-3" />

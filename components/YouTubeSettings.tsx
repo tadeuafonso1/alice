@@ -128,7 +128,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                         {isPolling ? (
                             <button
                                 onClick={stopPolling}
-                                className="w-full py-4 text-red-500 hover:text-white hover:bg-red-500 border-2 border-red-500/20 hover:border-red-500 active:scale-90 active:brightness-110 rounded-xl transition-all font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2"
+                                className="w-full py-4 text-red-500 hover:text-white hover:bg-red-500 border-2 border-red-500/20 hover:border-red-500 active:scale-90 active:brightness-110 rounded-full transition-all font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2"
                             >
                                 Parar Sincronização
                             </button>
@@ -136,7 +136,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                             <button
                                 onClick={onFindLiveChat}
                                 disabled={isFindingChat}
-                                className="w-full py-4 text-white bg-cyan-600 hover:bg-cyan-500 active:scale-90 active:brightness-110 disabled:scale-100 disabled:opacity-50 rounded-xl transition-all font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-cyan-500/20"
+                                className="w-full py-4 text-white bg-cyan-600 hover:bg-cyan-500 active:scale-90 active:brightness-110 disabled:scale-100 disabled:opacity-50 rounded-full transition-all font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-cyan-500/20"
                             >
                                 {isFindingChat
                                     ? 'Buscando Live...'
