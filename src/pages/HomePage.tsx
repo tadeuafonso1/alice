@@ -82,6 +82,8 @@ export const HomePage: React.FC = () => {
     const nextPageTokenRef = useRef<string | null>(null);
     const consecutiveErrorsRef = useRef<number>(0);
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const processedMessageIds = useRef<Set<string>>(new Set());
+    const isFetchingRef = useRef(false);
 
     // Layout State
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -617,8 +619,9 @@ export const HomePage: React.FC = () => {
     }, [isPolling, addBotMessage]);
 
     const fetchAndProcessMessages = useCallback(async () => {
-        if (!liveChatId) return;
+        if (!liveChatId || isFetchingRef.current) return;
 
+        isFetchingRef.current = true;
         const isFirstPoll = nextPageTokenRef.current === null;
 
         try {
@@ -629,24 +632,36 @@ export const HomePage: React.FC = () => {
             const { data, error } = response;
 
             if (error) {
+                // ... same error handling logic ...
                 let errorMessage = error.message || "Erro desconhecido";
                 if (error.context && typeof error.context.json === 'function') {
                     try {
                         const errorBody = await error.context.json();
                         errorMessage = errorBody.error || errorMessage;
-                    } catch (e) {
-                        // If we can't parse the body, use the message
-                    }
+                    } catch (e) { }
                 }
                 throw new Error(errorMessage);
             }
 
             if (data && data.items) {
-                consecutiveErrorsRef.current = 0; // Reset errors on success
-                // Se for a primeira busca desta sessão, apenas pegamos o token de próxima página
-                // e ignoramos as mensagens anteriores para evitar repetir comandos já executados.
+                consecutiveErrorsRef.current = 0;
+
+                // ATUALIZA O TOKEN IMEDIATAMENTE antes de processar mensagens lentas
+                const oldToken = nextPageTokenRef.current;
+                nextPageTokenRef.current = data.nextPageToken;
+
                 if (!isFirstPoll) {
                     for (const item of data.items) {
+                        // Verificamos o ID único do YouTube para NUNCA repetir a mesma mensagem
+                        if (processedMessageIds.current.has(item.id)) continue;
+
+                        processedMessageIds.current.add(item.id);
+                        // Mantemos apenas os últimos 200 IDs para não crescer infinitamente
+                        if (processedMessageIds.current.size > 200) {
+                            const oldestId = processedMessageIds.current.values().next().value;
+                            processedMessageIds.current.delete(oldestId);
+                        }
+
                         const author = item.authorDetails.displayName;
                         const text = item.snippet.displayMessage;
                         await handleSendMessageRef.current(author, text);
@@ -654,7 +669,6 @@ export const HomePage: React.FC = () => {
                 } else {
                     console.log("Sessão iniciada: Histórico ignorado. Pronto para as próximas mensagens.");
                 }
-                nextPageTokenRef.current = data.nextPageToken;
             }
         } catch (error: any) {
             consecutiveErrorsRef.current += 1;
@@ -691,6 +705,8 @@ export const HomePage: React.FC = () => {
                     }
                 }
             }
+        } finally {
+            isFetchingRef.current = false;
         }
     }, [liveChatId, stopPolling]);
 
@@ -919,19 +935,26 @@ export const HomePage: React.FC = () => {
     }, [liveChatId, isPolling, canAutoConnect, startPolling]);
 
     useEffect(() => {
+        let timeoutId: NodeJS.Timeout;
+
+        const poll = async () => {
+            if (isPolling) {
+                await fetchAndProcessMessages();
+                // Agenda a próxima busca apenas após terminar a atual
+                timeoutId = setTimeout(poll, 12000);
+            }
+        };
+
         if (isPolling) {
             nextPageTokenRef.current = null;
             consecutiveErrorsRef.current = 0;
-            fetchAndProcessMessages();
-            pollingIntervalRef.current = setInterval(fetchAndProcessMessages, 12000); // 12 segundos para poupar cota da API
-
-            return () => {
-                if (pollingIntervalRef.current) {
-                    clearInterval(pollingIntervalRef.current);
-                    pollingIntervalRef.current = null;
-                }
-            };
+            processedMessageIds.current.clear(); // Limpa cache de IDs ao iniciar nova poll
+            poll(); // Inicia o ciclo
         }
+
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId);
+        };
     }, [isPolling, fetchAndProcessMessages]);
 
     const handleAddUserManually = useCallback(async (username: string, nickname: string) => {
