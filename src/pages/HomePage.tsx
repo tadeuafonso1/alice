@@ -181,12 +181,14 @@ export const HomePage: React.FC = () => {
         const fetchData = async () => {
             if (adminName === 'Admin') return;
             try {
+                // Tenta buscar as configurações. RLS deve garantir que buscamos apenas a nossa.
                 const { data: settingsData, error: settingsError } = await supabase
                     .from('settings')
                     .select('id, settings_data')
-                    .single();
+                    .maybeSingle(); // maybeSingle não erro se não houver linhas
 
                 if (settingsError) throw settingsError;
+
                 if (settingsData) {
                     setSettingsId(settingsData.id);
                     const dbSettings = settingsData.settings_data as Partial<AppSettings>;
@@ -219,6 +221,7 @@ export const HomePage: React.FC = () => {
                     setAppSettings(mergedSettings);
                 }
 
+                // Busca fila e jogadores...
                 const { data: queueData, error: queueError } = await supabase
                     .from('queue')
                     .select('username, nickname, joined_at')
@@ -240,9 +243,12 @@ export const HomePage: React.FC = () => {
                 }, {} as Record<string, number>);
                 setUserTimers(initialTimers);
 
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Error fetching initial data:", error);
-                addBotMessageRef.current("Erro ao carregar dados do banco de dados.");
+                // Não alertar erro se for apenas falta de dados iniciais
+                if (error.code !== 'PGRST116') {
+                    addBotMessageRef.current(`Erro ao carregar dados: ${error.message}`);
+                }
             }
         };
 
@@ -253,31 +259,39 @@ export const HomePage: React.FC = () => {
         console.log("Tentando salvar configurações:", newSettings, "ID atual:", settingsId);
         setAppSettings(newSettings);
         try {
-            const { error } = await supabase
+            const payload: any = {
+                settings_data: newSettings
+            };
+
+            // SE tivermos um ID, usamos para garantir que estamos atualizando a linha correta.
+            // SE NÃO tivermos, não passamos ID para o Supabase gerar um novo e o RLS vincular ao nosso usuário.
+            if (settingsId) {
+                payload.id = settingsId;
+            }
+
+            const { data, error } = await supabase
                 .from('settings')
-                .upsert({
-                    id: settingsId || 1,
-                    settings_data: newSettings
-                });
+                .upsert(payload)
+                .select()
+                .single();
 
             if (error) {
                 console.error("Erro no upsert de configurações:", error);
                 throw error;
             }
 
-            addBotMessage("Configurações salvas com sucesso!");
-
-            // Se não tínhamos ID, busca agora
-            if (!settingsId) {
-                const { data } = await supabase.from('settings').select('id').single();
-                if (data) setSettingsId(data.id);
+            if (data) {
+                setSettingsId(data.id);
             }
+
+            addBotMessage("Configurações salvas com sucesso!");
         } catch (error: any) {
             console.error("Failed to save settings to Supabase:", error);
             const msg = error.message || "Erro desconhecido";
             addBotMessage(`Erro ao salvar configurações: ${msg}`);
         }
     };
+
 
     const handleMoveToPlaying = useCallback(async (userToMove: string) => {
         const userObjectIndex = queue.findIndex(u => u.user === userToMove);
