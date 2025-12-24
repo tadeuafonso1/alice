@@ -50,15 +50,14 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                             {onReconnectGoogle && (
                                 <button
                                     onClick={onReconnectGoogle}
-                                    className="text-xs text-cyan-500 hover:text-cyan-600 active:scale-95 transition-all font-semibold"
+                                    className="text-[10px] bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1 rounded-full active:scale-90 transition-all font-black uppercase tracking-wider shadow-sm"
                                 >
                                     Reconectar
                                 </button>
                             )}
-                            <span className="text-gray-300 dark:text-gray-700">|</span>
                             <button
                                 onClick={onDisconnectGoogle}
-                                className="text-xs text-red-500 hover:text-red-600 active:scale-95 transition-all font-semibold"
+                                className="text-[10px] bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded-full active:scale-90 transition-all font-black uppercase tracking-wider shadow-sm"
                             >
                                 Desconectar
                             </button>
