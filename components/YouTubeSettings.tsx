@@ -50,7 +50,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                             {onReconnectGoogle && (
                                 <button
                                     onClick={onReconnectGoogle}
-                                    className="text-xs text-cyan-500 hover:text-cyan-600 transition-colors font-semibold"
+                                    className="text-xs text-cyan-500 hover:text-cyan-600 active:scale-95 transition-all font-semibold"
                                 >
                                     Reconectar
                                 </button>
@@ -58,7 +58,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                             <span className="text-gray-300 dark:text-gray-700">|</span>
                             <button
                                 onClick={onDisconnectGoogle}
-                                className="text-xs text-red-500 hover:text-red-600 transition-colors font-semibold"
+                                className="text-xs text-red-500 hover:text-red-600 active:scale-95 transition-all font-semibold"
                             >
                                 Desconectar
                             </button>
@@ -128,7 +128,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                         {isPolling ? (
                             <button
                                 onClick={stopPolling}
-                                className="w-full py-4 text-red-500 hover:text-white hover:bg-red-500 border-2 border-red-500/20 hover:border-red-500 rounded-xl transition-all font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2"
+                                className="w-full py-4 text-red-500 hover:text-white hover:bg-red-500 border-2 border-red-500/20 hover:border-red-500 active:scale-[0.98] rounded-xl transition-all font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2"
                             >
                                 Parar Sincronização
                             </button>
@@ -136,7 +136,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                             <button
                                 onClick={onFindLiveChat}
                                 disabled={isFindingChat}
-                                className="w-full py-4 text-white bg-cyan-600 hover:bg-cyan-500 rounded-xl transition-all font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-cyan-500/20"
+                                className="w-full py-4 text-white bg-cyan-600 hover:bg-cyan-500 active:scale-[0.98] disabled:scale-100 disabled:opacity-50 rounded-xl transition-all font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-cyan-500/20"
                             >
                                 {isFindingChat
                                     ? 'Buscando Live...'
@@ -148,7 +148,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                     <button
                         onClick={onConnectGoogle}
                         disabled={isConnectingGoogle}
-                        className="w-full py-8 px-6 bg-gray-50 dark:bg-[#0f111a] border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all flex flex-col items-center gap-4 group"
+                        className="w-full py-8 px-6 bg-gray-50 dark:bg-[#0f111a] border-2 border-dashed border-gray-300 dark:border-gray-700 active:scale-[0.99] disabled:scale-100 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all flex flex-col items-center gap-4 group"
                     >
                         <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center group-hover:scale-110 transition-transform">
                             <CrownIcon className="w-6 h-6 text-gray-400 group-hover:text-cyan-500 transition-colors" />
