@@ -678,48 +678,54 @@ export const HomePage: React.FC = () => {
         setIsPolling(true);
     }, [isPolling, liveChatId, addBotMessage]);
 
-    const handleFindLiveChat = async () => {
+    const handleFindLiveChat = async (channelIdToUse?: string | any) => {
         // Busca a sessão mais recente diretamente do Supabase para evitar closures estáticas
         const { data: { session: currentSession } } = await supabase.auth.getSession();
 
-        if (!currentSession?.provider_token) {
-            const identities = currentSession?.user?.identities?.map(id => id.provider).join(', ') || 'nenhuma';
-            console.warn("Token do Google ausente. Identidades vinculadas:", identities);
+        // Se channelIdToUse for um evento (no onClick), ignoramos e usamos localStorage
+        const cleanChannelId = typeof channelIdToUse === 'string' ? channelIdToUse : null;
+        const storedChannelId = cleanChannelId || localStorage.getItem('alice_yt_channel_id');
 
-            // Se tiver identidade Google mas sem token, tenta limpar e pede reconexão
+        if (!currentSession?.provider_token && !storedChannelId) {
+            const identities = currentSession?.user?.identities?.map(id => id.provider).join(', ') || 'nenhuma';
+            console.warn("Token do Google ausente e nenhum Channel ID salvo. Identidades vinculadas:", identities);
+
             const hasGoogleIdentity = currentSession?.user?.identities?.some(id => id.provider === 'google');
 
             if (hasGoogleIdentity) {
                 addBotMessage("A sessão com o YouTube expirou. Por favor, clique no botão 'Reconectar YouTube' na aba de configurações ou no ícone do cabeçalho para renovar o acesso.");
-                // Opcional: Poderíamos chamar handleReconnectGoogle() aqui, mas o navegador pode bloquear o popup/redirecionamento se não for clique direto.
-                // Melhor instruir o usuário.
             } else {
                 addBotMessage(`Erro: Nenhuma conta do YouTube vinculada. Identidades: ${identities}.`);
             }
             return;
         }
+
         setIsFindingChat(true);
         setCanAutoConnect(true);
-        addBotMessage("Buscando sua transmissão ao vivo ativa...");
+        addBotMessage(storedChannelId && !currentSession?.provider_token
+            ? "Buscando sua live automaticamente via Channel ID..."
+            : "Buscando sua transmissão ao vivo ativa...");
+
         try {
+            const invokeHeaders: any = {};
+            if (currentSession?.provider_token) {
+                invokeHeaders['Authorization'] = `Bearer ${currentSession.provider_token}`;
+            }
+
             const response = await supabase.functions.invoke('youtube-find-live-chat', {
-                headers: {
-                    'Authorization': `Bearer ${currentSession.provider_token}`,
-                },
+                headers: invokeHeaders,
+                body: { channelId: storedChannelId }
             });
 
             const { data, error } = response;
 
             if (error) {
-                // Try to read the error body if it's a FunctionsHttpError
                 let errorMessage = error.message || "Erro desconhecido";
                 if (error.context && typeof error.context.json === 'function') {
                     try {
                         const errorBody = await error.context.json();
                         errorMessage = errorBody.error || errorMessage;
-                    } catch (e) {
-                        // If we can't parse the body, use the message
-                    }
+                    } catch (e) { }
                 }
                 throw new Error(errorMessage);
             }
@@ -729,6 +735,10 @@ export const HomePage: React.FC = () => {
                 if (data.channelTitle) {
                     setChannelTitle(data.channelTitle);
                 }
+                if (data.channelId) {
+                    localStorage.setItem('alice_yt_channel_id', data.channelId);
+                }
+                localStorage.setItem('alice_yt_last_chat_id', data.liveChatId);
             } else {
                 addBotMessage(data.error || "Não foi possível encontrar uma transmissão ativa.");
             }
@@ -840,28 +850,32 @@ export const HomePage: React.FC = () => {
     const googleConnected = !!googleIdentity;
     const googleEmail = googleIdentity?.identity_data?.email || session?.user?.user_metadata?.email || null;
 
-    // Auto-buscar live quando o usuário faz login
     const hasAutoSearchedRef = useRef(false);
     useEffect(() => {
         const initSession = async () => {
-            // Refresh session if we just came back from a redirect (identities might have changed)
             if (window.location.hash || window.location.search.includes('code=')) {
                 console.log("Detectado redirect de autenticação, atualizando sessão...");
                 await supabase.auth.refreshSession();
             }
 
-            // Busca a sessão atualizada para garantir que o provider_token esteja lá
             const { data: { session: currentSession } } = await supabase.auth.getSession();
+            const storedChannelId = localStorage.getItem('alice_yt_channel_id');
 
-            if (currentSession?.provider_token && !liveChatId && !isFindingChat && !hasAutoSearchedRef.current) {
-                console.log("Iniciando auto-busca de live chat...");
-                hasAutoSearchedRef.current = true;
-                handleFindLiveChat();
+            if (!liveChatId && !isFindingChat && !hasAutoSearchedRef.current) {
+                if (currentSession?.provider_token) {
+                    console.log("Iniciando auto-busca de live chat via Token...");
+                    hasAutoSearchedRef.current = true;
+                    handleFindLiveChat();
+                } else if (storedChannelId) {
+                    console.log("Iniciando auto-busca de live chat via Channel ID salvo...");
+                    hasAutoSearchedRef.current = true;
+                    handleFindLiveChat(storedChannelId);
+                }
             }
         };
 
         initSession();
-    }, [liveChatId, isFindingChat]); // Removido session do array para evitar loops infinitos, usando getSession interno
+    }, [liveChatId, isFindingChat]);
 
     // Auto-conectar quando encontrar o liveChatId
     useEffect(() => {
