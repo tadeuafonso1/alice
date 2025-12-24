@@ -76,6 +76,7 @@ export const HomePage: React.FC = () => {
     const [channelTitle, setChannelTitle] = useState<string>('');
     const [canAutoConnect, setCanAutoConnect] = useState(true);
     const [settingsId, setSettingsId] = useState<number | null>(null);
+    const [isLoadingSettings, setIsLoadingSettings] = useState(true);
     const [isPolling, setIsPolling] = useState(false);
     const [isFindingChat, setIsFindingChat] = useState(false);
     const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
@@ -252,6 +253,8 @@ export const HomePage: React.FC = () => {
                 if (error.code !== 'PGRST116') {
                     addBotMessageRef.current(`Erro ao carregar dados: ${error.message}`);
                 }
+            } finally {
+                setIsLoadingSettings(false);
             }
         };
 
@@ -809,6 +812,10 @@ export const HomePage: React.FC = () => {
                 options: {
                     scopes: 'https://www.googleapis.com/auth/youtube.force-ssl',
                     redirectTo: window.location.origin,
+                    queryParams: {
+                        prompt: 'consent',
+                        access_type: 'offline'
+                    }
                 }
             });
             if (error) throw error;
@@ -903,6 +910,9 @@ export const HomePage: React.FC = () => {
     const hasAutoSearchedRef = useRef(false);
     useEffect(() => {
         const initSession = async () => {
+            // Se ainda está carregando as configurações do banco, esperamos
+            if (isLoadingSettings) return;
+
             if (window.location.hash || window.location.search.includes('code=')) {
                 console.log("Detectado redirect de autenticação, atualizando sessão...");
                 await supabase.auth.refreshSession();
@@ -911,11 +921,28 @@ export const HomePage: React.FC = () => {
             const { data: { session: currentSession } } = await supabase.auth.getSession();
             const storedChannelId = appSettings.youtubeChannelId || localStorage.getItem('alice_yt_channel_id');
 
+            // Sincronizar tokens se acabamos de conectar/reconectar
+            if (currentSession?.provider_token) {
+                console.log("Sincronizando tokens do YouTube com o banco de dados...");
+                try {
+                    await supabase.functions.invoke('youtube-token-sync', {
+                        body: {
+                            access_token: currentSession.provider_token,
+                            refresh_token: (currentSession as any).provider_refresh_token, // Pode estar aqui após redirect
+                            expires_in: (currentSession as any).expires_in,
+                            channelId: storedChannelId
+                        }
+                    });
+                } catch (syncError) {
+                    console.error("Erro ao sincronizar tokens:", syncError);
+                }
+            }
+
             if (!liveChatId && !isFindingChat && !hasAutoSearchedRef.current) {
                 if (currentSession?.provider_token) {
                     console.log("Iniciando auto-busca de live chat via Token...");
                     hasAutoSearchedRef.current = true;
-                    handleFindLiveChat();
+                    handleFindLiveChat(undefined, true); // SILENT por padrão no início
                 } else if (storedChannelId) {
                     console.log("Iniciando auto-busca de live chat via Channel ID salvo...");
                     hasAutoSearchedRef.current = true;
@@ -925,7 +952,7 @@ export const HomePage: React.FC = () => {
         };
 
         initSession();
-    }, [liveChatId, isFindingChat, appSettings.youtubeChannelId]);
+    }, [liveChatId, isFindingChat, appSettings.youtubeChannelId, isLoadingSettings]);
 
     // Auto-conectar quando encontrar o liveChatId
     useEffect(() => {
