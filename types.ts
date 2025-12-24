@@ -66,4 +66,5 @@ export interface AppSettings {
   commands: CommandSettings;
   messages: MessageSettings;
   customCommands: CustomCommand[];
+  youtubeChannelId?: string;
 }

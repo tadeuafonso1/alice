@@ -52,6 +52,7 @@ const defaultSettings: AppSettings = {
         playingListEmpty: { text: 'Ninguém está jogando no momento.', enabled: true },
     },
     customCommands: [],
+    youtubeChannelId: '',
 };
 
 export const HomePage: React.FC = () => {
@@ -659,10 +660,17 @@ export const HomePage: React.FC = () => {
             consecutiveErrorsRef.current += 1;
             console.error(`Erro ao buscar mensagens do YouTube (Falha ${consecutiveErrorsRef.current}/3):`, error);
 
-            // Se atingir 3 erros consecutivos, desconecta. Caso contrário, apenas aguarda o próximo intervalo.
+            // Se atingir 3 erros consecutivos, tenta reconectar silenciosamente antes de parar
             if (consecutiveErrorsRef.current >= 3) {
-                addBotMessageRef.current(`Erro persistente ao conectar com o chat: ${error.message}. Desconectando para poupar sua conta.`);
-                stopPolling();
+                const storedChannelId = appSettings.youtubeChannelId || localStorage.getItem('alice_yt_channel_id');
+                if (storedChannelId) {
+                    console.log("Tentando auto-reconexão silenciosa via Channel ID...");
+                    consecutiveErrorsRef.current = 0; // Reset para dar mais uma chance
+                    handleFindLiveChat(storedChannelId, true); // Chamar silenciosamente
+                } else {
+                    addBotMessageRef.current(`Erro persistente ao conectar com o chat: ${error.message}. Desconectando para poupar sua conta.`);
+                    stopPolling();
+                }
             } else {
                 // Erros silenciosos nos logs, mas não para o usuário ainda para não poluir o chat
                 console.warn("Houve um erro temporário na busca de mensagens. Tentando novamente em breve...");
@@ -692,13 +700,13 @@ export const HomePage: React.FC = () => {
         setIsPolling(true);
     }, [isPolling, liveChatId, addBotMessage]);
 
-    const handleFindLiveChat = async (channelIdToUse?: string | any) => {
+    const handleFindLiveChat = async (channelIdToUse?: string | any, silent: boolean = false) => {
         // Busca a sessão mais recente diretamente do Supabase para evitar closures estáticas
         const { data: { session: currentSession } } = await supabase.auth.getSession();
 
-        // Se channelIdToUse for um evento (no onClick), ignoramos e usamos localStorage
+        // Se channelIdToUse for um evento (no onClick), ignoramos e usamos localStorage/settings
         const cleanChannelId = typeof channelIdToUse === 'string' ? channelIdToUse : null;
-        const storedChannelId = cleanChannelId || localStorage.getItem('alice_yt_channel_id');
+        const storedChannelId = cleanChannelId || appSettings.youtubeChannelId || localStorage.getItem('alice_yt_channel_id');
 
         if (!currentSession?.provider_token && !storedChannelId) {
             const identities = currentSession?.user?.identities?.map(id => id.provider).join(', ') || 'nenhuma';
@@ -706,9 +714,9 @@ export const HomePage: React.FC = () => {
 
             const hasGoogleIdentity = currentSession?.user?.identities?.some(id => id.provider === 'google');
 
-            if (hasGoogleIdentity) {
+            if (hasGoogleIdentity && !silent) {
                 addBotMessage("A sessão com o YouTube expirou. Por favor, clique no botão 'Reconectar YouTube' na aba de configurações ou no ícone do cabeçalho para renovar o acesso.");
-            } else {
+            } else if (!hasGoogleIdentity && !silent) {
                 addBotMessage(`Erro: Nenhuma conta do YouTube vinculada. Identidades: ${identities}.`);
             }
             return;
@@ -716,9 +724,11 @@ export const HomePage: React.FC = () => {
 
         setIsFindingChat(true);
         setCanAutoConnect(true);
-        addBotMessage(storedChannelId && !currentSession?.provider_token
-            ? "Buscando sua live automaticamente via Channel ID..."
-            : "Buscando sua transmissão ao vivo ativa...");
+        if (!silent) {
+            addBotMessage(storedChannelId && !currentSession?.provider_token
+                ? "Buscando sua live automaticamente via Channel ID..."
+                : "Buscando sua transmissão ao vivo ativa...");
+        }
 
         try {
             const invokeHeaders: any = {};
@@ -749,16 +759,26 @@ export const HomePage: React.FC = () => {
                 if (data.channelTitle) {
                     setChannelTitle(data.channelTitle);
                 }
+
+                // Salvar ID do canal persistentemente nos dois lugares
                 if (data.channelId) {
                     localStorage.setItem('alice_yt_channel_id', data.channelId);
+                    if (appSettings.youtubeChannelId !== data.channelId) {
+                        const updatedSettings = { ...appSettings, youtubeChannelId: data.channelId };
+                        handleSettingsSave(updatedSettings);
+                    }
                 }
                 localStorage.setItem('alice_yt_last_chat_id', data.liveChatId);
+
+                if (silent && !isPolling) {
+                    addBotMessage("Conexão restabelecida automaticamente.");
+                }
             } else {
-                addBotMessage(data.error || "Não foi possível encontrar uma transmissão ativa.");
+                if (!silent) addBotMessage(data.error || "Não foi possível encontrar uma transmissão ativa.");
             }
         } catch (error: any) {
             console.error('Erro ao buscar chat ao vivo:', error);
-            addBotMessage(`Erro: ${error.message || "Ocorreu um erro ao buscar sua live."}`);
+            if (!silent) addBotMessage(`Erro: ${error.message || "Ocorreu um erro ao buscar sua live."}`);
         } finally {
             setIsFindingChat(false);
         }
@@ -873,7 +893,7 @@ export const HomePage: React.FC = () => {
             }
 
             const { data: { session: currentSession } } = await supabase.auth.getSession();
-            const storedChannelId = localStorage.getItem('alice_yt_channel_id');
+            const storedChannelId = appSettings.youtubeChannelId || localStorage.getItem('alice_yt_channel_id');
 
             if (!liveChatId && !isFindingChat && !hasAutoSearchedRef.current) {
                 if (currentSession?.provider_token) {
@@ -883,13 +903,13 @@ export const HomePage: React.FC = () => {
                 } else if (storedChannelId) {
                     console.log("Iniciando auto-busca de live chat via Channel ID salvo...");
                     hasAutoSearchedRef.current = true;
-                    handleFindLiveChat(storedChannelId);
+                    handleFindLiveChat(storedChannelId, true); // Silent auto-reconnect
                 }
             }
         };
 
         initSession();
-    }, [liveChatId, isFindingChat]);
+    }, [liveChatId, isFindingChat, appSettings.youtubeChannelId]);
 
     // Auto-conectar quando encontrar o liveChatId
     useEffect(() => {
