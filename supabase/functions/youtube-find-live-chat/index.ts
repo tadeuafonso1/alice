@@ -116,34 +116,49 @@ serve(async (req) => {
     let response = await findLiveChat(providerToken || '');
 
     // 5. Token Renewal Logic
-    if (!response.ok && response.status === 401 && isAuthValid) {
-      console.log("Token expirado, tentando renovar...");
-      const { data: { user } } = await supabaseClient.auth.getUser(authHeader!.replace('Bearer ', ''));
+    if (!response.ok && response.status === 401) {
+      console.log("YouTube retornou 401. Tentando renovar...");
 
-      if (user) {
-        const { data: tokenData } = await supabaseClient
-          .from('youtube_tokens')
-          .select('refresh_token')
-          .eq('user_id', user.id)
-          .single();
+      if (!isAuthValid) {
+        console.warn("Renovação abortada: Authorization header (Supabase) inválido ou ausente.");
+      } else {
+        const { data: userData, error: userError } = await supabaseClient.auth.getUser(authHeader!.replace('Bearer ', ''));
+        const user = userData?.user;
 
-        if (tokenData?.refresh_token) {
-          try {
-            const newTokenData = await getNewToken(tokenData.refresh_token);
-            providerToken = newTokenData.access_token;
-            console.log("Novo token obtido com sucesso!");
+        if (userError || !user) {
+          console.error("Erro ao obter usuário Supabase:", userError?.message);
+        } else {
+          console.log(`Usuário identificado: ${user.id}. Buscando refresh_token no banco...`);
+          const { data: tokenData, error: dbError } = await supabaseClient
+            .from('youtube_tokens')
+            .select('refresh_token')
+            .eq('user_id', user.id)
+            .maybeSingle();
 
-            await supabaseClient
-              .from('youtube_tokens')
-              .update({
-                access_token: providerToken,
-                expires_at: new Date(Date.now() + newTokenData.expires_in * 1000).toISOString()
-              })
-              .eq('user_id', user.id);
+          if (dbError) {
+            console.error("Erro ao buscar token no banco:", dbError.message);
+          } else if (!tokenData?.refresh_token) {
+            console.warn("Nenhum refresh_token encontrado para este usuário no banco.");
+          } else {
+            try {
+              console.log("Refresh token encontrado. Solicitando novo access_token ao Google...");
+              const newTokenData = await getNewToken(tokenData.refresh_token);
+              providerToken = newTokenData.access_token;
+              console.log("Novo access_token obtido com sucesso!");
 
-            response = await findLiveChat(providerToken!);
-          } catch (renewalError: any) {
-            console.error("Erro na renovação:", renewalError.message);
+              await supabaseClient
+                .from('youtube_tokens')
+                .update({
+                  access_token: providerToken,
+                  expires_at: new Date(Date.now() + newTokenData.expires_in * 1000).toISOString()
+                })
+                .eq('user_id', user.id);
+
+              console.log("Banco de dados atualizado. Re-tentando chamada ao YouTube...");
+              response = await findLiveChat(providerToken!);
+            } catch (renewalError: any) {
+              console.error("Falha crítica na renovação via Google:", renewalError.message);
+            }
           }
         }
       }
@@ -151,8 +166,17 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error("Erro da API do YouTube:", errorData);
-      return new Response(JSON.stringify({ error: `Erro YouTube (${response.status}): ${errorData.error?.message || response.statusText}` }), {
+      const googleError = errorData.error?.message || response.statusText;
+      console.error("Erro final da API do YouTube:", errorData);
+
+      let hint = "";
+      if (response.status === 401) {
+        hint = " (Sua conexão expirou. Tente desconectar e conectar o YouTube novamente nas configurações)";
+      }
+
+      return new Response(JSON.stringify({
+        error: `Erro YouTube (${response.status}): ${googleError}${hint}`
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       });

@@ -88,34 +88,49 @@ serve(async (req) => {
         let response = await sendMessage(providerToken || '');
 
         // Renovação automática
-        if (!response.ok && response.status === 401 && isAuthValid) {
-            console.log("Token expirado no envio, tentando renovar...");
-            const { data: { user } } = await supabaseClient.auth.getUser(authHeader!.replace('Bearer ', ''));
+        if (!response.ok && response.status === 401) {
+            console.log("YouTube (envio) retornou 401. Tentando renovar...");
 
-            if (user) {
-                const { data: tokenData } = await supabaseClient
-                    .from('youtube_tokens')
-                    .select('refresh_token')
-                    .eq('user_id', user.id)
-                    .single();
+            if (!isAuthValid) {
+                console.warn("Renovação abortada (envio): Authorization header (Supabase) inválido ou ausente.");
+            } else {
+                const { data: userData, error: userError } = await supabaseClient.auth.getUser(authHeader!.replace('Bearer ', ''));
+                const user = userData?.user;
 
-                if (tokenData?.refresh_token) {
-                    try {
-                        const newTokenData = await getNewToken(tokenData.refresh_token);
-                        const newAccessToken = newTokenData.access_token;
-                        console.log("Mensagem: Novo token obtido com sucesso!");
+                if (userError || !user) {
+                    console.error("Erro ao obter usuário Supabase (envio):", userError?.message);
+                } else {
+                    console.log(`Usuário identificado (envio): ${user.id}. Buscando refresh_token no banco...`);
+                    const { data: tokenData, error: dbError } = await supabaseClient
+                        .from('youtube_tokens')
+                        .select('refresh_token')
+                        .eq('user_id', user.id)
+                        .maybeSingle();
 
-                        await supabaseClient
-                            .from('youtube_tokens')
-                            .update({
-                                access_token: newAccessToken,
-                                expires_at: new Date(Date.now() + newTokenData.expires_in * 1000).toISOString()
-                            })
-                            .eq('user_id', user.id);
+                    if (dbError) {
+                        console.error("Erro ao buscar token no banco (envio):", dbError.message);
+                    } else if (!tokenData?.refresh_token) {
+                        console.warn("Nenhum refresh_token encontrado para este usuário no banco (envio).");
+                    } else {
+                        try {
+                            console.log("Refresh token encontrado (envio). Solicitando novo access_token...");
+                            const newTokenData = await getNewToken(tokenData.refresh_token);
+                            const newAccessToken = newTokenData.access_token;
+                            console.log("Mensagem: Novo token obtido com sucesso!");
 
-                        response = await sendMessage(newAccessToken);
-                    } catch (renewalError: any) {
-                        console.error("Erro na renovação (envio):", renewalError.message);
+                            await supabaseClient
+                                .from('youtube_tokens')
+                                .update({
+                                    access_token: newAccessToken,
+                                    expires_at: new Date(Date.now() + newTokenData.expires_in * 1000).toISOString()
+                                })
+                                .eq('user_id', user.id);
+
+                            console.log("Banco atualizado (envio). Re-tentando envio da mensagem...");
+                            response = await sendMessage(newAccessToken);
+                        } catch (renewalError: any) {
+                            console.error("Erro crítico na renovação (envio):", renewalError.message);
+                        }
                     }
                 }
             }
@@ -123,10 +138,17 @@ serve(async (req) => {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
+            const googleError = errorData.error?.message || response.statusText;
             console.error("Erro da API do YouTube (envio):", errorData);
+
+            let hint = "";
+            if (response.status === 401) {
+                hint = " (Sua conexão expirou. Clique em 'Reconectar' nas configurações)";
+            }
+
             return new Response(JSON.stringify({
                 success: false,
-                error: `Erro YouTube (${response.status}): ${errorData.error?.message || response.statusText}`
+                error: `Erro YouTube (${response.status}): ${googleError}${hint}`
             }), {
                 status: 200,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
