@@ -175,7 +175,7 @@ serve(async (req) => {
       }
 
       return new Response(JSON.stringify({
-        error: `Erro YouTube (${response.status}): ${googleError}${hint}`
+        error: `[ALICE-DEBUG-FIND-1] Erro YouTube (${response.status}): ${googleError}${hint}`
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
@@ -206,7 +206,7 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error("Erro global Edge Function:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: `[ALICE-DEBUG-FIND-EX] ${error.message}` }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
