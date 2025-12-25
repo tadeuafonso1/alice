@@ -53,6 +53,7 @@ serve(async (req) => {
 
         let providerToken = req.headers.get('x-youtube-token');
         const authHeader = req.headers.get('Authorization');
+        const isAuthValid = authHeader && authHeader.startsWith('Bearer ') && authHeader.length > 7;
         const { liveChatId, messageText } = await req.json();
 
         if (!liveChatId || !messageText) {
@@ -85,7 +86,7 @@ serve(async (req) => {
         let response = await sendMessage(providerToken || '');
 
         // Se falhou por falta de autorização (token expirado), tenta renovar
-        if (!response.ok && response.status === 401 && authHeader) {
+        if (!response.ok && response.status === 401 && isAuthValid) {
             console.log("Token expirado, tentando renovar via Refresh Token...");
 
             const { data: { user } } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''));

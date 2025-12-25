@@ -55,11 +55,12 @@ serve(async (req) => {
     const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
     let providerToken = req.headers.get('x-youtube-token');
     const authHeader = req.headers.get('Authorization');
+    const isAuthValid = authHeader && authHeader.startsWith('Bearer ') && authHeader.length > 7;
 
     let { channelId } = await req.json().catch(() => ({}));
 
-    // Se NÃO temos o header de autorização, mas temos o channelId, usamos a API KEY
-    if (!authHeader && !providerToken && channelId) {
+    // Se NÃO temos um token válido do sistema e temos o channelId, usamos a API KEY (anon)
+    if (!isAuthValid && !providerToken && channelId) {
       if (!YOUTUBE_API_KEY) throw new Error("YOUTUBE_API_KEY não configurada.");
 
       console.log(`Buscando live por Channel ID: ${channelId}`);
@@ -113,7 +114,7 @@ serve(async (req) => {
     let response = await findLiveChat(providerToken || '');
 
     // Se falhou por falta de autorização (token expirado), tenta renovar
-    if (!response.ok && response.status === 401 && authHeader) {
+    if (!response.ok && response.status === 401 && isAuthValid) {
       console.log("Token expirado, tentando renovar via Refresh Token...");
 
       const { data: { user }, error: userError } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''));
