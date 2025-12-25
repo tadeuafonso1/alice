@@ -193,7 +193,7 @@ serve(async (req) => {
     if (activeBroadcast && activeBroadcast.snippet?.liveChatId) {
       return new Response(JSON.stringify({
         liveChatId: activeBroadcast.snippet.liveChatId,
-        channelTitle: activeBroadcast.snippet.channelTitle || "YouTube",
+        channelTitle: activeBroadcast.snippet.channelTitle || "",
         channelId: activeBroadcast.snippet.channelId
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

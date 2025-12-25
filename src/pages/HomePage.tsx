@@ -91,12 +91,12 @@ export const HomePage: React.FC = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     useEffect(() => {
-        if (channelTitle) {
-            setCurrentUser(channelTitle);
-            setAdminName(channelTitle);
-        } else if (session?.user?.user_metadata?.full_name) {
+        if (session?.user?.user_metadata?.full_name) {
             setCurrentUser(session.user.user_metadata.full_name);
             setAdminName(session.user.user_metadata.full_name);
+        } else if (channelTitle) {
+            setCurrentUser(channelTitle);
+            setAdminName(channelTitle);
         } else if (session?.user?.email) {
             // Máscara para o e-mail: pega apenas a parte antes do @ para não vazar o e-mail completo
             const maskedEmail = session.user.email.split('@')[0];
