@@ -69,7 +69,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                     <div className="space-y-6">
                         <div className="flex items-center gap-4 bg-gray-50 dark:bg-[#0f111a] p-6 rounded-2xl border border-gray-200 dark:border-gray-700">
                             <div className="relative">
-                                <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center overflow-hidden border-4 border-cyan-500 shadow-md">
+                                <div className={`w-16 h-16 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center overflow-hidden border-4 ${isPolling ? 'border-emerald-500 shadow-emerald-500/20' : 'border-cyan-500'} shadow-md transition-all`}>
                                     <svg className="w-8 h-8" viewBox="0 0 24 24">
                                         <path
                                             fill="#4285F4"
@@ -91,8 +91,8 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                                 </div>
                                 {isPolling && (
                                     <span className="absolute -bottom-1 -right-1 flex h-5 w-5">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-5 w-5 bg-cyan-500 ring-4 ring-gray-50 dark:ring-[#0f111a]"></span>
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-5 w-5 bg-emerald-500 ring-4 ring-gray-50 dark:ring-[#0f111a]"></span>
                                     </span>
                                 )}
                             </div>
@@ -102,13 +102,13 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                                 </p>
                                 <p
                                     className={`text-sm font-medium ${isPolling
-                                        ? 'text-cyan-500'
+                                        ? 'text-emerald-500'
                                         : 'text-gray-500'
                                         } flex items-center gap-2 mt-1`}
                                 >
                                     {isPolling ? (
                                         <>
-                                            <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                             Chat Ativo e Sincronizado
                                         </>
                                     ) : (
@@ -127,15 +127,17 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                         {isPolling ? (
                             <button
                                 onClick={stopPolling}
-                                className="w-full py-4 text-red-500 hover:text-white hover:bg-red-500 border-2 border-red-500/20 hover:border-red-500 active:scale-90 active:brightness-110 rounded-full transition-all font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2"
+                                className="w-full py-4 bg-emerald-500/10 text-emerald-500 border-2 border-emerald-500/20 hover:bg-red-500 hover:text-white hover:border-red-500 active:scale-90 active:brightness-110 rounded-full transition-all font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 group"
                             >
-                                Parar Sincronização
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse group-hover:hidden" />
+                                <span className="hidden group-hover:block">Parar Sincronização</span>
+                                <span className="group-hover:hidden">Chat Sincronizado</span>
                             </button>
                         ) : (
                             <button
                                 onClick={onFindLiveChat}
                                 disabled={isFindingChat}
-                                className="w-full py-4 text-white bg-cyan-600 hover:bg-cyan-500 active:scale-90 active:brightness-110 disabled:scale-100 disabled:opacity-50 rounded-full transition-all font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-cyan-500/20"
+                                className="w-full py-4 text-white bg-emerald-600 hover:bg-emerald-500 active:scale-90 active:brightness-110 disabled:scale-100 disabled:opacity-50 rounded-full transition-all font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-emerald-500/20"
                             >
                                 {isFindingChat
                                     ? 'Buscando Live...'

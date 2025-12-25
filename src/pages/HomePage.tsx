@@ -1135,24 +1135,24 @@ export const HomePage: React.FC = () => {
 
                         <div className="flex items-center gap-6">
                             {/* YouTube Controls */}
-                            <div className={`hidden md:flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300 border ${isPolling ? 'bg-red-500/5 border-red-500/20' : 'bg-gray-50 dark:bg-[#162036] border-gray-200 dark:border-gray-800'}`}>
+                            <div className={`hidden md:flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300 border ${isPolling ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-gray-50 dark:bg-[#162036] border-gray-200 dark:border-gray-800'}`}>
                                 {googleConnected ? (
                                     <>
                                         <div className="flex items-center gap-3">
                                             <div className="relative">
-                                                <div className={`p-1.5 rounded-lg ${isPolling ? 'bg-red-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
+                                                <div className={`p-1.5 rounded-lg ${isPolling ? 'bg-emerald-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
                                                     <YoutubeIcon className="w-4 h-4" />
                                                 </div>
                                                 {isPolling && (
                                                     <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 ring-2 ring-white dark:ring-[#0f111a]"></span>
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 ring-2 ring-white dark:ring-[#0f111a]"></span>
                                                     </span>
                                                 )}
                                             </div>
 
                                             <div className="flex flex-col">
-                                                <span className={`text-[10px] font-black uppercase tracking-wider ${isPolling ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                <span className={`text-[10px] font-black uppercase tracking-wider ${isPolling ? 'text-emerald-500' : 'text-gray-500 dark:text-gray-400'}`}>
                                                     {isPolling ? 'Ao Vivo' : 'YouTube'}
                                                 </span>
                                                 <span className="text-[10px] font-medium text-gray-400">
@@ -1166,12 +1166,14 @@ export const HomePage: React.FC = () => {
                                         {isPolling ? (
                                             <button
                                                 onClick={stopPolling}
-                                                className="p-1.5 hover:bg-red-50 text-red-500 hover:text-red-600 dark:hover:bg-red-500/10 rounded-lg transition-colors group"
+                                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all group shadow-sm"
                                                 title="Parar Sincronização"
                                             >
-                                                <svg className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+                                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse group-hover:hidden" />
+                                                <svg className="w-3 h-3 fill-current hidden group-hover:block" viewBox="0 0 24 24">
                                                     <rect x="6" y="6" width="12" height="12" rx="2" />
                                                 </svg>
+                                                Sincronizado
                                             </button>
                                         ) : (
                                             <button
