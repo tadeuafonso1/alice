@@ -150,7 +150,7 @@ serve(async (req) => {
 
             return new Response(JSON.stringify({
                 success: false,
-                error: `[SERV-SEND-V3] ${googleError}. Status: ${renewalLog.join(" -> ")}`
+                error: `Erro YouTube (${response.status}): ${googleError}${hint}`
             }), {
                 status: 200,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },

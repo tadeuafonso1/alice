@@ -796,7 +796,7 @@ export const HomePage: React.FC = () => {
         } catch (error: any) {
             console.error('Erro ao buscar chat ao vivo:', error);
             const detailedError = error.message || "Erro de conexão com o servidor";
-            if (!silent) addBotMessage(`Erro ao conectar [ALICE-FRONT]: ${detailedError}. Verifique sua internet ou se o serviço está instável.`);
+            if (!silent) addBotMessage(`Erro ao conectar: ${detailedError}. Verifique sua internet ou se o serviço está instável.`);
         } finally {
             setIsFindingChat(false);
         }
