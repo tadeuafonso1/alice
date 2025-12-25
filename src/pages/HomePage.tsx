@@ -124,16 +124,13 @@ export const HomePage: React.FC = () => {
             return;
         }
 
-        try {
-            const invokeHeaders: any = {};
-            if (token) invokeHeaders['x-youtube-token'] = token;
-            if (currentSession?.access_token) {
-                invokeHeaders['Authorization'] = `Bearer ${currentSession.access_token}`;
-            }
+        const invokeHeaders: any = {};
+        if (token) invokeHeaders['x-youtube-token'] = token;
 
+        try {
             const { data, error } = await supabase.functions.invoke('youtube-chat-send', {
                 body: { liveChatId, messageText: text },
-                headers: Object.keys(invokeHeaders).length > 0 ? invokeHeaders : undefined,
+                headers: invokeHeaders,
             });
 
             if (data && data.success === false) {
@@ -755,15 +752,12 @@ export const HomePage: React.FC = () => {
 
         try {
             const invokeHeaders: any = {};
-            if (currentSession?.access_token) {
-                invokeHeaders['Authorization'] = `Bearer ${currentSession.access_token}`;
-            }
             if (currentSession?.provider_token) {
                 invokeHeaders['x-youtube-token'] = currentSession.provider_token;
             }
 
             const response = await supabase.functions.invoke('youtube-find-live-chat', {
-                headers: Object.keys(invokeHeaders).length > 0 ? invokeHeaders : undefined,
+                headers: invokeHeaders,
                 body: { channelId: storedChannelId }
             });
 
