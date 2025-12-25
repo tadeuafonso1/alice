@@ -124,13 +124,13 @@ export const HomePage: React.FC = () => {
             return;
         }
 
-        const invokeHeaders: any = {};
-        if (token) invokeHeaders['x-youtube-token'] = token;
-
         try {
             const { data, error } = await supabase.functions.invoke('youtube-chat-send', {
-                body: { liveChatId, messageText: text },
-                headers: invokeHeaders,
+                body: {
+                    liveChatId,
+                    messageText: text,
+                    youtubeToken: token
+                },
             });
 
             if (data && data.success === false) {
@@ -751,14 +751,11 @@ export const HomePage: React.FC = () => {
         }
 
         try {
-            const invokeHeaders: any = {};
-            if (currentSession?.provider_token) {
-                invokeHeaders['x-youtube-token'] = currentSession.provider_token;
-            }
-
             const response = await supabase.functions.invoke('youtube-find-live-chat', {
-                headers: invokeHeaders,
-                body: { channelId: storedChannelId }
+                body: {
+                    channelId: storedChannelId,
+                    youtubeToken: currentSession?.provider_token
+                }
             });
 
             const { data, error } = response;

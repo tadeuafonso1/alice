@@ -5,7 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-youtube-token',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 async function getNewToken(refreshToken: string) {
@@ -30,7 +30,7 @@ async function getNewToken(refreshToken: string) {
     });
 
     if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({}));
         throw new Error(`Falha ao renovar token: ${JSON.stringify(error)}`);
     }
 
@@ -51,17 +51,12 @@ serve(async (req) => {
             { auth: { persistSession: false } }
         );
 
-        let providerToken = req.headers.get('x-youtube-token');
+        const body = await req.json().catch(() => ({}));
+        const { liveChatId, messageText, youtubeToken } = body;
+        let providerToken = youtubeToken || null;
+
         const authHeader = req.headers.get('Authorization');
         const isAuthValid = authHeader && authHeader.startsWith('Bearer ') && authHeader.length > 7;
-
-        let body: any = {};
-        try {
-            body = await req.json();
-        } catch (e) {
-            throw new Error("Body JSON inválido ou ausente.");
-        }
-        const { liveChatId, messageText } = body;
 
         if (!liveChatId || !messageText) {
             return new Response(JSON.stringify({ success: false, error: "liveChatId e messageText são obrigatórios." }), {
@@ -152,4 +147,5 @@ serve(async (req) => {
         });
     }
 });
+
 

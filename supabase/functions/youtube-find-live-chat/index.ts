@@ -5,7 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-youtube-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 async function getNewToken(refreshToken: string) {
@@ -30,7 +30,7 @@ async function getNewToken(refreshToken: string) {
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json().catch(() => ({}));
     throw new Error(`Falha ao renovar token: ${JSON.stringify(error)}`);
   }
 
@@ -52,22 +52,16 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // @ts-ignore
-    const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
-    let providerToken = req.headers.get('x-youtube-token');
+    // 2. Body Parsing
+    const body = await req.json().catch(() => ({}));
+    const { channelId, youtubeToken } = body;
+    let providerToken = youtubeToken || null;
+
     const authHeader = req.headers.get('Authorization');
     const isAuthValid = authHeader && authHeader.startsWith('Bearer ') && authHeader.length > 7;
 
-    // 2. Safe Body Parsing
-    let body: any = {};
-    if (req.body && req.method !== 'GET') {
-      try {
-        body = await req.json();
-      } catch (e) {
-        console.warn("Nenhum body JSON encontrado ou erro no parsing.");
-      }
-    }
-    const { channelId } = body;
+    // @ts-ignore
+    const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
 
     // 3. Logic for Anonymous connection via Channel ID + API Key
     if (!isAuthValid && !providerToken && channelId) {
@@ -100,12 +94,12 @@ serve(async (req) => {
 
       return new Response(JSON.stringify({ error: "Nenhuma live ativa encontrada para este canal." }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200, // Usando 200 para evitar erros genéricos no frontend
+        status: 200,
       });
     }
 
     // 4. Logic for Authenticated connection (Google Token)
-    if (!authHeader && !providerToken) {
+    if (!isAuthValid && !providerToken) {
       throw new Error("Não autenticado e nenhum Channel ID fornecido.");
     }
 
@@ -187,7 +181,7 @@ serve(async (req) => {
     });
 
   } catch (error: any) {
-    console.error("Erro global na Edge Function:", error.message);
+    console.error("Erro global Edge Function:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
