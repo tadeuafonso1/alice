@@ -129,6 +129,7 @@ export const HomePage: React.FC = () => {
                 body: { liveChatId, messageText: text },
                 headers: {
                     'x-youtube-token': token,
+                    'Authorization': `Bearer ${currentSession?.access_token || ''}`
                 },
             });
 
@@ -750,9 +751,11 @@ export const HomePage: React.FC = () => {
         }
 
         try {
-            const invokeHeaders: any = {};
+            const invokeHeaders: any = {
+                'Authorization': `Bearer ${currentSession?.access_token || ''}`
+            };
             if (currentSession?.provider_token) {
-                invokeHeaders['Authorization'] = `Bearer ${currentSession.provider_token}`;
+                invokeHeaders['x-youtube-token'] = currentSession.provider_token;
             }
 
             const response = await supabase.functions.invoke('youtube-find-live-chat', {
