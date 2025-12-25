@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-youtube-token',
 };
 
 serve(async (req) => {
@@ -18,10 +18,19 @@ serve(async (req) => {
       throw new Error("A chave da API do YouTube não foi configurada nos segredos.");
     }
 
-    const { liveChatId, pageToken } = await req.json();
+    let body: any = {};
+    if (req.body && req.method !== 'GET') {
+      try {
+        body = await req.json();
+      } catch (e) {
+        console.warn("Body JSON inválido em chat-fetch.");
+      }
+    }
+    const { liveChatId, pageToken } = body;
+
     if (!liveChatId) {
       return new Response(JSON.stringify({ error: "liveChatId é obrigatório." }), {
-        status: 400,
+        status: 200, // Usando 200 para consistência
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -33,9 +42,9 @@ serve(async (req) => {
 
     const response = await fetch(apiUrl);
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({}));
       console.error("Erro da API do YouTube:", errorData);
-      throw new Error(`Erro ao buscar mensagens: ${response.statusText}`);
+      throw new Error(`Erro ao buscar mensagens: ${errorData.error?.message || response.statusText}`);
     }
 
     const data = await response.json();
@@ -44,11 +53,11 @@ serve(async (req) => {
       status: 200,
     });
 
-  } catch (error) {
-    console.error("Erro na Edge Function:", error.message);
+  } catch (error: any) {
+    console.error("Erro na Edge Function fetch:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
+      status: 200,
     });
   }
 });

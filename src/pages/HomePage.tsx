@@ -133,7 +133,7 @@ export const HomePage: React.FC = () => {
 
             const { data, error } = await supabase.functions.invoke('youtube-chat-send', {
                 body: { liveChatId, messageText: text },
-                headers: invokeHeaders,
+                headers: Object.keys(invokeHeaders).length > 0 ? invokeHeaders : undefined,
             });
 
             if (data && data.success === false) {
@@ -763,7 +763,7 @@ export const HomePage: React.FC = () => {
             }
 
             const response = await supabase.functions.invoke('youtube-find-live-chat', {
-                headers: invokeHeaders,
+                headers: Object.keys(invokeHeaders).length > 0 ? invokeHeaders : undefined,
                 body: { channelId: storedChannelId }
             });
 
@@ -804,7 +804,8 @@ export const HomePage: React.FC = () => {
             }
         } catch (error: any) {
             console.error('Erro ao buscar chat ao vivo:', error);
-            if (!silent) addBotMessage(`Erro: ${error.message || "Ocorreu um erro ao buscar sua live."}`);
+            const detailedError = error.message || "Erro de conexão com o servidor";
+            if (!silent) addBotMessage(`Erro ao conectar: ${detailedError}. Verifique sua internet ou se o serviço está instável.`);
         } finally {
             setIsFindingChat(false);
         }

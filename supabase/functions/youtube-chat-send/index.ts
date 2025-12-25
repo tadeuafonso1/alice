@@ -1,7 +1,7 @@
 // @ts-ignore
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 // @ts-ignore
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -15,7 +15,7 @@ async function getNewToken(refreshToken: string) {
     const client_secret = Deno.env.get('GOOGLE_CLIENT_SECRET');
 
     if (!client_id || !client_secret) {
-        throw new Error("GOOGLE_CLIENT_ID ou GOOGLE_CLIENT_SECRET não configurados nas Edge Functions.");
+        throw new Error("GOOGLE_CLIENT_ID ou GOOGLE_CLIENT_SECRET não configurados.");
     }
 
     const response = await fetch('https://oauth2.googleapis.com/token', {
@@ -54,7 +54,14 @@ serve(async (req) => {
         let providerToken = req.headers.get('x-youtube-token');
         const authHeader = req.headers.get('Authorization');
         const isAuthValid = authHeader && authHeader.startsWith('Bearer ') && authHeader.length > 7;
-        const { liveChatId, messageText } = await req.json();
+
+        let body: any = {};
+        try {
+            body = await req.json();
+        } catch (e) {
+            throw new Error("Body JSON inválido ou ausente.");
+        }
+        const { liveChatId, messageText } = body;
 
         if (!liveChatId || !messageText) {
             return new Response(JSON.stringify({ success: false, error: "liveChatId e messageText são obrigatórios." }), {
@@ -65,7 +72,7 @@ serve(async (req) => {
 
         const sendMessage = async (token: string) => {
             const apiUrl = `https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet`;
-            const body = {
+            const payload = {
                 snippet: {
                     liveChatId: liveChatId,
                     type: 'textMessageEvent',
@@ -79,17 +86,16 @@ serve(async (req) => {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(body)
+                body: JSON.stringify(payload)
             });
         };
 
         let response = await sendMessage(providerToken || '');
 
-        // Se falhou por falta de autorização (token expirado), tenta renovar
+        // Renovação automática
         if (!response.ok && response.status === 401 && isAuthValid) {
-            console.log("Token expirado, tentando renovar via Refresh Token...");
-
-            const { data: { user } } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''));
+            console.log("Token expirado no envio, tentando renovar...");
+            const { data: { user } } = await supabaseClient.auth.getUser(authHeader!.replace('Bearer ', ''));
 
             if (user) {
                 const { data: tokenData } = await supabaseClient
@@ -102,10 +108,8 @@ serve(async (req) => {
                     try {
                         const newTokenData = await getNewToken(tokenData.refresh_token);
                         const newAccessToken = newTokenData.access_token;
+                        console.log("Mensagem: Novo token obtido com sucesso!");
 
-                        console.log("Novo token obtido com sucesso!");
-
-                        // Salva o novo token no banco
                         await supabaseClient
                             .from('youtube_tokens')
                             .update({
@@ -114,21 +118,20 @@ serve(async (req) => {
                             })
                             .eq('user_id', user.id);
 
-                        // Tenta enviar a mensagem novamente
                         response = await sendMessage(newAccessToken);
                     } catch (renewalError: any) {
-                        console.error("Erro na renovação do token:", renewalError.message);
+                        console.error("Erro na renovação (envio):", renewalError.message);
                     }
                 }
             }
         }
 
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Erro da API do YouTube:", errorData);
+            const errorData = await response.json().catch(() => ({}));
+            console.error("Erro da API do YouTube (envio):", errorData);
             return new Response(JSON.stringify({
                 success: false,
-                error: `Erro YouTube (${response.status}): ${JSON.stringify(errorData.error?.message || errorData)}`
+                error: `Erro YouTube (${response.status}): ${errorData.error?.message || response.statusText}`
             }), {
                 status: 200,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -142,10 +145,11 @@ serve(async (req) => {
         });
 
     } catch (error: any) {
-        console.error("Erro na Edge Function:", error.message);
+        console.error("Erro global youtube-chat-send:", error.message);
         return new Response(JSON.stringify({ success: false, error: error.message }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
         });
     }
 });
+
