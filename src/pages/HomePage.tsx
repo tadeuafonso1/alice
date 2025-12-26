@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/src/contexts/SessionContext';
 import { useTheme } from '@/src/contexts/ThemeContext';
 import { Sidebar } from '@/components/Sidebar';
+import { useQueuePersistence } from '@/src/hooks/useQueuePersistence';
 
 const defaultSettings: AppSettings = {
     botName: 'Alice',
@@ -58,6 +59,7 @@ const defaultSettings: AppSettings = {
 export const HomePage: React.FC = () => {
     const { session } = useSession();
     const { theme, toggleTheme } = useTheme();
+    const { saveQueueState, loadQueueState, updateUserTimer, markWarningAsSent } = useQueuePersistence();
     const [adminName, setAdminName] = useState<string>('Admin');
     const [currentUser, setCurrentUser] = useState<string>('');
     const [messages, setMessages] = useState<Message[]>([]);
@@ -251,10 +253,10 @@ export const HomePage: React.FC = () => {
                     setAppSettings(mergedSettings);
                 }
 
-                // Busca fila e jogadores...
+                // Busca fila e jogadores com os novos campos de persistência
                 const { data: queueData, error: queueError } = await supabase
                     .from('queue')
-                    .select('username, nickname, joined_at')
+                    .select('username, nickname, joined_at, timer_start_time, warning_sent')
                     .order('joined_at', { ascending: true });
 
                 if (queueError) throw queueError;
@@ -267,11 +269,33 @@ export const HomePage: React.FC = () => {
                 if (playingError) throw playingError;
                 setPlayingUsers(playingData.map(p => ({ user: p.username, nickname: p.nickname })));
 
+                // Restaurar timers dos usuários usando timer_start_time do banco
                 const initialTimers = queueData.reduce((acc, q) => {
-                    acc[q.username] = new Date(q.joined_at).getTime();
+                    // Usar timer_start_time se disponível, caso contrário joined_at
+                    const timerTime = q.timer_start_time || q.joined_at;
+                    acc[q.username] = new Date(timerTime).getTime();
                     return acc;
                 }, {} as Record<string, number>);
                 setUserTimers(initialTimers);
+
+                // Restaurar avisos enviados
+                const warningsSet = new Set<string>();
+                queueData.forEach(q => {
+                    if (q.warning_sent) {
+                        warningsSet.add(q.username);
+                    }
+                });
+                setWarningSentUsers(warningsSet);
+
+                // Carregar estado do timer (ativo/inativo e timeout)
+                const queueState = await loadQueueState();
+                if (queueState) {
+                    console.log('[HomePage] Estado do timer restaurado:', queueState);
+                    setIsTimerActive(queueState.isTimerActive);
+                    setTimeoutMinutes(queueState.timeoutMinutes);
+                } else {
+                    console.log('[HomePage] Nenhum estado de timer salvo, usando padrões');
+                }
 
             } catch (error: any) {
                 console.error("Error fetching initial data:", error);
@@ -285,7 +309,7 @@ export const HomePage: React.FC = () => {
         };
 
         fetchData();
-    }, [adminName]);
+    }, [adminName, loadQueueState]);
 
     const handleSettingsSave = async (newSettings: AppSettings) => {
         console.log("Tentando salvar configurações:", newSettings, "ID atual:", settingsId);
@@ -429,13 +453,19 @@ export const HomePage: React.FC = () => {
         setUserTimers(newTimers);
         setWarningSentUsers(new Set());
         sendBotMessage('timerOn', { minutes: timeoutMinutes });
-    }, [isTimerActive, queue, sendBotMessage, timeoutMinutes]);
+
+        // Persistir estado do timer no banco
+        saveQueueState({ isTimerActive: true, timeoutMinutes });
+    }, [isTimerActive, queue, sendBotMessage, timeoutMinutes, saveQueueState]);
 
     const deactivateTimer = useCallback(() => {
         if (!isTimerActive) return;
         setIsTimerActive(false);
         sendBotMessage('timerOff');
-    }, [isTimerActive, sendBotMessage]);
+
+        // Persistir estado do timer no banco
+        saveQueueState({ isTimerActive: false, timeoutMinutes });
+    }, [isTimerActive, sendBotMessage, timeoutMinutes, saveQueueState]);
 
     const handleToggleTimer = useCallback(() => {
         if (isTimerActive) {
@@ -464,6 +494,10 @@ export const HomePage: React.FC = () => {
         const now = Date.now();
         if (queue.some(u => u.user === author)) {
             setUserTimers(prev => ({ ...prev, [author]: now }));
+
+            // Persistir timer_start_time no banco quando usuário fala
+            updateUserTimer(author, now);
+
             if (warningSentUsers.has(author)) {
                 setWarningSentUsers(prev => {
                     const newSet = new Set(prev);
@@ -633,7 +667,7 @@ export const HomePage: React.FC = () => {
                 addBotMessage(response, true);
             }
         }
-    }, [adminName, queue, playingUsers, isTimerActive, timeoutMinutes, addBotMessage, appSettings, warningSentUsers, handleNextUser, activateTimer, deactivateTimer, sendBotMessage]);
+    }, [adminName, queue, playingUsers, isTimerActive, timeoutMinutes, addBotMessage, appSettings, warningSentUsers, handleNextUser, activateTimer, deactivateTimer, sendBotMessage, updateUserTimer]);
 
     const handleSendMessageRef = useRef(handleSendMessage);
     useEffect(() => {
@@ -1007,6 +1041,13 @@ export const HomePage: React.FC = () => {
             if (timeoutId) clearTimeout(timeoutId);
         };
     }, [isPolling, fetchAndProcessMessages]);
+
+    // Persistir mudanças no timeoutMinutes
+    useEffect(() => {
+        if (!isLoadingSettings) {
+            saveQueueState({ isTimerActive, timeoutMinutes });
+        }
+    }, [timeoutMinutes, isTimerActive, saveQueueState, isLoadingSettings]);
 
     const handleAddUserManually = useCallback(async (username: string, nickname: string) => {
         const isUserInQueue = queue.some(u => u.user === username);
