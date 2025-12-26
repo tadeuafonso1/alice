@@ -861,109 +861,9 @@ export const HomePage: React.FC = () => {
         }
     };
 
-    // Função para conectar conta Google
-    const handleConnectGoogle = async () => {
-        setIsConnectingGoogle(true);
-        try {
-            const { error } = await supabase.auth.linkIdentity({
-                provider: 'google',
-                options: {
-                    scopes: 'https://www.googleapis.com/auth/youtube.force-ssl',
-                    redirectTo: window.location.origin,
-                    queryParams: {
-                        prompt: 'consent',
-                        access_type: 'offline'
-                    }
-                }
-            });
-            if (error) throw error;
-        } catch (error: any) {
-            console.error('Erro ao conectar Google:', error);
-            const msg = error.message || JSON.stringify(error) || 'Erro desconhecido';
-            addBotMessage(`Erro ao conectar conta Google: ${msg}. Verifique se você já não tem outra conta vinculada.`);
-            setIsConnectingGoogle(false);
-        }
-    };
-    // Função para desvincular conta Google - Atualizado em 2025-12-23
-    const handleDisconnectGoogle = async () => {
-        const googleIdentity = session?.user?.identities?.find(id => id.provider === 'google');
-
-        if (!googleIdentity) {
-            addBotMessage("Nenhuma conta Google vinculada para desvincular.");
-            return;
-        }
-
-        try {
-            const { error } = await supabase.auth.unlinkIdentity(googleIdentity);
-            if (error) throw error;
-
-            addBotMessage("Conta Google desvinculada com sucesso!");
-
-            // Se o usuário logou diretamente com o Google, a sessão primária foi removida.
-            // É necessário sair e logar novamente por outro método.
-            const isGoogleLogin = session?.user?.app_metadata?.provider === 'google' && session?.user?.identities?.length === 1;
-
-            if (isGoogleLogin) {
-                await supabase.auth.signOut();
-                window.location.reload();
-            } else {
-                // Se logado por outro método (ex: e-mail), apenas refresca a sessão para atualizar os dados do usuário.
-                await supabase.auth.refreshSession();
-            }
-        } catch (error: any) {
-            console.error('Erro ao desvincular Google:', error);
-            const msg = error.message || "Erro desconhecido";
-            addBotMessage(`Erro ao desvincular: ${msg}`);
-
-            // Fallback: se falhar o unlink mas for um login Google, tenta pelo menos deslogar
-            const isGoogleLogin = session?.user?.app_metadata?.provider === 'google';
-            if (isGoogleLogin) {
-                await supabase.auth.signOut();
-                window.location.reload();
-            }
-        }
-    };
-
-    // Função para reconectar conta Google (Refresh de Token manual)
-    const handleReconnectGoogle = async () => {
-        setIsConnectingGoogle(true);
-        const googleIdentity = session?.user?.identities?.find(id => id.provider === 'google');
-
-        if (googleIdentity) {
-            try {
-                // 1. Tenta desvincular
-                await supabase.auth.unlinkIdentity(googleIdentity);
-            } catch (err) {
-                console.warn("Erro ao desvincular antes de reconectar (pode já estar desvinculado):", err);
-            }
-        }
-
-        // 2. Vincula novamente
-        try {
-            const { error } = await supabase.auth.linkIdentity({
-                provider: 'google',
-                options: {
-                    scopes: 'https://www.googleapis.com/auth/youtube.force-ssl',
-                    redirectTo: window.location.origin,
-                    queryParams: {
-                        prompt: 'consent', // Força o consentimento para garantir refresh token
-                        access_type: 'offline'
-                    }
-                }
-            });
-            if (error) throw error;
-        } catch (error: any) {
-            console.error('Erro ao reconectar Google:', error);
-            const msg = error.message || "Erro desconhecido";
-            addBotMessage(`Erro ao renovar conexão: ${msg}`);
-            setIsConnectingGoogle(false);
-        }
-    };
-
-    // Verificar se Google está conectado
-    const googleIdentity = session?.user?.identities?.find(id => id.provider === 'google');
-    const googleConnected = !!googleIdentity;
-    const googleEmail = googleIdentity?.identity_data?.email || session?.user?.user_metadata?.email || null;
+    // Verificar se Google está conectado (sempre true agora, pois login é obrigatório com Google)
+    const googleConnected = true;
+    const googleEmail = session?.user?.user_metadata?.email || session?.user?.email || null;
 
     const hasAutoSearchedRef = useRef(false);
     useEffect(() => {
@@ -1425,14 +1325,10 @@ export const HomePage: React.FC = () => {
                             <YouTubeSettings
                                 googleConnected={googleConnected}
                                 googleEmail={googleEmail}
-                                onConnectGoogle={handleConnectGoogle}
-                                isConnectingGoogle={isConnectingGoogle}
-                                onDisconnectGoogle={handleDisconnectGoogle}
                                 onFindLiveChat={handleFindLiveChat}
                                 isFindingChat={isFindingChat}
                                 isPolling={isPolling}
                                 stopPolling={stopPolling}
-                                onReconnectGoogle={handleReconnectGoogle}
                             />
                         )}
 
