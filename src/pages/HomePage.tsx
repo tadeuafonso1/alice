@@ -316,7 +316,8 @@ export const HomePage: React.FC = () => {
         setAppSettings(newSettings);
         try {
             const payload: any = {
-                settings_data: newSettings
+                settings_data: newSettings,
+                user_id: session?.user?.id
             };
 
             // SE tivermos um ID, usamos para garantir que estamos atualizando a linha correta.
