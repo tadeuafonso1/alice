@@ -912,6 +912,38 @@ export const HomePage: React.FC = () => {
         initSession();
     }, [liveChatId, isFindingChat, appSettings.youtubeChannelId, isLoadingSettings]);
 
+    // Auto-sync: Verifica a cada 2 minutos se há live ativa e conecta automaticamente
+    useEffect(() => {
+        // Só ativa auto-sync se:
+        // 1. Não está carregando configurações
+        // 2. Não está já conectado (polling)
+        // 3. Não está buscando chat no momento
+        if (isLoadingSettings || isPolling || isFindingChat) return;
+
+        console.log('[Auto-Sync] Iniciando verificação automática de live...');
+
+        // Primeira verificação imediata (após 5 segundos do login)
+        const initialTimeout = setTimeout(() => {
+            if (!isPolling && !isFindingChat) {
+                console.log('[Auto-Sync] Primeira verificação de live...');
+                handleFindLiveChat(undefined, true); // Silent
+            }
+        }, 5000);
+
+        // Verificações periódicas a cada 2 minutos
+        const autoSyncInterval = setInterval(() => {
+            if (!isPolling && !isFindingChat) {
+                console.log('[Auto-Sync] Verificando se há live ativa...');
+                handleFindLiveChat(undefined, true); // Silent
+            }
+        }, 120000); // 2 minutos
+
+        return () => {
+            clearTimeout(initialTimeout);
+            clearInterval(autoSyncInterval);
+        };
+    }, [isLoadingSettings, isPolling, isFindingChat, handleFindLiveChat]);
+
     // Auto-conectar quando encontrar o liveChatId
     useEffect(() => {
         if (liveChatId && !isPolling && canAutoConnect) {
