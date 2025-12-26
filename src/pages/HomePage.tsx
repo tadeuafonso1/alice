@@ -112,17 +112,42 @@ export const HomePage: React.FC = () => {
         }
     };
 
+    const addBotMessage = useCallback((text: string, sendToYouTube: boolean = false) => {
+        const botMessage: Message = { author: appSettings.botName, text, type: 'bot' };
+        setMessages(prev => [...prev, botMessage]);
+        if (sendToYouTube) {
+            sendToYouTubeChatRef.current(text);
+        }
+    }, [appSettings.botName]);
+
+    const addBotMessageRef = useRef(addBotMessage);
+    useEffect(() => {
+        addBotMessageRef.current = addBotMessage;
+    });
+
     const sendToYouTubeChat = useCallback(async (text: string) => {
-        if (!liveChatId) return;
+        console.log('[sendToYouTubeChat] Tentando enviar mensagem:', text);
+        console.log('[sendToYouTubeChat] liveChatId:', liveChatId);
+
+        if (!liveChatId) {
+            console.warn('[sendToYouTubeChat] BLOQUEADO: liveChatId não definido. Sincronize com o YouTube primeiro.');
+            addBotMessage('⚠️ Não conectado ao YouTube. Clique em "Sincronizar" primeiro.', false);
+            return;
+        }
 
         // Busca a sessão mais recente para garantir o token
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         const token = currentSession?.provider_token;
 
+        console.log('[sendToYouTubeChat] provider_token presente:', !!token);
+
         if (!token) {
-            console.warn("Cannot send to YouTube: Missing provider_token");
+            console.warn('[sendToYouTubeChat] BLOQUEADO: provider_token ausente');
+            addBotMessage('⚠️ Sessão do YouTube expirou. Clique em "Reconectar YouTube" nas configurações.', false);
             return;
         }
+
+        console.log('[sendToYouTubeChat] Enviando para YouTube API...');
 
         try {
             const { data, error } = await supabase.functions.invoke('youtube-chat-send', {
@@ -133,35 +158,33 @@ export const HomePage: React.FC = () => {
                 },
             });
 
+            console.log('[sendToYouTubeChat] Resposta:', { data, error });
+
             if (data && data.success === false) {
                 const errorText = `[Erro YouTube] ${data.error}`;
+                console.error('[sendToYouTubeChat] Erro retornado pela API:', data.error);
                 setMessages(prev => [...prev, { author: appSettings.botName, text: errorText, type: 'bot' }]);
                 return;
             }
 
             if (error) {
-                console.error('Error sending message to YouTube:', error);
+                console.error('[sendToYouTubeChat] Erro de rede/servidor:', error);
                 const errorText = `[Erro YouTube] Falha na rede/servidor: ${error.message}`;
                 setMessages(prev => [...prev, { author: appSettings.botName, text: errorText, type: 'bot' }]);
+                return;
             }
+
+            console.log('[sendToYouTubeChat] ✅ Mensagem enviada com sucesso!');
         } catch (error: any) {
-            console.error('Error sending message to YouTube:', error);
+            console.error('[sendToYouTubeChat] Exceção:', error);
             const errorText = `[Erro YouTube] Exceção: ${error.message}`;
             setMessages(prev => [...prev, { author: appSettings.botName, text: errorText, type: 'bot' }]);
         }
-    }, [liveChatId, session?.provider_token, appSettings.botName]);
+    }, [liveChatId, appSettings.botName, addBotMessage]);
 
-    const addBotMessage = useCallback((text: string, sendToYouTube: boolean = false) => {
-        const botMessage: Message = { author: appSettings.botName, text, type: 'bot' };
-        setMessages(prev => [...prev, botMessage]);
-        if (sendToYouTube) {
-            sendToYouTubeChat(text);
-        }
-    }, [appSettings.botName, sendToYouTubeChat]);
-
-    const addBotMessageRef = useRef(addBotMessage);
+    const sendToYouTubeChatRef = useRef(sendToYouTubeChat);
     useEffect(() => {
-        addBotMessageRef.current = addBotMessage;
+        sendToYouTubeChatRef.current = sendToYouTubeChat;
     });
 
     const sendBotMessage = useCallback((messageKey: keyof MessageSettings, replacements?: Record<string, string | number>) => {
@@ -178,9 +201,11 @@ export const HomePage: React.FC = () => {
                     text = text.replace(new RegExp(`{${key}}`, 'g'), strValue);
                 });
             }
+            console.log(`[sendBotMessage] Enviando mensagem "${messageKey}":`, text);
             addBotMessage(text, true);
         }
     }, [appSettings.messages, addBotMessage]);
+
 
     useEffect(() => {
         const fetchData = async () => {
