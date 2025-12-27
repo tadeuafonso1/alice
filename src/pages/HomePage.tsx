@@ -144,9 +144,8 @@ export const HomePage: React.FC = () => {
         console.log('[sendToYouTubeChat] provider_token presente:', !!token);
 
         if (!token) {
-            console.warn('[sendToYouTubeChat] BLOQUEADO: provider_token ausente');
-            addBotMessage('⚠️ Sessão do YouTube expirou. Clique em "Reconectar YouTube" nas configurações.', false);
-            return;
+            console.warn('[sendToYouTubeChat] provider_token ausente. Tentando enviar mesmo assim para que o Backend tente o Refresh Token...');
+            // NÃO retornamos mais aqui. Deixamos o backend tentar renovar.
         }
 
         console.log('[sendToYouTubeChat] Enviando para YouTube API...');
@@ -792,14 +791,17 @@ export const HomePage: React.FC = () => {
             const identities = currentSession?.user?.identities?.map(id => id.provider).join(', ') || 'nenhuma';
             console.warn("Token do Google ausente e nenhum Channel ID salvo. Identidades vinculadas:", identities);
 
-            const hasGoogleIdentity = currentSession?.user?.identities?.some(id => id.provider === 'google');
-
-            if (hasGoogleIdentity && !silent) {
-                addBotMessage("A sessão com o YouTube expirou. Por favor, clique no botão 'Reconectar YouTube' na aba de configurações ou no ícone do cabeçalho para renovar o acesso.");
-            } else if (!hasGoogleIdentity && !silent) {
-                addBotMessage(`Erro: Nenhuma conta do YouTube vinculada. Identidades: ${identities}.`);
+            // AQUI MUDOU: Se tiver Channel ID, deixamos passar para tentar conexão anônima ou via refresh token no backend
+            // Se NÃO tiver channel ID e nem token, aí sim falhamos
+            if (!storedChannelId) {
+                const hasGoogleIdentity = currentSession?.user?.identities?.some(id => id.provider === 'google');
+                if (hasGoogleIdentity && !silent) {
+                    addBotMessage("Sessão expirada e canal não identificado. Tente reconectar nas configurações.");
+                } else if (!hasGoogleIdentity && !silent) {
+                    addBotMessage(`Erro: Nenhuma conta do YouTube vinculada. Identidades: ${identities}.`);
+                }
+                return;
             }
-            return;
         }
 
         setIsFindingChat(true);
