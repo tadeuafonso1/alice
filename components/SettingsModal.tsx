@@ -225,7 +225,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
         </header>
       )}
 
-      <main className={`${isInline ? 'space-y-6' : 'p-6 overflow-y-auto space-y-6 bg-gray-50 dark:bg-gray-800/50'}`}>
+      <main className={`${isInline ? 'space-y-6 pb-8' : 'p-6 overflow-y-auto space-y-6 bg-gray-50 dark:bg-gray-800/50'}`}>
         <section>
           <h3 className="text-lg font-semibold mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 text-gray-900 dark:text-[#8bcbd5]">Geral</h3>
           <div className="space-y-4">
@@ -249,7 +249,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
             <span>Comandos Padrão</span>
             {openSections.commands ? <ChevronUpIcon className="w-5 h-5" /> : <ChevronDownIcon className="w-5 h-5" />}
           </button>
-          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${openSections.commands ? 'max-h-[2000px] opacity-100 pt-2' : 'max-h-0 opacity-0'}`}>
+          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${openSections.commands ? 'max-h-[5000px] opacity-100 pt-2' : 'max-h-0 opacity-0'}`}>
             <div className="space-y-4">
               {Object.keys(localSettings.commands).map((key) => renderCommandSetting(key as CommandKey))}
             </div>
@@ -261,7 +261,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
             <span>Mensagens do Bot</span>
             {openSections.messages ? <ChevronUpIcon className="w-5 h-5" /> : <ChevronDownIcon className="w-5 h-5" />}
           </button>
-          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${openSections.messages ? 'max-h-[2000px] opacity-100 pt-2' : 'max-h-0 opacity-0'}`}>
+          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${openSections.messages ? 'max-h-[5000px] opacity-100 pt-2' : 'max-h-0 opacity-0'}`}>
             <div className="space-y-4">
               {Object.keys(localSettings.messages).map((key) => renderMessageSetting(key as MessageKey))}
             </div>
@@ -273,7 +273,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
             <span>Comandos Personalizados</span>
             {openSections.customCommands ? <ChevronUpIcon className="w-5 h-5" /> : <ChevronDownIcon className="w-5 h-5" />}
           </button>
-          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${openSections.customCommands ? 'max-h-[2000px] opacity-100 pt-2' : 'max-h-0 opacity-0'}`}>
+          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${openSections.customCommands ? 'max-h-[5000px] opacity-100 pt-2' : 'max-h-0 opacity-0'}`}>
             <div className="space-y-4">
               {localSettings.customCommands.map((cmd, index) => (
                 <div key={index} className="p-4 bg-gray-100 dark:bg-gray-900/50 rounded-md space-y-2 relative">
