@@ -25,6 +25,7 @@ export interface CommandSettings {
   timerOff: CommandSetting;
   queueList: CommandSetting;
   playingList: CommandSetting;
+  loyaltyPoints: CommandSetting;
 }
 
 export interface MessageSetting {
@@ -54,6 +55,7 @@ export interface MessageSettings {
   queueListEmpty: MessageSetting;
   playingList: MessageSetting;
   playingListEmpty: MessageSetting;
+  loyaltyPoints: MessageSetting;
 }
 
 export interface CustomCommand {

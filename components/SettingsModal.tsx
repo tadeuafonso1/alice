@@ -29,6 +29,7 @@ const translations = {
     timerOff: 'Comando Admin: Desativar Timer',
     queueList: 'Comando Público: Listar Fila',
     playingList: 'Comando Público: Listar Jogadores',
+    loyaltyPoints: 'Comando Público: Saldo de Pontos',
   },
   messages: {
     userExistsQueue: 'Usuário já existe na fila',
@@ -52,6 +53,7 @@ const translations = {
     queueListEmpty: 'Resposta para !fila (vazia)',
     playingList: 'Resposta para !jogando',
     playingListEmpty: 'Resposta para !jogando (vazio)',
+    loyaltyPoints: 'Resposta para !pontos',
   },
 };
 
@@ -305,7 +307,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
           </div>
         </section>
         <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 text-center">
-          Variáveis disponíveis: {'{user}'}, {'{position}'}, {'{join}'}, {'{minutes}'}, {'{nickname}'}
+          Variáveis disponíveis: {'{user}'}, {'{position}'}, {'{join}'}, {'{minutes}'}, {'{nickname}'}, {'{points}'}
         </p>
       </main>
 

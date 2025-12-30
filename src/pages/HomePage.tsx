@@ -29,6 +29,7 @@ const defaultSettings: AppSettings = {
         reset: { command: '!resetar', enabled: true },
         queueList: { command: '!fila', enabled: true },
         playingList: { command: '!jogando', enabled: true },
+        loyaltyPoints: { command: '!pontos', enabled: true },
     },
     messages: {
         userExistsQueue: { text: '@{user}, você já está na fila na posição {position}.', enabled: true },
@@ -52,6 +53,7 @@ const defaultSettings: AppSettings = {
         queueListEmpty: { text: 'A fila de espera está vazia.', enabled: true },
         playingList: { text: 'Jogando agora: {list}', enabled: true },
         playingListEmpty: { text: 'Ninguém está jogando no momento.', enabled: true },
+        loyaltyPoints: { text: '@{user}, você tem {points} pontos de lealdade!', enabled: true },
     },
     customCommands: [],
     youtubeChannelId: '',
@@ -698,14 +700,14 @@ export const HomePage: React.FC = () => {
             } else {
                 sendBotMessage('queueListEmpty');
             }
-        } else if (commands.playingList.enabled && commandText === commands.playingList.command) {
+        } else if (commands.playingList.enabled && commandText === normalizeText(commands.playingList.command)) {
             if (playingUsers.length > 0) {
                 const list = playingUsers.map(u => u.user).join(', ');
                 sendBotMessage('playingList', { list });
             } else {
                 sendBotMessage('playingListEmpty');
             }
-        } else if (commandText === '!pontos' || commandText === '!points') {
+        } else if (commands.loyaltyPoints.enabled && (commandText === normalizeText(commands.loyaltyPoints.command) || commandText === '!points')) {
             try {
                 const { data: { session: currentSession } } = await supabase.auth.getSession();
                 if (currentSession?.user?.id) {
@@ -718,7 +720,7 @@ export const HomePage: React.FC = () => {
 
                     if (error) throw error;
                     const points = data?.points || 0;
-                    addBotMessage(`@${author}, você tem ${points} pontos de lealdade!`, true);
+                    sendBotMessage('loyaltyPoints', { user: author, points });
                 }
             } catch (err) {
                 console.error('[Loyalty] Erro ao buscar pontos:', err);
