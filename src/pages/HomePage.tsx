@@ -478,6 +478,24 @@ export const HomePage: React.FC = () => {
         }
     }, [isTimerActive, deactivateTimer, activateTimer]);
 
+    const handleResetLoyaltyPoints = useCallback(async () => {
+        try {
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            if (!currentSession?.user?.id) return;
+
+            const { error } = await supabase
+                .from('loyalty_points')
+                .delete()
+                .eq('owner_id', currentSession.user.id);
+
+            if (error) throw error;
+            addBotMessage("Todos os pontos de lealdade foram zerados!");
+        } catch (error: any) {
+            console.error("Error resetting loyalty points:", error);
+            addBotMessage(`Erro ao zerar pontos: ${error.message}`);
+        }
+    }, [addBotMessage]);
+
     const handleSendMessage = useCallback(async (author: string, text: string) => {
         if (!text.trim()) return;
 
@@ -1445,6 +1463,7 @@ export const HomePage: React.FC = () => {
                             <LoyaltySettings
                                 loyaltySettings={appSettings.loyalty || { pointsPerInterval: 10, intervalMinutes: 10, enabled: false }}
                                 onSaveSettings={(newLoyalty) => handleSettingsSave({ ...appSettings, loyalty: newLoyalty })}
+                                onResetPoints={handleResetLoyaltyPoints}
                             />
                         )}
                     </div>

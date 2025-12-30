@@ -8,11 +8,13 @@ interface LoyaltySettingsProps {
         enabled: boolean;
     };
     onSaveSettings: (settings: any) => void;
+    onResetPoints: () => void;
 }
 
 export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({
     loyaltySettings,
     onSaveSettings,
+    onResetPoints,
 }) => {
     return (
         <div className="space-y-8">
@@ -63,11 +65,24 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({
                                 <button
                                     onClick={() => onSaveSettings({ ...loyaltySettings, enabled: !loyaltySettings.enabled })}
                                     className={`w-full py-3 rounded-xl font-bold transition-all ${loyaltySettings.enabled
-                                            ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-900/20'
-                                            : 'bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700'
+                                        ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-900/20'
+                                        : 'bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700'
                                         }`}
                                 >
                                     {loyaltySettings.enabled ? 'Ativado' : 'Desativado'}
+                                </button>
+                            </div>
+
+                            <div className="pt-2">
+                                <button
+                                    onClick={() => {
+                                        if (confirm('Tem certeza que deseja ZERAR os pontos de TODOS os usuários? Esta ação não pode ser desfeita.')) {
+                                            onResetPoints();
+                                        }
+                                    }}
+                                    className="w-full py-2 text-xs font-bold text-red-500 hover:text-white border border-red-500 hover:bg-red-500 rounded-lg transition-all"
+                                >
+                                    Zerar Todos os Pontos
                                 </button>
                             </div>
                         </div>
