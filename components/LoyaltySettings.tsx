@@ -9,13 +9,17 @@ interface LoyaltySettingsProps {
     };
     onSaveSettings: (settings: any) => void;
     onResetPoints: () => void;
+    onAddPoints: (username: string, points: number) => void;
 }
 
 export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({
     loyaltySettings,
     onSaveSettings,
     onResetPoints,
+    onAddPoints,
 }) => {
+    const [manualUser, setManualUser] = React.useState('');
+    const [manualPoints, setManualPoints] = React.useState(0);
     return (
         <div className="space-y-8">
             {/* Header Section */}
@@ -30,6 +34,48 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Configuration Card */}
                 <div className="lg:col-span-1 space-y-6">
+                    {/* Manual Points Form */}
+                    <div className="bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-2 bg-cyan-500/10 rounded-lg">
+                                <UsersIcon className="w-5 h-5 text-cyan-500" />
+                            </div>
+                            <h4 className="font-bold text-gray-900 dark:text-white">Ajuste Manual</h4>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Usuário</label>
+                                <input
+                                    type="text"
+                                    value={manualUser}
+                                    onChange={(e) => setManualUser(e.target.value)}
+                                    className="w-full bg-gray-50 dark:bg-[#0F172A] dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 focus:ring-2 focus:ring-cyan-500 outline-none transition-all"
+                                    placeholder="Ex: joao_silva"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Pontos (pode ser negativo)</label>
+                                <input
+                                    type="number"
+                                    value={manualPoints}
+                                    onChange={(e) => setManualPoints(Number(e.target.value))}
+                                    className="w-full bg-gray-50 dark:bg-[#0F172A] dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 focus:ring-2 focus:ring-cyan-500 outline-none transition-all"
+                                />
+                            </div>
+                            <button
+                                onClick={() => {
+                                    if (!manualUser) return alert('Digite o nome do usuário');
+                                    onAddPoints(manualUser, manualPoints);
+                                    setManualUser('');
+                                    setManualPoints(0);
+                                }}
+                                className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold shadow-lg shadow-cyan-900/20 transition-all active:scale-95"
+                            >
+                                Adicionar Pontos
+                            </button>
+                        </div>
+                    </div>
+
                     <div className="bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="p-2 bg-amber-500/10 rounded-lg">

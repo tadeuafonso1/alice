@@ -496,6 +496,25 @@ export const HomePage: React.FC = () => {
         }
     }, [addBotMessage]);
 
+    const handleAddManualPoints = useCallback(async (username: string, points: number) => {
+        try {
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            if (!currentSession?.user?.id) return;
+
+            const { error } = await supabase.rpc('increment_loyalty_points', {
+                p_username: username,
+                p_points: points,
+                p_owner_id: currentSession.user.id
+            });
+
+            if (error) throw error;
+            addBotMessage(`Pontos de ${username} atualizados com sucesso (${points > 0 ? '+' : ''}${points}).`);
+        } catch (error: any) {
+            console.error("Error adding manual points:", error);
+            addBotMessage(`Erro ao atualizar pontos: ${error.message}`);
+        }
+    }, [addBotMessage]);
+
     const handleSendMessage = useCallback(async (author: string, text: string) => {
         if (!text.trim()) return;
 
@@ -1464,6 +1483,7 @@ export const HomePage: React.FC = () => {
                                 loyaltySettings={appSettings.loyalty || { pointsPerInterval: 10, intervalMinutes: 10, enabled: false }}
                                 onSaveSettings={(newLoyalty) => handleSettingsSave({ ...appSettings, loyalty: newLoyalty })}
                                 onResetPoints={handleResetLoyaltyPoints}
+                                onAddPoints={handleAddManualPoints}
                             />
                         )}
                     </div>
