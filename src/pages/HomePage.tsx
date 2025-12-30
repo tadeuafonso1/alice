@@ -57,6 +57,11 @@ const defaultSettings: AppSettings = {
     },
     customCommands: [],
     youtubeChannelId: '',
+    loyalty: {
+        pointsPerInterval: 10,
+        intervalMinutes: 10,
+        enabled: false,
+    },
 };
 
 export const HomePage: React.FC = () => {
@@ -254,6 +259,9 @@ export const HomePage: React.FC = () => {
                         }
                     }
                     mergedSettings.customCommands = dbSettings.customCommands || [];
+                    if (dbSettings.youtubeChannelId) mergedSettings.youtubeChannelId = dbSettings.youtubeChannelId;
+                    if (dbSettings.loyalty) mergedSettings.loyalty = { ...mergedSettings.loyalty, ...dbSettings.loyalty };
+
                     setAppSettings(mergedSettings);
                 }
 
@@ -1482,7 +1490,7 @@ export const HomePage: React.FC = () => {
 
                         {activeTab === 'loyalty' && (
                             <LoyaltySettings
-                                loyaltySettings={appSettings.loyalty || { pointsPerInterval: 10, intervalMinutes: 10, enabled: false }}
+                                loyaltySettings={appSettings.loyalty!}
                                 onSaveSettings={(newLoyalty) => handleSettingsSave({ ...appSettings, loyalty: newLoyalty })}
                                 onResetPoints={handleResetLoyaltyPoints}
                                 onAddPoints={handleAddManualPoints}
