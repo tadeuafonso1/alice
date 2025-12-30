@@ -12,7 +12,8 @@ import {
     RefreshCwIcon,
     TimerIcon,
     GlobeIcon,
-    CopyIcon
+    CopyIcon,
+    CrownIcon
 } from './Icons';
 
 interface SidebarProps {
@@ -38,6 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const menuItems = [
         { id: 'dashboard', label: 'Painel de controle', icon: LayoutIcon },
         { id: 'commands', label: 'Comandos do Bot', icon: MessageSquareIcon },
+        { id: 'loyalty', label: 'Lealdade', icon: CrownIcon },
         { id: 'settings', label: 'Configurações', icon: SettingsIcon },
         {
             id: 'youtube', label: 'YouTube Chat', icon: (props: any) => (

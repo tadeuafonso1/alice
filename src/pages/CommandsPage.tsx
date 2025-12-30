@@ -1,5 +1,5 @@
 import React from 'react';
-import { BotIcon, UsersIcon, MessageSquareIcon, SettingsIcon, Gamepad2Icon, ChevronRightIcon, CopyIcon, HomeIcon } from '@/components/Icons';
+import { BotIcon, UsersIcon, MessageSquareIcon, SettingsIcon, Gamepad2Icon, ChevronRightIcon, CopyIcon, HomeIcon, CrownIcon } from '@/components/Icons';
 import { Link } from 'react-router-dom';
 
 const CommandCard: React.FC<{ icon: React.ReactNode, title: string, command: string, description: string, colorClass: string }> = ({ icon, title, command, description, colorClass }) => (
@@ -121,6 +121,25 @@ export const CommandsPage: React.FC = () => {
                                 command="!jogando"
                                 description="Lista todos os usuários que estão participando da partida atual."
                                 colorClass="bg-lime-500"
+                            />
+                        </div>
+                    </section>
+
+                    {/* Fidelidade & Pontos */}
+                    <section>
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="h-px flex-grow bg-gradient-to-r from-transparent to-gray-200 dark:to-gray-800"></div>
+                            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-amber-500 whitespace-nowrap">Comandos de Lealdade</h2>
+                            <div className="h-px flex-grow bg-gradient-to-l from-transparent to-gray-200 dark:to-gray-800"></div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <CommandCard
+                                icon={<CrownIcon className="w-6 h-6" />}
+                                title="Ver Meus Pontos"
+                                command="!pontos"
+                                description="Verifica quantos pontos de lealdade você acumulou assistindo a live."
+                                colorClass="bg-amber-500"
                             />
                         </div>
                     </section>

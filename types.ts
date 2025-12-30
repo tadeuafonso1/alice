@@ -61,10 +61,17 @@ export interface CustomCommand {
   response: string;
 }
 
+export interface LoyaltySetting {
+  pointsPerInterval: number;
+  intervalMinutes: number;
+  enabled: boolean;
+}
+
 export interface AppSettings {
   botName: string;
   commands: CommandSettings;
   messages: MessageSettings;
   customCommands: CustomCommand[];
   youtubeChannelId?: string;
+  loyalty?: LoyaltySetting;
 }

@@ -7,6 +7,7 @@ import { PlayingDisplay } from '@/components/PlayingDisplay';
 import { SettingsModal } from '@/components/SettingsModal';
 import { YouTubeSettings } from '@/components/YouTubeSettings';
 import { TimerSettings } from '@/components/TimerSettings';
+import { LoyaltySettings } from '@/components/LoyaltySettings';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings } from '@/types';
 import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, UsersIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon } from '@/components/Icons';
 import { supabase } from '@/integrations/supabase/client';
@@ -87,6 +88,8 @@ export const HomePage: React.FC = () => {
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const processedMessageIds = useRef<Set<string>>(new Set());
     const isFetchingRef = useRef(false);
+    const lastLoyaltyAwardRef = useRef<number>(Date.now());
+    const activeChattersRef = useRef<Set<string>>(new Set());
 
     // Layout State
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -487,6 +490,11 @@ export const HomePage: React.FC = () => {
         const userMessage: Message = { author, text, type: 'user' };
         setMessages(prev => [...prev, userMessage]);
 
+        // Registrar atividade para o sistema de lealdade
+        if (appSettings.loyalty?.enabled) {
+            activeChattersRef.current.add(author);
+        }
+
         const normalizeText = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         const commandText = normalizeText(text.trim());
         const { commands, customCommands } = appSettings;
@@ -659,6 +667,25 @@ export const HomePage: React.FC = () => {
                 sendBotMessage('playingList', { list });
             } else {
                 sendBotMessage('playingListEmpty');
+            }
+        } else if (commandText === '!pontos' || commandText === '!points') {
+            try {
+                const { data: { session: currentSession } } = await supabase.auth.getSession();
+                if (currentSession?.user?.id) {
+                    const { data, error } = await supabase
+                        .from('loyalty_points')
+                        .select('points')
+                        .eq('username', author)
+                        .eq('owner_id', currentSession.user.id)
+                        .maybeSingle();
+
+                    if (error) throw error;
+                    const points = data?.points || 0;
+                    addBotMessage(`@${author}, você tem ${points} pontos de lealdade!`, true);
+                }
+            } catch (err) {
+                console.error('[Loyalty] Erro ao buscar pontos:', err);
+                addBotMessage(`@${author}, erro ao verificar seus pontos.`);
             }
         } else {
             const customCommand = customCommands.find(c => normalizeText(c.command) === commandText);
@@ -1099,6 +1126,44 @@ export const HomePage: React.FC = () => {
         return () => clearInterval(intervalId);
     }, [isTimerActive]);
 
+    // Sistema de Lealdade: Acúmulo de Pontos
+    useEffect(() => {
+        const { loyalty } = appSettings;
+        if (!loyalty?.enabled) return;
+
+        const intervalId = setInterval(async () => {
+            const now = Date.now();
+            const intervalMs = loyalty.intervalMinutes * 60 * 1000;
+
+            if (now - lastLoyaltyAwardRef.current >= intervalMs) {
+                const chatters = Array.from(activeChattersRef.current);
+                if (chatters.length > 0) {
+                    console.log(`[Loyalty] Atribuindo ${loyalty.pointsPerInterval} pontos para ${chatters.length} usuários.`);
+                    try {
+                        const { data: { session: currentSession } } = await supabase.auth.getSession();
+                        if (!currentSession?.user?.id) return;
+
+                        // Upsert pontos para todos os usuários ativos
+                        for (const username of chatters) {
+                            const { error } = await supabase.rpc('increment_loyalty_points', {
+                                p_username: username,
+                                p_points: loyalty.pointsPerInterval,
+                                p_owner_id: currentSession.user.id
+                            });
+                            if (error) console.error(`[Loyalty] Erro ao atribuir pontos para ${username}:`, error);
+                        }
+                    } catch (err) {
+                        console.error('[Loyalty] Erro no loop de pontos:', err);
+                    }
+                }
+                lastLoyaltyAwardRef.current = now;
+                activeChattersRef.current.clear();
+            }
+        }, 30000); // Verifica a cada 30 segundos
+
+        return () => clearInterval(intervalId);
+    }, [appSettings.loyalty]);
+
 
     return (
         <div className="flex justify-center min-h-screen bg-[#F3F4F6] dark:bg-[#0F172A] transition-colors duration-300">
@@ -1373,6 +1438,13 @@ export const HomePage: React.FC = () => {
                                 onToggleTimer={handleToggleTimer}
                                 timeoutMinutes={timeoutMinutes}
                                 setTimeoutMinutes={setTimeoutMinutes}
+                            />
+                        )}
+
+                        {activeTab === 'loyalty' && (
+                            <LoyaltySettings
+                                loyaltySettings={appSettings.loyalty || { pointsPerInterval: 10, intervalMinutes: 10, enabled: false }}
+                                onSaveSettings={(newLoyalty) => handleSettingsSave({ ...appSettings, loyalty: newLoyalty })}
                             />
                         )}
                     </div>
