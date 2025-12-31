@@ -95,7 +95,7 @@ export const HomePage: React.FC = () => {
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const processedMessageIds = useRef<Set<string>>(new Set());
     const isFetchingRef = useRef(false);
-    const lastLoyaltyAwardRef = useRef<number>(Date.now());
+    const lastLoyaltyAwardRef = useRef<number>(Number(localStorage.getItem('alice_last_loyalty_award')) || Date.now());
     const activeChattersRef = useRef<Set<string>>(new Set());
 
     // Layout State
@@ -509,7 +509,7 @@ export const HomePage: React.FC = () => {
     const handleAddManualPoints = useCallback(async (username: string, points: number) => {
         try {
             const { data: { session: currentSession } } = await supabase.auth.getSession();
-            if (!currentSession?.user?.id) return;
+            if (!currentSession?.user?.id) return false;
 
             const { error } = await supabase.rpc('increment_loyalty_points', {
                 p_username: username,
@@ -519,9 +519,11 @@ export const HomePage: React.FC = () => {
 
             if (error) throw error;
             addBotMessage(`Pontos de ${username} atualizados com sucesso (${points > 0 ? '+' : ''}${points}).`);
+            return true;
         } catch (error: any) {
             console.error("Error adding manual points:", error);
             addBotMessage(`Erro ao atualizar pontos: ${error.message}`);
+            return false;
         }
     }, [addBotMessage]);
 
@@ -1204,6 +1206,7 @@ export const HomePage: React.FC = () => {
                     }
                 }
                 lastLoyaltyAwardRef.current = now;
+                localStorage.setItem('alice_last_loyalty_award', now.toString());
                 activeChattersRef.current.clear();
             }
         }, 30000); // Verifica a cada 30 segundos
@@ -1494,6 +1497,7 @@ export const HomePage: React.FC = () => {
                                 onSaveSettings={(newLoyalty) => handleSettingsSave({ ...appSettings, loyalty: newLoyalty })}
                                 onResetPoints={handleResetLoyaltyPoints}
                                 onAddPoints={handleAddManualPoints}
+                                currentOwnerId={session?.user?.id}
                             />
                         )}
                     </div>

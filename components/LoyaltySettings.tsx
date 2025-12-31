@@ -1,5 +1,6 @@
 import React from 'react';
 import { CrownIcon, SettingsIcon, UsersIcon, RefreshCwIcon } from './Icons';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoyaltySettingsProps {
     loyaltySettings: {
@@ -9,7 +10,8 @@ interface LoyaltySettingsProps {
     };
     onSaveSettings: (settings: any) => void;
     onResetPoints: () => void;
-    onAddPoints: (username: string, points: number) => void;
+    onAddPoints: (username: string, points: number) => Promise<boolean>;
+    currentOwnerId?: string;
 }
 
 export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({
@@ -17,9 +19,38 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({
     onSaveSettings,
     onResetPoints,
     onAddPoints,
+    currentOwnerId,
 }) => {
     const [manualUser, setManualUser] = React.useState('');
     const [manualPoints, setManualPoints] = React.useState(0);
+    const [leaderboard, setLeaderboard] = React.useState<{ username: string, points: number }[]>([]);
+    const [isLoadingRanking, setIsLoadingRanking] = React.useState(false);
+    const [isAddingPoints, setIsAddingPoints] = React.useState(false);
+    const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
+
+    const fetchLeaderboard = React.useCallback(async () => {
+        if (!currentOwnerId) return;
+        setIsLoadingRanking(true);
+        try {
+            const { data, error } = await supabase
+                .from('loyalty_points')
+                .select('username, points')
+                .eq('owner_id', currentOwnerId)
+                .order('points', { ascending: false })
+                .limit(10);
+
+            if (error) throw error;
+            setLeaderboard(data || []);
+        } catch (err) {
+            console.error('[Loyalty] Erro ao buscar ranking:', err);
+        } finally {
+            setIsLoadingRanking(false);
+        }
+    }, [currentOwnerId]);
+
+    React.useEffect(() => {
+        fetchLeaderboard();
+    }, [fetchLeaderboard]);
     return (
         <div className="space-y-8">
             {/* Header Section */}
@@ -63,16 +94,30 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({
                                 />
                             </div>
                             <button
-                                onClick={() => {
+                                onClick={async () => {
                                     if (!manualUser) return alert('Digite o nome do usuário');
-                                    onAddPoints(manualUser, manualPoints);
-                                    setManualUser('');
-                                    setManualPoints(0);
+                                    setIsAddingPoints(true);
+                                    const success = await onAddPoints(manualUser, manualPoints);
+                                    if (success) {
+                                        setSuccessMessage(`Pontos adicionados para @${manualUser}!`);
+                                        setTimeout(() => setSuccessMessage(null), 5000);
+                                        setManualUser('');
+                                        setManualPoints(0);
+                                        fetchLeaderboard();
+                                    }
+                                    setIsAddingPoints(false);
                                 }}
-                                className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold shadow-lg shadow-cyan-900/20 transition-all active:scale-95"
+                                disabled={isAddingPoints}
+                                className={`w-full py-3 text-white rounded-xl font-bold shadow-lg transition-all active:scale-95 ${isAddingPoints ? 'bg-gray-400 cursor-not-allowed' : 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-900/20'}`}
                             >
-                                Adicionar Pontos
+                                {isAddingPoints ? 'Adicionando...' : 'Adicionar Pontos'}
                             </button>
+
+                            {successMessage && (
+                                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-500 text-xs font-bold animate-pulse text-center">
+                                    {successMessage}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -151,17 +196,50 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({
                                 </div>
                                 <h4 className="font-bold text-gray-900 dark:text-white">Ranking de Lealdade</h4>
                             </div>
-                            <button className="p-2 text-gray-400 hover:text-amber-500 transition-colors">
+                            <button
+                                onClick={fetchLeaderboard}
+                                disabled={isLoadingRanking}
+                                className={`p-2 text-gray-400 hover:text-amber-500 transition-colors ${isLoadingRanking ? 'animate-spin' : ''}`}
+                            >
                                 <RefreshCwIcon className="w-4 h-4" />
                             </button>
                         </div>
 
-                        <div className="flex-grow p-6 flex flex-col items-center justify-center text-center space-y-4 opacity-50">
-                            <CrownIcon className="w-16 h-16 text-gray-300 dark:text-gray-700" />
-                            <div>
-                                <p className="font-bold text-gray-500 dark:text-gray-400">Nenhum dado de lealdade ainda</p>
-                                <p className="text-sm text-gray-400 dark:text-gray-500">Ative o sistema e aguarde os usuários interagirem.</p>
-                            </div>
+                        <div className="flex-grow overflow-y-auto custom-scrollbar">
+                            {isLoadingRanking ? (
+                                <div className="p-12 flex justify-center items-center">
+                                    <RefreshCwIcon className="w-8 h-8 text-amber-500 animate-spin opacity-50" />
+                                </div>
+                            ) : leaderboard.length > 0 ? (
+                                <div className="divide-y divide-gray-100 dark:divide-gray-800/50">
+                                    {leaderboard.map((user, index) => (
+                                        <div key={user.username} className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${index === 0 ? 'bg-amber-100 text-amber-600' :
+                                                    index === 1 ? 'bg-gray-100 text-gray-600' :
+                                                        index === 2 ? 'bg-orange-100 text-orange-600' :
+                                                            'bg-gray-50 dark:bg-gray-900 text-gray-400'
+                                                    }`}>
+                                                    {index + 1}
+                                                </div>
+                                                <span className="font-bold text-gray-700 dark:text-gray-200">@{user.username}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-black text-amber-600 dark:text-amber-500">{user.points}</span>
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Pontos</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="p-12 flex flex-col items-center justify-center text-center space-y-4 opacity-50">
+                                    <CrownIcon className="w-16 h-16 text-gray-300 dark:text-gray-700" />
+                                    <div>
+                                        <p className="font-bold text-gray-500 dark:text-gray-400">Nenhum dado de lealdade ainda</p>
+                                        <p className="text-sm text-gray-400 dark:text-gray-500">Ative o sistema e aguarde os usuários interagirem.</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
