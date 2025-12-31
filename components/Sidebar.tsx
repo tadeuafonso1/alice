@@ -49,6 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )
         },
         { id: 'timer', label: 'Timer Inatividade', icon: TimerIcon },
+        { id: 'loyalty', label: 'Lealdade', icon: CrownIcon },
         { id: 'giveaway', label: 'Sorteio', icon: GiftIcon },
     ];
 

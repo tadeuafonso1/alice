@@ -8,6 +8,7 @@ import { SettingsModal } from '@/components/SettingsModal';
 import { YouTubeSettings } from '@/components/YouTubeSettings';
 import { TimerSettings } from '@/components/TimerSettings';
 import { GiveawayRoulette } from '@/components/GiveawayRoulette';
+import { LoyaltySettings } from '@/components/LoyaltySettings';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings, CommandSetting } from '@/types';
 import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, UsersIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon } from '@/components/Icons';
 import { supabase } from '@/integrations/supabase/client';
@@ -1268,14 +1269,16 @@ export const HomePage: React.FC = () => {
                                     activeTab === 'settings' ? 'Configurações' :
                                         activeTab === 'commands' ? 'Comandos do Bot' :
                                             activeTab === 'youtube' ? 'Conexão YouTube' :
-                                                activeTab === 'timer' ? 'Timer' : 'Alice Bot'}
+                                                activeTab === 'timer' ? 'Timer' :
+                                                    activeTab === 'loyalty' ? 'Sistema de Lealdade' : 'Alice Bot'}
                             </h2>
                             <p className="text-[10px] text-gray-500 font-medium">
                                 {activeTab === 'dashboard' ? 'Gerencie sua fila e interação com o bot.' :
                                     activeTab === 'settings' ? 'Personalize o comportamento da Alice.' :
                                         activeTab === 'youtube' ? 'Gerencie a conexão com o chat da live.' :
                                             activeTab === 'timer' ? 'Configuração de inatividade automática.' :
-                                                'Painel administrativo.'}
+                                                activeTab === 'loyalty' ? 'Configure pontos e recompensas.' :
+                                                    'Painel administrativo.'}
                             </p>
                         </div>
 
@@ -1519,6 +1522,13 @@ export const HomePage: React.FC = () => {
                                 onToggleTimer={handleToggleTimer}
                                 timeoutMinutes={timeoutMinutes}
                                 setTimeoutMinutes={setTimeoutMinutes}
+                            />
+                        )}
+
+                        {activeTab === 'loyalty' && (
+                            <LoyaltySettings
+                                settings={appSettings}
+                                onSave={handleSettingsSave}
                             />
                         )}
 
