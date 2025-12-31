@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppSettings } from '../types';
-import { CrownIcon, SettingsIcon, UsersIcon, SearchIcon, PlusIcon, MinusIcon, RefreshCwIcon } from './Icons';
+import { CrownIcon, SettingsIcon, UsersIcon, SearchIcon, PlusIcon, MinusIcon, RefreshCwIcon, TrashIcon } from './Icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/src/contexts/SessionContext';
 
@@ -56,6 +56,32 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
                 [key]: value
             }
         });
+    };
+
+    const handleDeleteUser = async (username: string) => {
+        if (!session?.user?.id) return;
+
+        const confirmed = window.confirm(`Tem certeza que deseja excluir "${username}" do sistema de pontos?`);
+        if (!confirmed) return;
+
+        setIsLoading(true);
+        try {
+            const { error } = await supabase
+                .from('loyalty_points')
+                .delete()
+                .eq('username', username)
+                .eq('owner_id', session.user.id);
+
+            if (error) throw error;
+
+            showNotification(`Usuário ${username} removido com sucesso!`);
+            fetchLeaderboard();
+        } catch (err: any) {
+            console.error('[LoyaltySettings] Erro ao excluir usuário:', err);
+            showNotification(`Erro: ${err.message || 'Erro ao excluir usuário'}`, 'error');
+        } finally {
+            setTimeout(() => setIsLoading(false), 500);
+        }
     };
 
     const handleManualPoints = async (username: string, amount: number) => {
@@ -319,6 +345,13 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
                                             title={`Adicionar ${pointsToUpdate} pontos`}
                                         >
                                             <PlusIcon className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteUser(user.username)}
+                                            className="p-2 bg-gray-500/10 hover:bg-gray-600 text-gray-500 hover:text-white rounded-lg transition-all"
+                                            title="Excluir usuário"
+                                        >
+                                            <TrashIcon className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                 </div>
