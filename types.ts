@@ -12,6 +12,7 @@ export interface QueueUser {
 export interface CommandSetting {
   command: string;
   enabled: boolean;
+  cost?: number;
 }
 
 export interface CommandSettings {
@@ -56,6 +57,15 @@ export interface MessageSettings {
   playingList: MessageSetting;
   playingListEmpty: MessageSetting;
   userParticipating: MessageSetting;
+  userPoints: MessageSetting;
+  insufficientPoints: MessageSetting;
+}
+
+export interface LoyaltySettings {
+  enabled: boolean;
+  pointsPerMessage: number;
+  pointsPerInterval: number;
+  intervalMinutes: number;
 }
 
 export interface CustomCommand {
@@ -68,5 +78,6 @@ export interface AppSettings {
   commands: CommandSettings;
   messages: MessageSettings;
   customCommands: CustomCommand[];
+  loyalty: LoyaltySettings;
   youtubeChannelId?: string;
 }

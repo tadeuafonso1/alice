@@ -12,7 +12,7 @@ interface SettingsModalProps {
   initialTab?: string;
 }
 
-type SettingsSection = 'commands' | 'messages';
+type SettingsSection = 'commands' | 'messages' | 'loyalty';
 type GeneralKey = 'botName';
 type CommandKey = keyof AppSettings['commands'];
 type MessageKey = keyof AppSettings['messages'];
@@ -30,6 +30,12 @@ const translations = {
     queueList: 'Comando Público: Listar Fila',
     playingList: 'Comando Público: Listar Jogadores',
     participate: 'Comando: Entrar no Sorteio',
+  },
+  loyalty: {
+    enabled: 'Habilitar Sistema de Lealdade',
+    pointsPerMessage: 'Pontos por Mensagem',
+    pointsPerInterval: 'Pontos por Intervalo (Presença)',
+    intervalMinutes: 'Intervalo de Presença (Minutos)',
   },
   messages: {
     userExistsQueue: 'Usuário já existe na fila',
@@ -62,7 +68,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
   const [openSections, setOpenSections] = useState({
     commands: initialTab === 'commands',
     messages: initialTab === 'messages',
-    customCommands: initialTab === 'customCommands'
+    customCommands: initialTab === 'customCommands',
+    loyalty: initialTab === 'loyalty'
   });
 
   useEffect(() => {
@@ -87,7 +94,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
     }));
   };
 
-  const handleCommandChange = (key: CommandKey, field: 'command' | 'enabled', value: string | boolean) => {
+  const handleCommandChange = (key: CommandKey, field: 'command' | 'enabled' | 'cost', value: string | boolean | number) => {
     setLocalSettings(prev => ({
       ...prev,
       commands: {
@@ -97,6 +104,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
           [field]: value,
         },
       },
+    }));
+  };
+
+  const handleLoyaltyChange = <K extends keyof AppSettings['loyalty']>(key: K, value: AppSettings['loyalty'][K]) => {
+    setLocalSettings(prev => ({
+      ...prev,
+      loyalty: {
+        ...prev.loyalty,
+        [key]: value
+      }
     }));
   };
 
@@ -207,6 +224,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
           className="w-full bg-gray-50 dark:bg-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={!commandSetting.enabled}
         />
+        {commandSetting.enabled && (
+          <div className="mt-2 flex items-center gap-2">
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Custo (Pontos):</label>
+            <input
+              type="number"
+              value={commandSetting.cost || 0}
+              onChange={(e) => handleCommandChange(key, 'cost', parseInt(e.target.value) || 0)}
+              className="w-20 bg-gray-50 dark:bg-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md py-1 px-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-xs"
+              min="0"
+            />
+          </div>
+        )}
       </div>
     );
   };
@@ -240,6 +269,64 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                 onChange={(e) => handleGeneralInputChange('botName', e.target.value)}
                 className="w-full bg-white dark:bg-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm"
               />
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <button onClick={() => toggleSection('loyalty')} className="w-full flex items-center justify-between text-lg font-semibold mb-2 border-b border-gray-200 dark:border-gray-700 pb-2 focus:outline-none text-gray-900 dark:text-[#8bcbd5]">
+            <span>Configurações de Lealdade</span>
+            {openSections.loyalty ? <ChevronUpIcon className="w-5 h-5" /> : <ChevronDownIcon className="w-5 h-5" />}
+          </button>
+          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${openSections.loyalty ? 'max-h-[5000px] opacity-100 pt-2' : 'max-h-0 opacity-0'}`}>
+            <div className="space-y-4 p-4 bg-gray-100 dark:bg-gray-900/50 rounded-md">
+              <div className="flex items-center justify-between mb-4">
+                <label className="text-sm font-medium text-gray-900 dark:text-[#8bcbd5]">{translations.loyalty.enabled}</label>
+                <label className="flex items-center cursor-pointer">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={localSettings.loyalty.enabled}
+                      onChange={(e) => handleLoyaltyChange('enabled', e.target.checked)}
+                    />
+                    <div className={`block w-10 h-6 rounded-full transition-colors ${localSettings.loyalty.enabled ? 'bg-cyan-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                    <div className={`dot absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ease-in-out ${localSettings.loyalty.enabled ? 'translate-x-4' : ''}`}></div>
+                  </div>
+                </label>
+              </div>
+
+              {localSettings.loyalty.enabled && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{translations.loyalty.pointsPerMessage}</label>
+                    <input
+                      type="number"
+                      value={localSettings.loyalty.pointsPerMessage}
+                      onChange={(e) => handleLoyaltyChange('pointsPerMessage', parseInt(e.target.value) || 0)}
+                      className="w-full bg-white dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md py-1.5 px-3 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{translations.loyalty.pointsPerInterval}</label>
+                    <input
+                      type="number"
+                      value={localSettings.loyalty.pointsPerInterval}
+                      onChange={(e) => handleLoyaltyChange('pointsPerInterval', parseInt(e.target.value) || 0)}
+                      className="w-full bg-white dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md py-1.5 px-3 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{translations.loyalty.intervalMinutes}</label>
+                    <input
+                      type="number"
+                      value={localSettings.loyalty.intervalMinutes}
+                      onChange={(e) => handleLoyaltyChange('intervalMinutes', parseInt(e.target.value) || 1)}
+                      className="w-full bg-white dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md py-1.5 px-3 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>

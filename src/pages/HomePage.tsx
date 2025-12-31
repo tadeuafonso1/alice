@@ -8,7 +8,7 @@ import { SettingsModal } from '@/components/SettingsModal';
 import { YouTubeSettings } from '@/components/YouTubeSettings';
 import { TimerSettings } from '@/components/TimerSettings';
 import { GiveawayRoulette } from '@/components/GiveawayRoulette';
-import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings } from '@/types';
+import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings, CommandSetting } from '@/types';
 import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, UsersIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon } from '@/components/Icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/src/contexts/SessionContext';
@@ -54,8 +54,16 @@ const defaultSettings: AppSettings = {
         playingList: { text: 'Jogando agora: {list}', enabled: true },
         playingListEmpty: { text: 'Ninguém está jogando no momento.', enabled: true },
         userParticipating: { text: '✅ @{user}, você entrou no sorteio!', enabled: true },
+        userPoints: { text: '💰 @{user}, você tem {points} pontos.', enabled: true },
+        insufficientPoints: { text: '❌ @{user}, você precisa de {cost} pontos para usar esse comando (Saldo: {points}).', enabled: true },
     },
     customCommands: [],
+    loyalty: {
+        enabled: true,
+        pointsPerMessage: 10,
+        pointsPerInterval: 50,
+        intervalMinutes: 5,
+    },
     youtubeChannelId: '',
 };
 
@@ -519,10 +527,64 @@ export const HomePage: React.FC = () => {
             [author]: Date.now()
         }));
 
+        // Sistema de Lealdade: Ganhar pontos por mensagem
+        if (appSettings.loyalty.enabled && author !== adminName) {
+            supabase.rpc('increment_loyalty_points', {
+                p_username: author,
+                p_points: appSettings.loyalty.pointsPerMessage,
+                p_owner_id: session?.user?.id
+            }).then(({ error }) => {
+                if (error) console.error('Error incrementing points for message:', error);
+            });
+        }
+
 
         const normalizeText = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         const commandText = normalizeText(text.trim());
-        const { commands, customCommands } = appSettings;
+        const { commands, customCommands, loyalty } = appSettings;
+
+        // Verificar custo de comando se o sistema de lealdade estiver ativo
+        if (loyalty.enabled && author !== adminName) {
+            // Tenta encontrar se o texto é algum comando existente
+            let commandToExecute: CommandSetting | null = null;
+            if (commandText.startsWith(commands.join.command)) commandToExecute = commands.join;
+            else if (commandText === commands.leave.command) commandToExecute = commands.leave;
+            else if (commandText === commands.position.command || commandText === '!posicao' || commandText === '!posição') commandToExecute = commands.position;
+            else if (commandText.startsWith(commands.nick.command)) commandToExecute = commands.nick;
+            else if (commandText === commands.queueList.command) commandToExecute = commands.queueList;
+            else if (commandText === commands.playingList.command) commandToExecute = commands.playingList;
+            else if (commandText === commands.participate.command) commandToExecute = commands.participate;
+
+            if (commandToExecute && commandToExecute.enabled && (commandToExecute.cost || 0) > 0) {
+                const cost = commandToExecute.cost || 0;
+                const { data: userPointsData } = await supabase
+                    .from('loyalty_points')
+                    .select('points')
+                    .eq('username', author)
+                    .eq('owner_id', session?.user?.id)
+                    .maybeSingle();
+
+                const currentPoints = userPointsData?.points || 0;
+
+                if (currentPoints < cost) {
+                    sendBotMessage('insufficientPoints', { user: author, cost, points: currentPoints });
+                    return;
+                }
+
+                // Deduzir pontos
+                const { error: deductError } = await supabase.rpc('increment_loyalty_points', {
+                    p_username: author,
+                    p_points: -cost,
+                    p_owner_id: session?.user?.id
+                });
+
+                if (deductError) {
+                    console.error('Error deducting points:', deductError);
+                    addBotMessage(`Erro ao processar custo do comando para @${author}.`);
+                    return;
+                }
+            }
+        }
 
         const now = Date.now();
         if (queue.some(u => u.user === author)) {
@@ -709,7 +771,20 @@ export const HomePage: React.FC = () => {
                 addBotMessage(response, true);
             }
         }
-    }, [adminName, queue, playingUsers, isTimerActive, timeoutMinutes, addBotMessage, appSettings, warningSentUsers, handleNextUser, activateTimer, deactivateTimer, sendBotMessage, updateUserTimer]);
+
+        // Comando !pontos (sempre disponível se lealdade ativa)
+        if (loyalty.enabled && (commandText === '!pontos' || commandText === '!points')) {
+            const { data: userPointsData } = await supabase
+                .from('loyalty_points')
+                .select('points')
+                .eq('username', author)
+                .eq('owner_id', session?.user?.id)
+                .maybeSingle();
+
+            const points = userPointsData?.points || 0;
+            sendBotMessage('userPoints', { user: author, points });
+        }
+    }, [adminName, queue, playingUsers, isTimerActive, timeoutMinutes, addBotMessage, appSettings, warningSentUsers, handleNextUser, activateTimer, deactivateTimer, sendBotMessage, updateUserTimer, session?.user?.id]);
 
     const handleSendMessageRef = useRef(handleSendMessage);
     useEffect(() => {
@@ -1140,6 +1215,34 @@ export const HomePage: React.FC = () => {
 
         return () => clearInterval(intervalId);
     }, [isTimerActive]);
+
+    // Sistema de Lealdade: Ganhar pontos por intervalo
+    useEffect(() => {
+        if (!appSettings.loyalty.enabled || !session?.user?.id) return;
+
+        const intervalId = setInterval(() => {
+            const now = Date.now();
+            const intervalMs = appSettings.loyalty.intervalMinutes * 60 * 1000;
+            const activeUsers = Object.entries(activeChatters)
+                .filter(([_, lastSeen]) => (now - lastSeen) < intervalMs)
+                .map(([username]) => username);
+
+            if (activeUsers.length > 0) {
+                console.log(`[Loyalty] Granting periodic points to ${activeUsers.length} users:`, activeUsers);
+                activeUsers.forEach(username => {
+                    supabase.rpc('increment_loyalty_points', {
+                        p_username: username,
+                        p_points: appSettings.loyalty.pointsPerInterval,
+                        p_owner_id: session.user.id
+                    }).then(({ error }) => {
+                        if (error) console.error(`Error granting interval points to ${username}:`, error);
+                    });
+                });
+            }
+        }, 60000); // Verifica a cada 1 minuto
+
+        return () => clearInterval(intervalId);
+    }, [appSettings.loyalty, activeChatters, session?.user?.id]);
 
 
 
