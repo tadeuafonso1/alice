@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GiftIcon, RefreshCwIcon, TrophyIcon, UsersIcon, TimerIcon, TrashIcon } from './Icons';
-import confetti from 'canvas-confetti';
+import * as confettiModule from 'canvas-confetti';
+
+// Compatibilidade para diferentes ambientes de importação
+const confetti = (confettiModule as any).default || confettiModule;
 
 interface GiveawayRouletteProps {
     activeChatters: Record<string, number>;
@@ -22,9 +25,17 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
 
     // Persistence: Load from localStorage
     useEffect(() => {
+        if (typeof confetti !== 'function') {
+            console.error('[Confetti] Biblioteca não carregou corretamente!');
+        }
+
         // Expose for debugging
         (window as any).fireConfetti = () => {
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, zIndex: 9999 });
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, zIndex: 999999 });
+            } else {
+                alert('Erro: Biblioteca de confetes não encontrada no navegador.');
+            }
         };
 
         const saved = localStorage.getItem('alice_giveaway_participants');
@@ -238,33 +249,30 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
                 playWinSound();
 
                 // 🔥 Confetti celebration!
-                console.log('[Confetti] Winner found:', participants[winningIndex]);
+                console.log('[Confetti] Tentando disparar confetes para:', participants[winningIndex]);
 
-                // Pequeno delay para garantir que o estado do vencedor foi renderizado
-                setTimeout(() => {
-                    const count = 200;
-                    const defaults = {
-                        origin: { y: 0.7 },
-                        zIndex: 9999,
-                        colors: ['#3ABEF9', '#F9C80E', '#F87060', '#A1E887', '#9D4EDD', '#F15BB5']
-                    };
+                try {
+                    // Disparo básico para testar se a biblioteca está carregando
+                    confetti({
+                        particleCount: 150,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        zIndex: 999999
+                    });
 
-                    function fire(particleRatio: number, opts: any) {
+                    // Disparo extra após um delay curto
+                    setTimeout(() => {
                         confetti({
-                            ...defaults,
-                            ...opts,
-                            particleCount: Math.floor(count * particleRatio)
+                            particleCount: 100,
+                            spread: 100,
+                            origin: { y: 0.7 },
+                            zIndex: 999999,
+                            colors: ['#3ABEF9', '#F9C80E', '#F87060', '#A1E887', '#9D4EDD', '#F15BB5']
                         });
-                    }
-
-                    fire(0.25, { spread: 26, startVelocity: 55 });
-                    fire(0.2, { spread: 60 });
-                    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-                    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-                    fire(0.1, { spread: 120, startVelocity: 45 });
-
-                    console.log('[Confetti] Bursts fired!');
-                }, 200);
+                    }, 300);
+                } catch (err) {
+                    console.error('[Confetti Error]', err);
+                }
             }
         };
 
@@ -272,13 +280,19 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
     };
 
     const manualConfetti = () => {
-        confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 },
-            zIndex: 9999,
-            colors: ['#3ABEF9', '#F9C80E', '#F87060', '#A1E887', '#9D4EDD', '#F15BB5']
-        });
+        console.log('[Confetti] Botão de brilhos clicado');
+        try {
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                zIndex: 999999,
+                colors: ['#3ABEF9', '#F9C80E', '#F87060', '#A1E887', '#9D4EDD', '#F15BB5']
+            });
+        } catch (err) {
+            console.error('[Confetti Manual Error]', err);
+            alert('Erro ao disparar confetes: ' + (err as Error).message);
+        }
     };
 
     const handleAddParticipant = () => {
@@ -459,8 +473,8 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
                             onClick={handleSpin}
                             disabled={isSpinning || participants.length < 2}
                             className={`flex-grow flex items-center justify-center gap-3 py-4 md:py-5 px-8 rounded-2xl md:rounded-3xl font-black text-lg md:text-xl uppercase tracking-widest transition-all shadow-2xl ${isSpinning || participants.length < 2
-                                    ? 'bg-zinc-800 text-zinc-600 border border-zinc-700 cursor-not-allowed opacity-50'
-                                    : 'bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 text-white hover:scale-105 active:scale-95 shadow-orange-500/20'
+                                ? 'bg-zinc-800 text-zinc-600 border border-zinc-700 cursor-not-allowed opacity-50'
+                                : 'bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 text-white hover:scale-105 active:scale-95 shadow-orange-500/20'
                                 }`}
                         >
                             {isSpinning ? (
