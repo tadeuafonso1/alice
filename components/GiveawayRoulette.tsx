@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GiftIcon, RefreshCwIcon, TrophyIcon, UsersIcon, TimerIcon, TrashIcon } from './Icons';
+import confetti from 'canvas-confetti';
 
 interface GiveawayRouletteProps {
     activeChatters: Record<string, number>;
@@ -230,6 +231,14 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
 
                 setWinner(participants[winningIndex]);
                 playWinSound();
+
+                // 🔥 Confetti celebration!
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#3ABEF9', '#F9C80E', '#F87060', '#A1E887', '#9D4EDD', '#F15BB5']
+                });
             }
         };
 
