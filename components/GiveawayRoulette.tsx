@@ -457,12 +457,12 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
 
                 <div className="mt-8 flex flex-col items-center gap-4 w-full max-w-md shrink-0">
                     {winner && !isSpinning && (
-                        <div className="text-center animate-in zoom-in fade-in duration-500">
-                            <div className="flex items-center justify-center gap-2 text-emerald-500 mb-0.5">
-                                <TrophyIcon className="w-4 h-4 animate-bounce" />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Vencedor(a)</span>
+                        <div className="text-center animate-in zoom-in fade-in duration-500 py-2">
+                            <div className="inline-flex items-center justify-center gap-2 px-4 py-1.5 bg-emerald-500 dark:bg-emerald-600 text-white rounded-full shadow-lg shadow-emerald-500/20 mb-3 animate-bounce">
+                                <TrophyIcon className="w-4 h-4" />
+                                <span className="text-xs font-black uppercase tracking-[0.2em]">Vencedor(a)</span>
                             </div>
-                            <div className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter drop-shadow-sm">
+                            <div className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white uppercase tracking-tighter drop-shadow-md bg-clip-text text-transparent bg-gradient-to-b from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
                                 {winner}
                             </div>
                         </div>
