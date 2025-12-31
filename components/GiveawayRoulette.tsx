@@ -22,6 +22,11 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
 
     // Persistence: Load from localStorage
     useEffect(() => {
+        // Expose for debugging
+        (window as any).fireConfetti = () => {
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, zIndex: 9999 });
+        };
+
         const saved = localStorage.getItem('alice_giveaway_participants');
         if (saved) {
             try {
@@ -233,38 +238,47 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
                 playWinSound();
 
                 // 🔥 Confetti celebration!
-                console.log('[Confetti] Ganhador anunciado! Disparando confetes para:', participants[winningIndex]);
+                console.log('[Confetti] Winner found:', participants[winningIndex]);
 
-                const duration = 3 * 1000;
-                const end = Date.now() + duration;
-
-                const frame = () => {
-                    confetti({
-                        particleCount: 5,
-                        angle: 60,
-                        spread: 55,
-                        origin: { x: 0, y: 0.7 },
+                // Pequeno delay para garantir que o estado do vencedor foi renderizado
+                setTimeout(() => {
+                    const count = 200;
+                    const defaults = {
+                        origin: { y: 0.7 },
                         zIndex: 9999,
                         colors: ['#3ABEF9', '#F9C80E', '#F87060', '#A1E887', '#9D4EDD', '#F15BB5']
-                    });
-                    confetti({
-                        particleCount: 5,
-                        angle: 120,
-                        spread: 55,
-                        origin: { x: 1, y: 0.7 },
-                        zIndex: 9999,
-                        colors: ['#3ABEF9', '#F9C80E', '#F87060', '#A1E887', '#9D4EDD', '#F15BB5']
-                    });
+                    };
 
-                    if (Date.now() < end) {
-                        requestAnimationFrame(frame);
+                    function fire(particleRatio: number, opts: any) {
+                        confetti({
+                            ...defaults,
+                            ...opts,
+                            particleCount: Math.floor(count * particleRatio)
+                        });
                     }
-                };
-                frame();
+
+                    fire(0.25, { spread: 26, startVelocity: 55 });
+                    fire(0.2, { spread: 60 });
+                    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+                    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+                    fire(0.1, { spread: 120, startVelocity: 45 });
+
+                    console.log('[Confetti] Bursts fired!');
+                }, 200);
             }
         };
 
         animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    const manualConfetti = () => {
+        confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            zIndex: 9999,
+            colors: ['#3ABEF9', '#F9C80E', '#F87060', '#A1E887', '#9D4EDD', '#F15BB5']
+        });
     };
 
     const handleAddParticipant = () => {
@@ -440,35 +454,39 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
                         </div>
                     )}
 
-                    <button
-                        onClick={handleSpin}
-                        disabled={isSpinning || participants.length < 2}
-                        className={`group relative w-full py-4 rounded-xl font-black text-lg uppercase tracking-widest transition-all
-                            ${isSpinning || participants.length < 2
-                                ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed opacity-50'
-                                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-2xl shadow-blue-500/40 active:scale-95'
-                            } `}
-                    >
-                        <span className="flex items-center justify-center gap-2">
+                    <div className="flex w-full gap-2 mt-4">
+                        <button
+                            onClick={handleSpin}
+                            disabled={isSpinning || participants.length < 2}
+                            className={`flex-grow flex items-center justify-center gap-3 py-4 md:py-5 px-8 rounded-2xl md:rounded-3xl font-black text-lg md:text-xl uppercase tracking-widest transition-all shadow-2xl ${isSpinning || participants.length < 2
+                                    ? 'bg-zinc-800 text-zinc-600 border border-zinc-700 cursor-not-allowed opacity-50'
+                                    : 'bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 text-white hover:scale-105 active:scale-95 shadow-orange-500/20'
+                                }`}
+                        >
                             {isSpinning ? (
-                                <>
-                                    <RefreshCwIcon className="w-5 h-5 animate-spin" />
-                                    Girando...
-                                </>
+                                <RefreshCwIcon className="w-6 h-6 animate-spin" />
                             ) : (
-                                <>
-                                    Girar Roleta
-                                    <GiftIcon className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                                </>
+                                <GiftIcon className="w-6 h-6 md:w-7 md:h-7" />
                             )}
-                        </span>
-                    </button>
+                            {isSpinning ? 'Girando...' : 'Girar Roleta'}
+                        </button>
+
+                        {winner && (
+                            <button
+                                onClick={manualConfetti}
+                                className="p-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 rounded-2xl md:rounded-3xl transition-all"
+                                title="Mais confetes!"
+                            >
+                                ✨
+                            </button>
+                        )}
+                    </div>
 
                     {participants.length < 2 && (
                         <p className="text-[10px] text-gray-400 font-medium whitespace-nowrap">Adicione ao menos 2 participantes para girar</p>
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
