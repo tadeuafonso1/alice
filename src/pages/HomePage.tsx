@@ -562,6 +562,7 @@ export const HomePage: React.FC = () => {
         const { commands, customCommands, loyalty } = appSettings;
 
         // Verificar custo de comando se o sistema de lealdade estiver ativo
+        console.log(`[Loyalty Debug] author: "${author}", adminName: "${adminName}", isAdmin: ${author === adminName}`);
         if (loyalty.enabled && author !== adminName) {
             console.log('[Loyalty] Sistema de lealdade ativo, verificando custo do comando...');
 
