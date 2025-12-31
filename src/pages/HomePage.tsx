@@ -1137,12 +1137,12 @@ export const HomePage: React.FC = () => {
 
                         <div className="flex items-center gap-6">
                             {/* YouTube Controls */}
-                            <div className={`hidden md:flex items - center gap - 3 px - 4 py - 2 rounded - xl transition - all duration - 300 border ${isPolling ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-gray-50 dark:bg-[#162036] border-gray-200 dark:border-gray-800'} `}>
+                            <div className={`hidden md:flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300 border ${isPolling ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-gray-50 dark:bg-[#162036] border-gray-200 dark:border-gray-800'}`}>
                                 {googleConnected ? (
                                     <>
                                         <div className="flex items-center gap-3">
                                             <div className="relative">
-                                                <div className={`p - 1.5 rounded - lg ${isPolling ? 'bg-emerald-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'} `}>
+                                                <div className={`p-1.5 rounded-lg ${isPolling ? 'bg-emerald-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
                                                     <YoutubeIcon className="w-4 h-4" />
                                                 </div>
                                                 {isPolling && (
@@ -1154,7 +1154,7 @@ export const HomePage: React.FC = () => {
                                             </div>
 
                                             <div className="flex flex-col">
-                                                <span className={`text - [10px] font - black uppercase tracking - wider ${isPolling ? 'text-emerald-500' : 'text-gray-500 dark:text-gray-400'} `}>
+                                                <span className={`text-[10px] font-black uppercase tracking-wider ${isPolling ? 'text-emerald-500' : 'text-gray-500 dark:text-gray-400'}`}>
                                                     {isPolling ? 'Ao Vivo' : 'YouTube'}
                                                 </span>
                                                 <span className="text-[10px] font-medium text-gray-400">
@@ -1181,11 +1181,11 @@ export const HomePage: React.FC = () => {
                                             <button
                                                 onClick={handleFindLiveChat}
                                                 disabled={isFindingChat}
-                                                className={`flex items - center gap - 2 px - 3 py - 1.5 rounded - lg text - [10px] font - black uppercase tracking - wider transition - all
+                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all
                                                     ${isFindingChat
                                                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                         : 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 active:scale-95'
-                                                    } `}
+                                                    }`}
                                             >
                                                 {isFindingChat ? (
                                                     <RefreshCwIcon className="w-3 h-3 animate-spin" />
@@ -1251,7 +1251,7 @@ export const HomePage: React.FC = () => {
 
                                 {/* Column 3: Chat */}
                                 <div className="xl:col-span-1 h-full overflow-hidden">
-                                    <div className={`bg - white dark: bg - [#131b2e] border border - gray - 200 dark: border - gray - 800 rounded - 2xl shadow - xl overflow - hidden flex flex - col transition - all duration - 300 h - full`}>
+                                    <div className={`bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl overflow-hidden flex flex-col transition-all duration-300 h-full`}>
                                         <div
                                             className="p-4 bg-gray-50 dark:bg-[#162036] border-b border-gray-200 dark:border-gray-800 flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-[#1f2937] transition-colors flex-shrink-0"
                                             onClick={() => setIsChatVisible(!isChatVisible)}
