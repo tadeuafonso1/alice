@@ -1,6 +1,8 @@
 import React from 'react';
 import { AppSettings } from '../types';
-import { CrownIcon, SettingsIcon } from './Icons';
+import { CrownIcon, SettingsIcon, UsersIcon, SearchIcon, PlusIcon, MinusIcon, RefreshCwIcon } from './Icons';
+import { supabase } from '@/integrations/supabase/client';
+import { useSession } from '@/src/contexts/SessionContext';
 
 interface LoyaltySettingsProps {
     settings: AppSettings;
@@ -8,6 +10,36 @@ interface LoyaltySettingsProps {
 }
 
 export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSave }) => {
+    const { session } = useSession();
+    const [leaderboard, setLeaderboard] = React.useState<any[]>([]);
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [searchTerm, setSearchTerm] = React.useState('');
+    const [pointsToUpdate, setPointsToUpdate] = React.useState<number>(100);
+
+    const fetchLeaderboard = React.useCallback(async () => {
+        if (!session?.user?.id) return;
+        setIsLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('loyalty_points')
+                .select('*')
+                .eq('owner_id', session.user.id)
+                .order('points', { ascending: false })
+                .limit(50);
+
+            if (error) throw error;
+            setLeaderboard(data || []);
+        } catch (err) {
+            console.error('Error fetching leaderboard:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [session?.user?.id]);
+
+    React.useEffect(() => {
+        fetchLeaderboard();
+    }, [fetchLeaderboard]);
+
     const handleLoyaltyChange = <K extends keyof AppSettings['loyalty']>(key: K, value: AppSettings['loyalty'][K]) => {
         onSave({
             ...settings,
@@ -18,93 +50,209 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
         });
     };
 
+    const handleManualPoints = async (username: string, amount: number) => {
+        if (!session?.user?.id) return;
+        try {
+            const { error } = await supabase.rpc('increment_loyalty_points', {
+                p_username: username,
+                p_points: amount,
+                p_owner_id: session.user.id
+            });
+
+            if (error) throw error;
+            fetchLeaderboard();
+        } catch (err) {
+            console.error('Error updating points:', err);
+            alert('Erro ao atualizar pontos.');
+        }
+    };
+
+    const filteredLeaderboard = leaderboard.filter(user =>
+        user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
-        <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-800">
-            <div className="mb-8 overflow-hidden rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 p-8 text-white relative">
-                <div className="relative z-10">
-                    <h3 className="text-2xl font-bold mb-2">Sistema de Lealdade</h3>
-                    <p className="text-amber-100 opacity-90">Recompense seus espectadores por assistirem e interagirem com a live.</p>
+        <div className="flex flex-col xl:flex-row gap-8 animate-in fade-in duration-500">
+            {/* Left Column: Settings */}
+            <div className="xl:w-1/2 space-y-6">
+                <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-800 h-fit">
+                    <div className="mb-8 overflow-hidden rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 p-8 text-white relative">
+                        <div className="relative z-10">
+                            <h3 className="text-2xl font-bold mb-2">Sistema de Lealdade</h3>
+                            <p className="text-amber-100 opacity-90 text-sm">Configure como seus espectadores ganham pontos automaticamente.</p>
+                        </div>
+                        <CrownIcon className="absolute -right-10 -bottom-10 w-48 h-48 text-white opacity-10 rotate-12" />
+                    </div>
+
+                    <div className="space-y-8">
+                        <section>
+                            <div className="flex items-center justify-between p-6 bg-gray-50 dark:bg-[#0f111a] rounded-2xl border border-gray-200 dark:border-gray-800">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-amber-500/10 rounded-xl">
+                                        <CrownIcon className="w-6 h-6 text-amber-500" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-base font-bold text-gray-900 dark:text-white">Habilitar Sistema</h4>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Ative o acúmulo de pontos globalmente.</p>
+                                    </div>
+                                </div>
+                                <label className="flex items-center cursor-pointer">
+                                    <div className="relative">
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only"
+                                            checked={settings.loyalty.enabled}
+                                            onChange={(e) => handleLoyaltyChange('enabled', e.target.checked)}
+                                        />
+                                        <div className={`block w-12 h-7 rounded-full transition-colors ${settings.loyalty.enabled ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                                        <div className={`dot absolute top-1 left-1 bg-white w-5 h-5 rounded-full transition-transform duration-300 ease-in-out ${settings.loyalty.enabled ? 'translate-x-5' : ''}`}></div>
+                                    </div>
+                                </label>
+                            </div>
+                        </section>
+
+                        {settings.loyalty.enabled && (
+                            <section className="animate-in fade-in slide-in-from-top-4 duration-300">
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="p-5 bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Pontos por Mensagem</label>
+                                            <input
+                                                type="number"
+                                                value={settings.loyalty.pointsPerMessage}
+                                                onChange={(e) => handleLoyaltyChange('pointsPerMessage', parseInt(e.target.value) || 0)}
+                                                className="w-full bg-gray-50 dark:bg-[#0F172A] dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-amber-500 outline-none transition-all font-bold text-sm"
+                                            />
+                                        </div>
+
+                                        <div className="p-5 bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Pontos por Presença</label>
+                                            <input
+                                                type="number"
+                                                value={settings.loyalty.pointsPerInterval}
+                                                onChange={(e) => handleLoyaltyChange('pointsPerInterval', parseInt(e.target.value) || 0)}
+                                                className="w-full bg-gray-50 dark:bg-[#0F172A] dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-amber-500 outline-none transition-all font-bold text-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="p-5 bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Intervalo de Presença (Minutos)</label>
+                                        <input
+                                            type="number"
+                                            value={settings.loyalty.intervalMinutes}
+                                            onChange={(e) => handleLoyaltyChange('intervalMinutes', parseInt(e.target.value) || 1)}
+                                            className="w-full bg-gray-50 dark:bg-[#0F172A] dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-amber-500 outline-none transition-all font-bold text-sm"
+                                        />
+                                    </div>
+
+                                    <div className="p-5 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-500/20 rounded-2xl flex items-start gap-4">
+                                        <div className="p-2 bg-white dark:bg-[#1E293B] rounded-lg shadow-sm">
+                                            <SettingsIcon className="w-5 h-5 text-amber-500" />
+                                        </div>
+                                        <p className="text-xs text-amber-800 dark:text-amber-200 opacity-80 leading-relaxed font-medium">
+                                            Cobre pontos para ações específicas (ex: entrar na fila) na aba **Comandos do Bot**.
+                                        </p>
+                                    </div>
+                                </div>
+                            </section>
+                        )}
+                    </div>
                 </div>
-                <CrownIcon className="absolute -right-10 -bottom-10 w-64 h-64 text-white opacity-10 rotate-12" />
             </div>
 
-            <div className="space-y-8">
-                <section>
-                    <div className="flex items-center justify-between p-6 bg-gray-50 dark:bg-[#0f111a] rounded-2xl border border-gray-200 dark:border-gray-800">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-amber-500/10 rounded-xl">
-                                <CrownIcon className="w-6 h-6 text-amber-500" />
+            {/* Right Column: User Management */}
+            <div className="xl:w-1/2 flex flex-col h-[calc(100vh-180px)]">
+                <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col h-full overflow-hidden">
+                    <header className="p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#161f31] flex-shrink-0">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                                <UsersIcon className="w-5 h-5 text-amber-500" />
+                                <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-sm">Lista de Usuários</h3>
                             </div>
-                            <div>
-                                <h4 className="text-lg font-bold text-gray-900 dark:text-white">Habilitar Sistema</h4>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">Ative ou desative o acúmulo de pontos globalmente.</p>
+                            <button
+                                onClick={fetchLeaderboard}
+                                disabled={isLoading}
+                                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-all text-gray-500"
+                                title="Atualizar Lista"
+                            >
+                                <RefreshCwIcon className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                            </button>
+                        </div>
+
+                        <div className="relative">
+                            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Buscar usuário..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full bg-white dark:bg-[#0F172A] dark:text-zinc-100 border border-gray-200 dark:border-gray-800 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500/50 transition-all font-medium"
+                            />
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between bg-white dark:bg-[#0f111a] p-3 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Valor para ajuste manual:</span>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    value={pointsToUpdate}
+                                    onChange={(e) => setPointsToUpdate(parseInt(e.target.value) || 0)}
+                                    className="w-20 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 text-xs font-bold text-center dark:text-white"
+                                />
                             </div>
                         </div>
-                        <label className="flex items-center cursor-pointer">
-                            <div className="relative">
-                                <input
-                                    type="checkbox"
-                                    className="sr-only"
-                                    checked={settings.loyalty.enabled}
-                                    onChange={(e) => handleLoyaltyChange('enabled', e.target.checked)}
-                                />
-                                <div className={`block w-14 h-8 rounded-full transition-colors ${settings.loyalty.enabled ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                                <div className={`dot absolute top-1 left-1 bg-white w-6 h-6 rounded-full transition-transform duration-300 ease-in-out ${settings.loyalty.enabled ? 'translate-x-6' : ''}`}></div>
+                    </header>
+
+                    <div className="flex-grow overflow-y-auto custom-scrollbar p-6 space-y-3">
+                        {isLoading && filteredLeaderboard.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-4">
+                                <RefreshCwIcon className="w-8 h-8 animate-spin opacity-20" />
+                                <p className="text-sm font-medium">Carregando usuários...</p>
                             </div>
-                        </label>
+                        ) : filteredLeaderboard.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-4">
+                                <UsersIcon className="w-12 h-12 opacity-10" />
+                                <p className="text-sm font-medium">Nenhum usuário encontrado.</p>
+                            </div>
+                        ) : (
+                            filteredLeaderboard.map((user, idx) => (
+                                <div key={user.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#161f31] rounded-2xl border border-gray-100 dark:border-gray-700/50 hover:border-amber-500/30 transition-all group">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center text-amber-600 font-black text-xs border border-amber-500/10">
+                                            {idx + 1}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-gray-900 dark:text-zinc-100 group-hover:text-amber-500 transition-colors">{user.username}</p>
+                                            <p className="text-[10px] font-black text-amber-500/80 uppercase tracking-widest">{user.points} Pontos</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={() => handleManualPoints(user.username, -pointsToUpdate)}
+                                            className="p-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg transition-all"
+                                            title={`Remover ${pointsToUpdate} pontos`}
+                                        >
+                                            <MinusIcon className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                            onClick={() => handleManualPoints(user.username, pointsToUpdate)}
+                                            className="p-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white rounded-lg transition-all"
+                                            title={`Adicionar ${pointsToUpdate} pontos`}
+                                        >
+                                            <PlusIcon className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
-                </section>
 
-                {settings.loyalty.enabled && (
-                    <section className="animate-in fade-in slide-in-from-top-4 duration-300">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="p-6 bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                                <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Pontos por Mensagem</label>
-                                <input
-                                    type="number"
-                                    value={settings.loyalty.pointsPerMessage}
-                                    onChange={(e) => handleLoyaltyChange('pointsPerMessage', parseInt(e.target.value) || 0)}
-                                    className="w-full bg-gray-50 dark:bg-[#0F172A] dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all font-bold"
-                                />
-                                <p className="text-[10px] text-gray-400 mt-2 italic">Quantos pontos ganhar a cada mensagem enviada.</p>
-                            </div>
-
-                            <div className="p-6 bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                                <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Pontos por Presença</label>
-                                <input
-                                    type="number"
-                                    value={settings.loyalty.pointsPerInterval}
-                                    onChange={(e) => handleLoyaltyChange('pointsPerInterval', parseInt(e.target.value) || 0)}
-                                    className="w-full bg-gray-50 dark:bg-[#0F172A] dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all font-bold"
-                                />
-                                <p className="text-[10px] text-gray-400 mt-2 italic">Pontos ganhos periodicamente por assistir.</p>
-                            </div>
-
-                            <div className="p-6 bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                                <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Intervalo (Minutos)</label>
-                                <input
-                                    type="number"
-                                    value={settings.loyalty.intervalMinutes}
-                                    onChange={(e) => handleLoyaltyChange('intervalMinutes', parseInt(e.target.value) || 1)}
-                                    className="w-full bg-gray-50 dark:bg-[#0F172A] dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all font-bold"
-                                />
-                                <p className="text-[10px] text-gray-400 mt-2 italic">Frequência do ganho por presença.</p>
-                            </div>
-                        </div>
-
-                        <div className="mt-8 p-6 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-500/20 rounded-2xl flex items-start gap-4">
-                            <div className="p-2 bg-white dark:bg-[#1E293B] rounded-lg shadow-sm">
-                                <SettingsIcon className="w-6 h-6 text-amber-500" />
-                            </div>
-                            <div>
-                                <h5 className="font-bold text-amber-900 dark:text-amber-100 mb-1">Dica de Streamer</h5>
-                                <p className="text-sm text-amber-800 dark:text-amber-200 opacity-80 leading-relaxed">
-                                    Configure o **Custo de Pontos** em cada comando na aba **Comandos do Bot**. Isso permitirá que você cobre pontos para ações específicas como entrar na fila ou participar de sorteios.
-                                </p>
-                            </div>
-                        </div>
-                    </section>
-                )}
+                    <footer className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-[#0f111a] text-center">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">Exibindo Top 50 Colocados</p>
+                    </footer>
+                </div>
             </div>
         </div>
     );
