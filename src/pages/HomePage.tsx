@@ -118,9 +118,16 @@ export const HomePage: React.FC = () => {
     const processedMessageIds = useRef<Set<string>>(new Set());
     const isFetchingRef = useRef(false);
 
-    // Layout State
-    const [activeTab, setActiveTab] = useState('dashboard');
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+    // Layout State - Restaura do localStorage se disponível
+    const [activeTab, setActiveTab] = useState(() => {
+        const saved = localStorage.getItem('alice_active_tab');
+        return saved || 'dashboard';
+    });
+    const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+        const saved = localStorage.getItem('alice_sidebar_open');
+        return saved !== null ? saved === 'true' : true;
+    });
 
     useEffect(() => {
         if (session?.user?.user_metadata?.full_name) {
@@ -136,6 +143,16 @@ export const HomePage: React.FC = () => {
             setAdminName(maskedEmail);
         }
     }, [session, channelTitle]);
+
+    // Persistir aba ativa no localStorage
+    useEffect(() => {
+        localStorage.setItem('alice_active_tab', activeTab);
+    }, [activeTab]);
+
+    // Persistir estado da sidebar no localStorage
+    useEffect(() => {
+        localStorage.setItem('alice_sidebar_open', String(isSidebarOpen));
+    }, [isSidebarOpen]);
 
     const handleSignOut = async () => {
         const { error } = await supabase.auth.signOut();
