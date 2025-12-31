@@ -7,6 +7,7 @@ import { PlayingDisplay } from '@/components/PlayingDisplay';
 import { SettingsModal } from '@/components/SettingsModal';
 import { YouTubeSettings } from '@/components/YouTubeSettings';
 import { TimerSettings } from '@/components/TimerSettings';
+import { GiveawayRoulette } from '@/components/GiveawayRoulette';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings } from '@/types';
 import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, UsersIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon } from '@/components/Icons';
 import { supabase } from '@/integrations/supabase/client';
@@ -72,6 +73,7 @@ export const HomePage: React.FC = () => {
     const [isChatVisible, setIsChatVisible] = useState(true);
     const [appSettings, setAppSettings] = useState<AppSettings>(defaultSettings);
     const [warningSentUsers, setWarningSentUsers] = useState<Set<string>>(new Set());
+    const [activeChatters, setActiveChatters] = useState<Set<string>>(new Set());
 
     // Estado para a conexão com o YouTube
     const [liveChatId, setLiveChatId] = useState<string>('');
@@ -485,6 +487,14 @@ export const HomePage: React.FC = () => {
 
         const userMessage: Message = { author, text, type: 'user' };
         setMessages(prev => [...prev, userMessage]);
+
+        if (author !== adminName) {
+            setActiveChatters(prev => {
+                const next = new Set(prev);
+                next.add(author);
+                return next;
+            });
+        }
 
 
         const normalizeText = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -1375,6 +1385,10 @@ export const HomePage: React.FC = () => {
                                 timeoutMinutes={timeoutMinutes}
                                 setTimeoutMinutes={setTimeoutMinutes}
                             />
+                        )}
+
+                        {activeTab === 'giveaway' && (
+                            <GiveawayRoulette activeChatters={Array.from(activeChatters)} />
                         )}
 
                     </div>

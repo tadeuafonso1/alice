@@ -13,7 +13,8 @@ import {
     TimerIcon,
     GlobeIcon,
     CopyIcon,
-    CrownIcon
+    CrownIcon,
+    GiftIcon
 } from './Icons';
 
 interface SidebarProps {
@@ -48,6 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )
         },
         { id: 'timer', label: 'Timer Inatividade', icon: TimerIcon },
+        { id: 'giveaway', label: 'Sorteio', icon: GiftIcon },
     ];
 
     return (
