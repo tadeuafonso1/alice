@@ -60,23 +60,42 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
 
     const handleManualPoints = async (username: string, amount: number) => {
         if (!session?.user?.id || !username.trim()) return;
+
+        console.log('[LoyaltySettings] Tentando atualizar pontos:', {
+            username: username.trim(),
+            amount,
+            owner_id: session.user.id
+        });
+
         setIsLoading(true);
         try {
-            const { error } = await supabase.rpc('increment_loyalty_points', {
+            const { error, data } = await supabase.rpc('increment_loyalty_points', {
                 p_username: username.trim(),
                 p_points: amount,
                 p_owner_id: session.user.id
             });
 
-            if (error) throw error;
+            console.log('[LoyaltySettings] Resposta do RPC:', { data, error });
+
+            if (error) {
+                console.error('[LoyaltySettings] Erro detalhado:', error);
+                throw error;
+            }
+
             showNotification(`Pontos atualizados com sucesso para ${username}!`);
             fetchLeaderboard();
             if (username === manualUsername) {
                 setManualUsername('');
             }
-        } catch (err) {
-            console.error('Error updating points:', err);
-            showNotification('Erro ao atualizar pontos.', 'error');
+        } catch (err: any) {
+            console.error('[LoyaltySettings] Erro ao atualizar pontos:', err);
+            console.error('[LoyaltySettings] Detalhes do erro:', {
+                message: err.message,
+                details: err.details,
+                hint: err.hint,
+                code: err.code
+            });
+            showNotification(`Erro: ${err.message || 'Erro ao atualizar pontos'}`, 'error');
         } finally {
             setIsLoading(true);
             // Re-fetch to ensure loading state is cleared by fetchLeaderboard or manually
@@ -253,8 +272,8 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
                     {notification && (
                         <div className={`absolute top-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 fade-in duration-300`}>
                             <div className={`px-4 py-2 rounded-full shadow-2xl border text-xs font-bold flex items-center gap-2 ${notification.type === 'success'
-                                    ? 'bg-emerald-500 border-emerald-400 text-white'
-                                    : 'bg-red-500 border-red-400 text-white'
+                                ? 'bg-emerald-500 border-emerald-400 text-white'
+                                : 'bg-red-500 border-red-400 text-white'
                                 }`}>
                                 {notification.type === 'success' ? <PlusIcon className="w-3 h-3" /> : <MinusIcon className="w-3 h-3" />}
                                 {notification.message}
