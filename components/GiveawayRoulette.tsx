@@ -436,7 +436,7 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
                     </div>
                 </header>
 
-                <div className="flex-grow flex flex-col items-center justify-center w-full min-h-0">
+                <div className="flex-grow flex flex-col items-center justify-center w-full min-h-0 pb-12">
                     <div className="relative w-fit h-fit flex items-center justify-center mt-4">
                         {/* Pointer - Positioned relative to wheel container */}
                         <div className="absolute -right-6 md:-right-8 top-1/2 -translate-y-1/2 z-20">
@@ -455,12 +455,12 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
                     </div>
                 </div>
 
-                <div className="mt-12 md:mt-16 flex flex-col items-center gap-6 w-full max-w-md shrink-0">
+                <div className="mt-4 flex flex-col items-center gap-6 w-full max-w-md shrink-0">
                     {winner && !isSpinning && (
-                        <div className="text-center animate-in zoom-in fade-in duration-500">
-                            <div className="inline-flex items-center justify-center gap-2 px-4 py-1.5 bg-emerald-500 dark:bg-emerald-600 text-white rounded-full shadow-lg shadow-emerald-500/20 mb-3 animate-bounce">
-                                <TrophyIcon className="w-4 h-4" />
-                                <span className="text-xs font-black uppercase tracking-[0.2em]">Vencedor(a)</span>
+                        <div className="text-center animate-in zoom-in fade-in duration-500 flex flex-col items-center">
+                            <div className="inline-flex items-center justify-center gap-2 px-6 py-2 bg-emerald-500 dark:bg-emerald-600 text-white rounded-full shadow-lg shadow-emerald-500/30 mb-4 animate-bounce shrink-0">
+                                <TrophyIcon className="w-5 h-5" />
+                                <span className="text-sm font-black uppercase tracking-[0.2em]">Vencedor(a)</span>
                             </div>
                             <div className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white uppercase tracking-tighter drop-shadow-md bg-clip-text text-transparent bg-gradient-to-b from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
                                 {winner}
