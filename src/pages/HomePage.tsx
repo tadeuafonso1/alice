@@ -73,7 +73,7 @@ export const HomePage: React.FC = () => {
     const [isChatVisible, setIsChatVisible] = useState(true);
     const [appSettings, setAppSettings] = useState<AppSettings>(defaultSettings);
     const [warningSentUsers, setWarningSentUsers] = useState<Set<string>>(new Set());
-    const [activeChatters, setActiveChatters] = useState<Set<string>>(new Set());
+    const [activeChatters, setActiveChatters] = useState<Record<string, number>>({});
 
     // Estado para a conexão com o YouTube
     const [liveChatId, setLiveChatId] = useState<string>('');
@@ -489,11 +489,10 @@ export const HomePage: React.FC = () => {
         setMessages(prev => [...prev, userMessage]);
 
         if (author !== adminName) {
-            setActiveChatters(prev => {
-                const next = new Set(prev);
-                next.add(author);
-                return next;
-            });
+            setActiveChatters(prev => ({
+                ...prev,
+                [author]: Date.now()
+            }));
         }
 
 
@@ -1388,7 +1387,7 @@ export const HomePage: React.FC = () => {
                         )}
 
                         {activeTab === 'giveaway' && (
-                            <GiveawayRoulette activeChatters={Array.from(activeChatters)} />
+                            <GiveawayRoulette activeChatters={activeChatters} />
                         )}
 
                     </div>

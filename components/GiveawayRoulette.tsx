@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { GiftIcon, RefreshCwIcon, TrophyIcon, UsersIcon } from './Icons';
+import { GiftIcon, RefreshCwIcon, TrophyIcon, UsersIcon, TimerIcon } from './Icons';
 
 interface GiveawayRouletteProps {
-    activeChatters: string[];
+    activeChatters: Record<string, number>;
 }
 
 export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatters }) => {
@@ -132,12 +132,29 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
         setInputValue('');
     };
 
-    const handlePullChatters = () => {
-        if (activeChatters.length === 0) {
+    const handlePullChatters = (minutes?: number) => {
+        const chatterEntries = Object.entries(activeChatters);
+        if (chatterEntries.length === 0) {
             alert('Nenhum chatter ativo detectado ainda.');
             return;
         }
-        setParticipants(Array.from(new Set(activeChatters)));
+
+        let filteredNames: string[];
+        if (minutes) {
+            const cutoff = Date.now() - minutes * 60 * 1000;
+            filteredNames = chatterEntries
+                .filter(([_, timestamp]) => timestamp >= cutoff)
+                .map(([name]) => name);
+
+            if (filteredNames.length === 0) {
+                alert(`Nenhum chatter ativo nos últimos ${minutes} minutos.`);
+                return;
+            }
+        } else {
+            filteredNames = chatterEntries.map(([name]) => name);
+        }
+
+        setParticipants(Array.from(new Set(filteredNames)));
     };
 
     const handleClearParticipants = () => {
@@ -163,7 +180,7 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             placeholder="Um nome por linha..."
-                            className="w-full h-32 bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl p-3 text-sm text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 focus:ring-2 focus:ring-cyan-500 outline-none transition-all resize-none"
+                            className="w-full h-32 bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl p-3 text-sm text-zinc-900 dark:text-white placeholder:text-gray-500 focus:ring-2 focus:ring-cyan-500 outline-none transition-all resize-none shadow-inner"
                         />
                         <button
                             onClick={handleAddParticipant}
@@ -173,32 +190,43 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 pt-2">
-                        <button
-                            onClick={handlePullChatters}
-                            className="flex items-center justify-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 font-bold py-2 px-3 rounded-xl transition-all text-[11px] uppercase tracking-wider"
-                        >
-                            <RefreshCwIcon className="w-3 h-3" />
-                            Puxar Chat
-                        </button>
+                    <div className="grid grid-cols-1 gap-2 pt-2">
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                onClick={() => handlePullChatters()}
+                                className="flex items-center justify-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 font-bold py-2 px-2 rounded-xl transition-all text-[10px] uppercase tracking-wider"
+                                title="Puxar todos os que falaram"
+                            >
+                                <RefreshCwIcon className="w-3 h-3" />
+                                Todos
+                            </button>
+                            <button
+                                onClick={() => handlePullChatters(5)}
+                                className="flex items-center justify-center gap-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-500 border border-cyan-500/20 font-bold py-2 px-2 rounded-xl transition-all text-[10px] uppercase tracking-wider"
+                                title="Puxar quem falou nos últimos 5 minutos"
+                            >
+                                <TimerIcon className="w-3 h-3" />
+                                Ativos (5m)
+                            </button>
+                        </div>
                         <button
                             onClick={handleClearParticipants}
-                            className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 font-bold py-2 px-3 rounded-xl transition-all text-[11px] uppercase tracking-wider"
+                            className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 font-bold py-2 px-3 rounded-xl transition-all text-[10px] uppercase tracking-wider w-full"
                         >
-                            Limpar
+                            Limpar Tudo
                         </button>
                     </div>
                 </div>
 
                 <div className="bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-xl flex-grow overflow-hidden flex flex-col">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">
                         Lista ({participants.length})
                     </div>
                     <div className="flex-grow overflow-y-auto custom-scrollbar space-y-1">
                         {participants.map((name, i) => (
-                            <div key={i} className="flex items-center gap-2 text-sm text-gray-700 dark:text-zinc-200 bg-gray-50 dark:bg-[#162036] px-3 py-1.5 rounded-lg border border-transparent dark:border-white/5">
-                                <span className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: colors[i % colors.length] }} />
-                                <span className="truncate font-medium">{name}</span>
+                            <div key={i} className="flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-100 bg-gray-50 dark:bg-[#1e293b] px-3 py-2 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm">
+                                <span className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm" style={{ backgroundColor: colors[i % colors.length] }} />
+                                <span className="truncate font-bold">{name}</span>
                             </div>
                         ))}
                     </div>
