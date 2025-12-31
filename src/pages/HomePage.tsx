@@ -506,14 +506,14 @@ export const HomePage: React.FC = () => {
         }
     }, [addBotMessage]);
 
-    const handleAddManualPoints = useCallback(async (username: string, points: number) => {
+    const handleAddManualPoints = useCallback(async (username: string, points: number): Promise<{ success: boolean; error?: string }> => {
         try {
-            // Normalizar username para minúsculas para evitar duplicidade por case
-            const normalizedUsername = username.trim().replace(/^@/, '').toLowerCase();
-            if (!normalizedUsername) return false;
+            // Normalizar username: remove todos os @, espaços e converte para minúsculas
+            const normalizedUsername = username.trim().replace(/@/g, '').toLowerCase();
+            if (!normalizedUsername) return { success: false, error: "Nome de usuário inválido." };
 
             const { data: { session: currentSession } } = await supabase.auth.getSession();
-            if (!currentSession?.user?.id) return false;
+            if (!currentSession?.user?.id) return { success: false, error: "Sessão expirada. Faça login novamente." };
 
             const { error } = await supabase.rpc('increment_loyalty_points', {
                 p_username: normalizedUsername,
@@ -521,24 +521,26 @@ export const HomePage: React.FC = () => {
                 p_owner_id: currentSession.user.id
             });
 
-            if (error) throw error;
+            if (error) {
+                console.error("[Loyalty] Erro no RPC:", error);
+                return { success: false, error: error.message };
+            }
+
             addBotMessage(`Pontos de ${normalizedUsername} atualizados com sucesso (${points > 0 ? '+' : ''}${points}).`);
-            return true;
+            return { success: true };
         } catch (error: any) {
             console.error("Error adding manual points:", error);
-            addBotMessage(`Erro ao atualizar pontos: ${error.message}`);
-            return false;
+            const msg = error.message || "Erro desconhecido.";
+            addBotMessage(`Erro ao atualizar pontos: ${msg}`);
+            return { success: false, error: msg };
         }
     }, [addBotMessage]);
 
     const handleSendMessage = useCallback(async (author: string, text: string) => {
         if (!text.trim()) return;
 
-        // Normalização do autor: remove o @ inicial caso venha da API do YouTube
-        // para evitar mensagens com @@ (ex: @@usuario)
-        if (author.startsWith('@')) {
-            author = author.substring(1);
-        }
+        // Normalização do autor: remove @ e espaços extras
+        author = author.trim().replace(/@/g, '');
 
         const userMessage: Message = { author, text, type: 'user' };
         setMessages(prev => [...prev, userMessage]);

@@ -10,7 +10,7 @@ interface LoyaltySettingsProps {
     };
     onSaveSettings: (settings: any) => void;
     onResetPoints: () => void;
-    onAddPoints: (username: string, points: number) => Promise<boolean>;
+    onAddPoints: (username: string, points: number) => Promise<{ success: boolean; error?: string }>;
     currentOwnerId?: string;
 }
 
@@ -104,18 +104,18 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({
                                     setErrorMessage(null);
 
                                     try {
-                                        const success = await onAddPoints(normalizedUser, manualPoints);
-                                        if (success) {
+                                        const result = await onAddPoints(normalizedUser, manualPoints);
+                                        if (result.success) {
                                             setSuccessMessage(`✅ Sucesso! @${normalizedUser} recebeu os pontos.`);
                                             setManualUser('');
                                             setManualPoints(0);
                                             fetchLeaderboard();
                                             setTimeout(() => setSuccessMessage(null), 8000);
                                         } else {
-                                            setErrorMessage(`❌ Erro ao adicionar pontos para @${normalizedUser}. Verifique o nome.`);
+                                            setErrorMessage(`❌ ${result.error || `Erro ao adicionar pontos para @${normalizedUser}.`}`);
                                         }
-                                    } catch (err) {
-                                        setErrorMessage("❌ Ocorreu um erro inesperado.");
+                                    } catch (err: any) {
+                                        setErrorMessage(`❌ Erro inesperado: ${err.message}`);
                                     } finally {
                                         setIsAddingPoints(false);
                                     }
