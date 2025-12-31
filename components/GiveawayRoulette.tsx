@@ -233,12 +233,34 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
                 playWinSound();
 
                 // 🔥 Confetti celebration!
-                confetti({
-                    particleCount: 150,
-                    spread: 70,
-                    origin: { y: 0.6 },
-                    colors: ['#3ABEF9', '#F9C80E', '#F87060', '#A1E887', '#9D4EDD', '#F15BB5']
-                });
+                console.log('[Confetti] Ganhador anunciado! Disparando confetes para:', participants[winningIndex]);
+
+                const duration = 3 * 1000;
+                const end = Date.now() + duration;
+
+                const frame = () => {
+                    confetti({
+                        particleCount: 5,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0, y: 0.7 },
+                        zIndex: 9999,
+                        colors: ['#3ABEF9', '#F9C80E', '#F87060', '#A1E887', '#9D4EDD', '#F15BB5']
+                    });
+                    confetti({
+                        particleCount: 5,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1, y: 0.7 },
+                        zIndex: 9999,
+                        colors: ['#3ABEF9', '#F9C80E', '#F87060', '#A1E887', '#9D4EDD', '#F15BB5']
+                    });
+
+                    if (Date.now() < end) {
+                        requestAnimationFrame(frame);
+                    }
+                };
+                frame();
             }
         };
 
