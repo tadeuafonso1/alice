@@ -78,6 +78,22 @@ export const HomePage: React.FC = () => {
     const [activeChatters, setActiveChatters] = useState<Record<string, number>>({});
     const [giveawayParticipants, setGiveawayParticipants] = useState<Set<string>>(new Set());
 
+    // Persistence: Load giveaway participants
+    useEffect(() => {
+        const saved = localStorage.getItem('alice_giveaway_external');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) setGiveawayParticipants(new Set(parsed));
+            } catch (e) { console.error('Error loading giveaway state', e); }
+        }
+    }, []);
+
+    // Persistence: Save giveaway participants
+    useEffect(() => {
+        localStorage.setItem('alice_giveaway_external', JSON.stringify(Array.from(giveawayParticipants)));
+    }, [giveawayParticipants]);
+
     // Estado para a conexão com o YouTube
     const [liveChatId, setLiveChatId] = useState<string>('');
     const [channelTitle, setChannelTitle] = useState<string>('');

@@ -16,6 +16,42 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
 }) => {
     const [participants, setParticipants] = useState<string[]>([]);
     const [inputValue, setInputValue] = useState('');
+    const [isSpinning, setIsSpinning] = useState(false);
+    const [winner, setWinner] = useState<string | null>(null);
+
+    // Persistence: Load from localStorage
+    useEffect(() => {
+        const saved = localStorage.getItem('alice_giveaway_participants');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) setParticipants(parsed);
+            } catch (e) { console.error('Error loading giveaway participants', e); }
+        }
+
+        const savedWinner = localStorage.getItem('alice_giveaway_winner');
+        if (savedWinner) setWinner(savedWinner);
+
+        const savedAngle = localStorage.getItem('alice_giveaway_angle');
+        if (savedAngle) spinAngleRef.current = parseFloat(savedAngle);
+    }, []);
+
+    // Persistence: Save to localStorage
+    useEffect(() => {
+        localStorage.setItem('alice_giveaway_participants', JSON.stringify(participants));
+    }, [participants]);
+
+    useEffect(() => {
+        localStorage.setItem('alice_giveaway_angle', spinAngleRef.current.toString());
+    }, [isSpinning]); // Save after spin ends or starts
+
+    useEffect(() => {
+        if (winner) {
+            localStorage.setItem('alice_giveaway_winner', winner);
+        } else {
+            localStorage.removeItem('alice_giveaway_winner');
+        }
+    }, [winner]);
 
     // Auto-import external participants (!participar command)
     useEffect(() => {
@@ -26,8 +62,7 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
             });
         }
     }, [externalParticipants]);
-    const [isSpinning, setIsSpinning] = useState(false);
-    const [winner, setWinner] = useState<string | null>(null);
+
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const spinAngleRef = useRef(0);
     const lastTickAngleRef = useRef(0);
@@ -239,6 +274,8 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
             setParticipants([]);
             setWinner(null);
             spinAngleRef.current = 0;
+            localStorage.removeItem('alice_giveaway_winner');
+            localStorage.removeItem('alice_giveaway_angle');
             if (onClearExternalParticipants) {
                 onClearExternalParticipants();
             }
