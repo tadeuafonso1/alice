@@ -546,7 +546,7 @@ export const HomePage: React.FC = () => {
         }));
 
         // Sistema de Lealdade: Ganhar pontos por mensagem
-        if (appSettings.loyalty.enabled && author !== adminName) {
+        if (appSettings.loyalty.enabled) {
             supabase.rpc('increment_loyalty_points', {
                 p_username: author,
                 p_points: appSettings.loyalty.pointsPerMessage,
@@ -563,7 +563,7 @@ export const HomePage: React.FC = () => {
 
         // Verificar custo de comando se o sistema de lealdade estiver ativo
         console.log(`[Loyalty Debug] author: "${author}", adminName: "${adminName}", isAdmin: ${author === adminName}`);
-        if (loyalty.enabled && author !== adminName) {
+        if (loyalty.enabled) {
             console.log('[Loyalty] Sistema de lealdade ativo, verificando custo do comando...');
 
             // Tenta encontrar se o texto é algum comando existente
