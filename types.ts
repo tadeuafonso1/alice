@@ -25,7 +25,6 @@ export interface CommandSettings {
   timerOff: CommandSetting;
   queueList: CommandSetting;
   playingList: CommandSetting;
-  loyaltyPoints: CommandSetting;
 }
 
 export interface MessageSetting {
@@ -55,18 +54,11 @@ export interface MessageSettings {
   queueListEmpty: MessageSetting;
   playingList: MessageSetting;
   playingListEmpty: MessageSetting;
-  loyaltyPoints: MessageSetting;
 }
 
 export interface CustomCommand {
   command: string;
   response: string;
-}
-
-export interface LoyaltySetting {
-  pointsPerInterval: number;
-  intervalMinutes: number;
-  enabled: boolean;
 }
 
 export interface AppSettings {
@@ -75,5 +67,4 @@ export interface AppSettings {
   messages: MessageSettings;
   customCommands: CustomCommand[];
   youtubeChannelId?: string;
-  loyalty?: LoyaltySetting;
 }

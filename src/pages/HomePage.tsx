@@ -7,7 +7,6 @@ import { PlayingDisplay } from '@/components/PlayingDisplay';
 import { SettingsModal } from '@/components/SettingsModal';
 import { YouTubeSettings } from '@/components/YouTubeSettings';
 import { TimerSettings } from '@/components/TimerSettings';
-import { LoyaltySettings } from '@/components/LoyaltySettings';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings } from '@/types';
 import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, UsersIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon } from '@/components/Icons';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,7 +28,6 @@ const defaultSettings: AppSettings = {
         reset: { command: '!resetar', enabled: true },
         queueList: { command: '!fila', enabled: true },
         playingList: { command: '!jogando', enabled: true },
-        loyaltyPoints: { command: '!pontos', enabled: true },
     },
     messages: {
         userExistsQueue: { text: '@{user}, você já está na fila na posição {position}.', enabled: true },
@@ -53,15 +51,9 @@ const defaultSettings: AppSettings = {
         queueListEmpty: { text: 'A fila de espera está vazia.', enabled: true },
         playingList: { text: 'Jogando agora: {list}', enabled: true },
         playingListEmpty: { text: 'Ninguém está jogando no momento.', enabled: true },
-        loyaltyPoints: { text: '@{user}, você tem {points} pontos de lealdade!', enabled: true },
     },
     customCommands: [],
     youtubeChannelId: '',
-    loyalty: {
-        pointsPerInterval: 10,
-        intervalMinutes: 10,
-        enabled: false,
-    },
 };
 
 export const HomePage: React.FC = () => {
@@ -95,8 +87,6 @@ export const HomePage: React.FC = () => {
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const processedMessageIds = useRef<Set<string>>(new Set());
     const isFetchingRef = useRef(false);
-    const lastLoyaltyAwardRef = useRef<number>(Number(localStorage.getItem('alice_last_loyalty_award')) || Date.now());
-    const activeChattersRef = useRef<Set<string>>(new Set());
 
     // Layout State
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -172,7 +162,7 @@ export const HomePage: React.FC = () => {
             console.log('[sendToYouTubeChat] Resposta:', { data, error });
 
             if (data && data.success === false) {
-                const errorText = `[Erro YouTube] ${data.error}`;
+                const errorText = `[Erro YouTube] ${data.error} `;
                 console.error('[sendToYouTubeChat] Erro retornado pela API:', data.error);
                 setMessages(prev => [...prev, { author: appSettings.botName, text: errorText, type: 'bot' }]);
                 return;
@@ -180,7 +170,7 @@ export const HomePage: React.FC = () => {
 
             if (error) {
                 console.error('[sendToYouTubeChat] Erro de rede/servidor:', error);
-                const errorText = `[Erro YouTube] Falha na rede/servidor: ${error.message}`;
+                const errorText = `[Erro YouTube] Falha na rede / servidor: ${error.message} `;
                 setMessages(prev => [...prev, { author: appSettings.botName, text: errorText, type: 'bot' }]);
                 return;
             }
@@ -188,7 +178,7 @@ export const HomePage: React.FC = () => {
             console.log('[sendToYouTubeChat] ✅ Mensagem enviada com sucesso!');
         } catch (error: any) {
             console.error('[sendToYouTubeChat] Exceção:', error);
-            const errorText = `[Erro YouTube] Exceção: ${error.message}`;
+            const errorText = `[Erro YouTube]Exceção: ${error.message} `;
             setMessages(prev => [...prev, { author: appSettings.botName, text: errorText, type: 'bot' }]);
         }
     }, [liveChatId, appSettings.botName, addBotMessage]);
@@ -209,10 +199,10 @@ export const HomePage: React.FC = () => {
                     if (key === 'user' && strValue.startsWith('@') && text.includes('@{user}')) {
                         strValue = strValue.substring(1);
                     }
-                    text = text.replace(new RegExp(`{${key}}`, 'g'), strValue);
+                    text = text.replace(new RegExp(`{${key} } `, 'g'), strValue);
                 });
             }
-            console.log(`[sendBotMessage] Enviando mensagem "${messageKey}":`, text);
+            console.log(`[sendBotMessage] Enviando mensagem "${messageKey}": `, text);
             addBotMessage(text, true);
         }
     }, [appSettings.messages, addBotMessage]);
@@ -260,7 +250,6 @@ export const HomePage: React.FC = () => {
                     }
                     mergedSettings.customCommands = dbSettings.customCommands || [];
                     if (dbSettings.youtubeChannelId) mergedSettings.youtubeChannelId = dbSettings.youtubeChannelId;
-                    if (dbSettings.loyalty) mergedSettings.loyalty = { ...mergedSettings.loyalty, ...dbSettings.loyalty };
 
                     setAppSettings(mergedSettings);
                 }
@@ -313,7 +302,7 @@ export const HomePage: React.FC = () => {
                 console.error("Error fetching initial data:", error);
                 // Não alertar erro se for apenas falta de dados iniciais
                 if (error.code !== 'PGRST116') {
-                    addBotMessageRef.current(`Erro ao carregar dados: ${error.message}`);
+                    addBotMessageRef.current(`Erro ao carregar dados: ${error.message} `);
                 }
             } finally {
                 setIsLoadingSettings(false);
@@ -357,7 +346,7 @@ export const HomePage: React.FC = () => {
         } catch (error: any) {
             console.error("Failed to save settings to Supabase:", error);
             const msg = error.message || "Erro desconhecido";
-            addBotMessage(`Erro ao salvar configurações: ${msg}`);
+            addBotMessage(`Erro ao salvar configurações: ${msg} `);
         }
     };
 
@@ -488,54 +477,6 @@ export const HomePage: React.FC = () => {
         }
     }, [isTimerActive, deactivateTimer, activateTimer]);
 
-    const handleResetLoyaltyPoints = useCallback(async () => {
-        try {
-            const { data: { session: currentSession } } = await supabase.auth.getSession();
-            if (!currentSession?.user?.id) return;
-
-            const { error } = await supabase
-                .from('loyalty_points')
-                .delete()
-                .eq('owner_id', currentSession.user.id);
-
-            if (error) throw error;
-            addBotMessage("Todos os pontos de lealdade foram zerados!");
-        } catch (error: any) {
-            console.error("Error resetting loyalty points:", error);
-            addBotMessage(`Erro ao zerar pontos: ${error.message}`);
-        }
-    }, [addBotMessage]);
-
-    const handleAddManualPoints = useCallback(async (username: string, points: number): Promise<{ success: boolean; error?: string }> => {
-        try {
-            // Normalizar username: remove todos os @, espaços e converte para minúsculas
-            const normalizedUsername = username.trim().replace(/@/g, '').toLowerCase();
-            if (!normalizedUsername) return { success: false, error: "Nome de usuário inválido." };
-
-            const { data: { session: currentSession } } = await supabase.auth.getSession();
-            if (!currentSession?.user?.id) return { success: false, error: "Sessão expirada. Faça login novamente." };
-
-            const { error } = await supabase.rpc('increment_loyalty_points', {
-                p_username: normalizedUsername,
-                p_points: points,
-                p_owner_id: currentSession.user.id
-            });
-
-            if (error) {
-                console.error("[Loyalty] Erro no RPC:", error);
-                return { success: false, error: error.message };
-            }
-
-            addBotMessage(`Pontos de ${normalizedUsername} atualizados com sucesso (${points > 0 ? '+' : ''}${points}).`);
-            return { success: true };
-        } catch (error: any) {
-            console.error("Error adding manual points:", error);
-            const msg = error.message || "Erro desconhecido.";
-            addBotMessage(`Erro ao atualizar pontos: ${msg}`);
-            return { success: false, error: msg };
-        }
-    }, [addBotMessage]);
-
     const handleSendMessage = useCallback(async (author: string, text: string) => {
         if (!text.trim()) return;
 
@@ -545,10 +486,6 @@ export const HomePage: React.FC = () => {
         const userMessage: Message = { author, text, type: 'user' };
         setMessages(prev => [...prev, userMessage]);
 
-        // Registrar atividade para o sistema de lealdade
-        if (appSettings.loyalty?.enabled) {
-            activeChattersRef.current.add(author);
-        }
 
         const normalizeText = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         const commandText = normalizeText(text.trim());
@@ -616,7 +553,7 @@ export const HomePage: React.FC = () => {
                 const nickname = parts.length > 1 ? parts.slice(1).join(' ') : undefined;
 
                 if (!nickname) {
-                    addBotMessage(`@${author}, você precisa fornecer um apelido para entrar na fila. Ex: ${commands.join.command} SeuApelido`, true);
+                    addBotMessage(`@${author}, você precisa fornecer um apelido para entrar na fila.Ex: ${commands.join.command} SeuApelido`, true);
                     return;
                 }
 
@@ -664,7 +601,7 @@ export const HomePage: React.FC = () => {
             if (isUserInQueue || isUserPlaying) {
                 const newNickname = text.trim().split(' ').slice(1).join(' ');
                 if (!newNickname) {
-                    addBotMessage(`@${author}, você precisa fornecer um apelido. Ex: ${commands.nick.command} MeuApelido`, true);
+                    addBotMessage(`@${author}, você precisa fornecer um apelido.Ex: ${commands.nick.command} MeuApelido`, true);
                     return;
                 }
 
@@ -711,7 +648,7 @@ export const HomePage: React.FC = () => {
             }
         } else if (commands.queueList.enabled && commandText === commands.queueList.command) {
             if (queue.length > 0) {
-                const list = queue.slice(0, 5).map((u, i) => `${i + 1}. ${u.user}`).join(', ');
+                const list = queue.slice(0, 5).map((u, i) => `${i + 1}. ${u.user} `).join(', ');
                 sendBotMessage('queueList', { list });
             } else {
                 sendBotMessage('queueListEmpty');
@@ -722,25 +659,6 @@ export const HomePage: React.FC = () => {
                 sendBotMessage('playingList', { list });
             } else {
                 sendBotMessage('playingListEmpty');
-            }
-        } else if (commands.loyaltyPoints.enabled && (commandText === normalizeText(commands.loyaltyPoints.command) || commandText === '!points')) {
-            try {
-                const { data: { session: currentSession } } = await supabase.auth.getSession();
-                if (currentSession?.user?.id) {
-                    const { data, error } = await supabase
-                        .from('loyalty_points')
-                        .select('points')
-                        .eq('username', author.toLowerCase())
-                        .eq('owner_id', currentSession.user.id)
-                        .maybeSingle();
-
-                    if (error) throw error;
-                    const points = data?.points || 0;
-                    sendBotMessage('loyaltyPoints', { user: author, points });
-                }
-            } catch (err) {
-                console.error('[Loyalty] Erro ao buscar pontos:', err);
-                addBotMessage(`@${author}, erro ao verificar seus pontos.`);
             }
         } else {
             const customCommand = customCommands.find(c => normalizeText(c.command) === commandText);
@@ -817,7 +735,7 @@ export const HomePage: React.FC = () => {
             }
         } catch (error: any) {
             consecutiveErrorsRef.current += 1;
-            console.error(`Erro ao buscar mensagens do YouTube (Falha ${consecutiveErrorsRef.current}/3):`, error);
+            console.error(`Erro ao buscar mensagens do YouTube(Falha ${consecutiveErrorsRef.current} / 3): `, error);
 
             // Se atingir 3 erros consecutivos, tenta reconectar silenciosamente antes de parar
             if (consecutiveErrorsRef.current >= 3) {
@@ -880,7 +798,7 @@ export const HomePage: React.FC = () => {
                 if (hasGoogleIdentity && !silent) {
                     addBotMessage("Sessão expirada e canal não identificado. Tente reconectar nas configurações.");
                 } else if (!hasGoogleIdentity && !silent) {
-                    addBotMessage(`Erro: Nenhuma conta do YouTube vinculada. Identidades: ${identities}.`);
+                    addBotMessage(`Erro: Nenhuma conta do YouTube vinculada.Identidades: ${identities}.`);
                 }
                 return;
             }
@@ -1181,44 +1099,6 @@ export const HomePage: React.FC = () => {
         return () => clearInterval(intervalId);
     }, [isTimerActive]);
 
-    // Sistema de Lealdade: Acúmulo de Pontos
-    useEffect(() => {
-        const { loyalty } = appSettings;
-        if (!loyalty?.enabled) return;
-
-        const intervalId = setInterval(async () => {
-            const now = Date.now();
-            const intervalMs = loyalty.intervalMinutes * 60 * 1000;
-
-            if (now - lastLoyaltyAwardRef.current >= intervalMs) {
-                const chatters = Array.from(activeChattersRef.current);
-                if (chatters.length > 0) {
-                    console.log(`[Loyalty] Atribuindo ${loyalty.pointsPerInterval} pontos para ${chatters.length} usuários.`);
-                    try {
-                        const { data: { session: currentSession } } = await supabase.auth.getSession();
-                        if (!currentSession?.user?.id) return;
-
-                        // Upsert pontos para todos os usuários ativos
-                        for (const username of chatters) {
-                            const { error } = await supabase.rpc('increment_loyalty_points', {
-                                p_username: username.toLowerCase(),
-                                p_points: loyalty.pointsPerInterval,
-                                p_owner_id: currentSession.user.id
-                            });
-                            if (error) console.error(`[Loyalty] Erro ao atribuir pontos para ${username}:`, error);
-                        }
-                    } catch (err) {
-                        console.error('[Loyalty] Erro no loop de pontos:', err);
-                    }
-                }
-                lastLoyaltyAwardRef.current = now;
-                localStorage.setItem('alice_last_loyalty_award', now.toString());
-                activeChattersRef.current.clear();
-            }
-        }, 30000); // Verifica a cada 30 segundos
-
-        return () => clearInterval(intervalId);
-    }, [appSettings.loyalty]);
 
 
     return (
@@ -1257,12 +1137,12 @@ export const HomePage: React.FC = () => {
 
                         <div className="flex items-center gap-6">
                             {/* YouTube Controls */}
-                            <div className={`hidden md:flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300 border ${isPolling ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-gray-50 dark:bg-[#162036] border-gray-200 dark:border-gray-800'}`}>
+                            <div className={`hidden md:flex items - center gap - 3 px - 4 py - 2 rounded - xl transition - all duration - 300 border ${isPolling ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-gray-50 dark:bg-[#162036] border-gray-200 dark:border-gray-800'} `}>
                                 {googleConnected ? (
                                     <>
                                         <div className="flex items-center gap-3">
                                             <div className="relative">
-                                                <div className={`p-1.5 rounded-lg ${isPolling ? 'bg-emerald-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
+                                                <div className={`p - 1.5 rounded - lg ${isPolling ? 'bg-emerald-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'} `}>
                                                     <YoutubeIcon className="w-4 h-4" />
                                                 </div>
                                                 {isPolling && (
@@ -1274,7 +1154,7 @@ export const HomePage: React.FC = () => {
                                             </div>
 
                                             <div className="flex flex-col">
-                                                <span className={`text-[10px] font-black uppercase tracking-wider ${isPolling ? 'text-emerald-500' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                <span className={`text - [10px] font - black uppercase tracking - wider ${isPolling ? 'text-emerald-500' : 'text-gray-500 dark:text-gray-400'} `}>
                                                     {isPolling ? 'Ao Vivo' : 'YouTube'}
                                                 </span>
                                                 <span className="text-[10px] font-medium text-gray-400">
@@ -1301,11 +1181,11 @@ export const HomePage: React.FC = () => {
                                             <button
                                                 onClick={handleFindLiveChat}
                                                 disabled={isFindingChat}
-                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all
+                                                className={`flex items - center gap - 2 px - 3 py - 1.5 rounded - lg text - [10px] font - black uppercase tracking - wider transition - all
                                                     ${isFindingChat
                                                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                         : 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 active:scale-95'
-                                                    }`}
+                                                    } `}
                                             >
                                                 {isFindingChat ? (
                                                     <RefreshCwIcon className="w-3 h-3 animate-spin" />
@@ -1371,7 +1251,7 @@ export const HomePage: React.FC = () => {
 
                                 {/* Column 3: Chat */}
                                 <div className="xl:col-span-1 h-full overflow-hidden">
-                                    <div className={`bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl overflow-hidden flex flex-col transition-all duration-300 h-full`}>
+                                    <div className={`bg - white dark: bg - [#131b2e] border border - gray - 200 dark: border - gray - 800 rounded - 2xl shadow - xl overflow - hidden flex flex - col transition - all duration - 300 h - full`}>
                                         <div
                                             className="p-4 bg-gray-50 dark:bg-[#162036] border-b border-gray-200 dark:border-gray-800 flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-[#1f2937] transition-colors flex-shrink-0"
                                             onClick={() => setIsChatVisible(!isChatVisible)}
@@ -1497,15 +1377,6 @@ export const HomePage: React.FC = () => {
                             />
                         )}
 
-                        {activeTab === 'loyalty' && (
-                            <LoyaltySettings
-                                loyaltySettings={appSettings.loyalty!}
-                                onSaveSettings={(newLoyalty) => handleSettingsSave({ ...appSettings, loyalty: newLoyalty })}
-                                onResetPoints={handleResetLoyaltyPoints}
-                                onAddPoints={handleAddManualPoints}
-                                currentOwnerId={session?.user?.id}
-                            />
-                        )}
                     </div>
 
                     <footer className="py-6 border-t border-gray-200 dark:border-gray-800 text-center bg-white dark:bg-[#131b2e] flex-shrink-0">
