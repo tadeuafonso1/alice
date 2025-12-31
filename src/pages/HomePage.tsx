@@ -546,33 +546,61 @@ export const HomePage: React.FC = () => {
 
         // Verificar custo de comando se o sistema de lealdade estiver ativo
         if (loyalty.enabled && author !== adminName) {
+            console.log('[Loyalty] Sistema de lealdade ativo, verificando custo do comando...');
+
             // Tenta encontrar se o texto é algum comando existente
             let commandToExecute: CommandSetting | null = null;
-            if (commandText.startsWith(commands.join.command)) commandToExecute = commands.join;
-            else if (commandText === commands.leave.command) commandToExecute = commands.leave;
-            else if (commandText === commands.position.command || commandText === '!posicao' || commandText === '!posição') commandToExecute = commands.position;
-            else if (commandText.startsWith(commands.nick.command)) commandToExecute = commands.nick;
-            else if (commandText === commands.queueList.command) commandToExecute = commands.queueList;
-            else if (commandText === commands.playingList.command) commandToExecute = commands.playingList;
-            else if (commandText === commands.participate.command) commandToExecute = commands.participate;
+            let commandName = '';
+
+            if (commandText.startsWith(commands.join.command)) {
+                commandToExecute = commands.join;
+                commandName = 'join';
+            } else if (commandText === commands.leave.command) {
+                commandToExecute = commands.leave;
+                commandName = 'leave';
+            } else if (commandText === commands.position.command || commandText === '!posicao' || commandText === '!posição') {
+                commandToExecute = commands.position;
+                commandName = 'position';
+            } else if (commandText.startsWith(commands.nick.command)) {
+                commandToExecute = commands.nick;
+                commandName = 'nick';
+            } else if (commandText === commands.queueList.command) {
+                commandToExecute = commands.queueList;
+                commandName = 'queueList';
+            } else if (commandText === commands.playingList.command) {
+                commandToExecute = commands.playingList;
+                commandName = 'playingList';
+            } else if (commandText === commands.participate.command) {
+                commandToExecute = commands.participate;
+                commandName = 'participate';
+            }
 
             if (commandToExecute && commandToExecute.enabled && (commandToExecute.cost || 0) > 0) {
                 const cost = commandToExecute.cost || 0;
-                const { data: userPointsData } = await supabase
+                console.log(`[Loyalty] Comando "${commandName}" detectado com custo de ${cost} pontos para @${author}`);
+
+                const { data: userPointsData, error: fetchError } = await supabase
                     .from('loyalty_points')
                     .select('points')
                     .eq('username', author)
                     .eq('owner_id', session?.user?.id)
                     .maybeSingle();
 
+                if (fetchError) {
+                    console.error('[Loyalty] Erro ao buscar pontos do usuário:', fetchError);
+                }
+
                 const currentPoints = userPointsData?.points || 0;
+                console.log(`[Loyalty] Pontos atuais de @${author}: ${currentPoints}`);
 
                 if (currentPoints < cost) {
+                    console.log(`[Loyalty] ❌ Pontos insuficientes! Necessário: ${cost}, Disponível: ${currentPoints}`);
                     sendBotMessage('insufficientPoints', { user: author, cost, points: currentPoints });
                     return;
                 }
 
                 // Deduzir pontos
+                console.log(`[Loyalty] Deduzindo ${cost} pontos de @${author}...`);
                 const { error: deductError } = await supabase.rpc('increment_loyalty_points', {
                     p_username: author,
                     p_points: -cost,
@@ -580,10 +608,18 @@ export const HomePage: React.FC = () => {
                 });
 
                 if (deductError) {
-                    console.error('Error deducting points:', deductError);
+                    console.error('[Loyalty] ❌ Erro ao deduzir pontos:', deductError);
                     addBotMessage(`Erro ao processar custo do comando para @${author}.`);
                     return;
                 }
+
+                const newBalance = currentPoints - cost;
+                console.log(`[Loyalty] ✅ Pontos deduzidos com sucesso! Novo saldo de @${author}: ${newBalance}`);
+
+                // Mensagem de confirmação ao usuário (opcional, pode comentar se preferir silencioso)
+                addBotMessage(`💰 ${cost} pontos deduzidos de @${author}. Saldo: ${newBalance} pontos.`, true);
+            } else if (commandToExecute && commandToExecute.enabled) {
+                console.log(`[Loyalty] Comando "${commandName}" não tem custo configurado`);
             }
         }
 
