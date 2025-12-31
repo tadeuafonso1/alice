@@ -206,10 +206,10 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
             </div>
 
             {/* Main Wheel Area */}
-            <div className="flex-grow bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-3xl p-8 shadow-xl flex flex-col items-center justify-center relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500 opacity-50" />
+            <div className="flex-grow bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-3xl p-8 shadow-xl flex flex-col items-center relative min-h-[600px]">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500 opacity-50 rounded-t-3xl" />
 
-                <header className="absolute top-8 left-8">
+                <header className="w-full flex justify-start mb-4">
                     <div className="flex items-center gap-3">
                         <div className="p-3 bg-red-500 shadow-lg shadow-red-500/30 rounded-2xl rotate-3">
                             <span className="text-white font-black text-xl">R</span>
@@ -218,7 +218,7 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
                     </div>
                 </header>
 
-                <div className="relative mt-8">
+                <div className="relative mt-4 flex-grow flex items-center justify-center w-full">
                     {/* Pointer */}
                     <div className="absolute -right-4 top-1/2 -translate-y-1/2 z-20">
                         <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow-2xl border-4 border-white dark:border-[#131b2e]">
@@ -231,7 +231,7 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
                         ref={canvasRef}
                         width={500}
                         height={500}
-                        className={`max-w-full h-auto drop-shadow-2xl transition-transform ${isSpinning ? 'scale-[1.02]' : 'scale-100'} `}
+                        className={`max-w-full max-h-[500px] w-auto h-auto drop-shadow-2xl transition-transform ${isSpinning ? 'scale-[1.02]' : 'scale-100'}`}
                     />
                 </div>
 
