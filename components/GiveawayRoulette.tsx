@@ -206,7 +206,7 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
             </div>
 
             {/* Main Wheel Area */}
-            <div className="flex-grow bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-3xl p-8 shadow-xl flex flex-col items-center relative min-h-[600px]">
+            <div className="flex-grow bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 md:p-8 shadow-xl flex flex-col items-center relative min-h-0 overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500 opacity-50 rounded-t-3xl" />
 
                 <header className="w-full flex justify-start mb-4">
@@ -218,31 +218,33 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
                     </div>
                 </header>
 
-                <div className="relative mt-4 flex-grow flex items-center justify-center w-full">
-                    {/* Pointer */}
-                    <div className="absolute -right-4 top-1/2 -translate-y-1/2 z-20">
-                        <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow-2xl border-4 border-white dark:border-[#131b2e]">
-                            <div className="w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-l-[12px] border-l-red-500 absolute -left-2" />
+                <div className="flex-grow flex flex-col items-center justify-center w-full min-h-0">
+                    <div className="relative w-fit h-fit flex items-center justify-center mt-4">
+                        {/* Pointer - Positioned relative to wheel container */}
+                        <div className="absolute -right-6 md:-right-8 top-1/2 -translate-y-1/2 z-20">
+                            <div className="w-8 h-8 md:w-10 md:h-10 bg-red-500 rounded-full flex items-center justify-center shadow-2xl border-4 border-white dark:border-[#131b2e]">
+                                <div className="w-0 h-0 border-t-[6px] md:border-t-[8px] border-t-transparent border-b-[6px] md:border-b-[8px] border-b-transparent border-l-[10px] md:border-l-[12px] border-l-red-500 absolute -left-2" />
+                            </div>
                         </div>
-                    </div>
 
-                    {/* The Wheel */}
-                    <canvas
-                        ref={canvasRef}
-                        width={500}
-                        height={500}
-                        className={`max-w-full max-h-[500px] w-auto h-auto drop-shadow-2xl transition-transform ${isSpinning ? 'scale-[1.02]' : 'scale-100'}`}
-                    />
+                        {/* The Wheel */}
+                        <canvas
+                            ref={canvasRef}
+                            width={440}
+                            height={440}
+                            className={`max-w-full max-h-[40vh] md:max-h-[440px] h-auto w-auto drop-shadow-2xl transition-transform ${isSpinning ? 'scale-[1.02]' : 'scale-100'}`}
+                        />
+                    </div>
                 </div>
 
-                <div className="mt-12 flex flex-col items-center gap-6 w-full max-w-md">
+                <div className="mt-8 flex flex-col items-center gap-4 w-full max-w-md shrink-0">
                     {winner && !isSpinning && (
                         <div className="text-center animate-in zoom-in fade-in duration-500">
-                            <div className="flex items-center justify-center gap-2 text-emerald-500 mb-1">
-                                <TrophyIcon className="w-5 h-5 animate-bounce" />
-                                <span className="text-xs font-black uppercase tracking-widest">Vencedor(a)</span>
+                            <div className="flex items-center justify-center gap-2 text-emerald-500 mb-0.5">
+                                <TrophyIcon className="w-4 h-4 animate-bounce" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Vencedor(a)</span>
                             </div>
-                            <div className="text-5xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-1 drop-shadow-sm">
+                            <div className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter drop-shadow-sm">
                                 {winner}
                             </div>
                         </div>
@@ -251,29 +253,29 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
                     <button
                         onClick={handleSpin}
                         disabled={isSpinning || participants.length < 2}
-                        className={`group relative w-full py-5 rounded-2xl font-black text-xl uppercase tracking-widest transition-all
+                        className={`group relative w-full py-4 rounded-xl font-black text-lg uppercase tracking-widest transition-all
                             ${isSpinning || participants.length < 2
                                 ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed opacity-50'
                                 : 'bg-blue-600 hover:bg-blue-700 text-white shadow-2xl shadow-blue-500/40 active:scale-95'
                             } `}
                     >
-                        <span className="flex items-center justify-center gap-3">
+                        <span className="flex items-center justify-center gap-2">
                             {isSpinning ? (
                                 <>
-                                    <RefreshCwIcon className="w-6 h-6 animate-spin" />
+                                    <RefreshCwIcon className="w-5 h-5 animate-spin" />
                                     Girando...
                                 </>
                             ) : (
                                 <>
                                     Girar Roleta
-                                    <GiftIcon className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                                    <GiftIcon className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                                 </>
                             )}
                         </span>
                     </button>
 
                     {participants.length < 2 && (
-                        <p className="text-xs text-gray-500 font-medium">Adicione ao menos 2 participantes para girar</p>
+                        <p className="text-[10px] text-gray-400 font-medium whitespace-nowrap">Adicione ao menos 2 participantes para girar</p>
                     )}
                 </div>
             </div>
