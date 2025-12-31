@@ -1,16 +1,18 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { GiftIcon, RefreshCwIcon, TrophyIcon, UsersIcon, TimerIcon } from './Icons';
+import { GiftIcon, RefreshCwIcon, TrophyIcon, UsersIcon, TimerIcon, TrashIcon } from './Icons';
 
 interface GiveawayRouletteProps {
     activeChatters: Record<string, number>;
     externalParticipants?: string[];
     onClearExternalParticipants?: () => void;
+    onRemoveExternalParticipant?: (name: string) => void;
 }
 
 export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
     activeChatters,
     externalParticipants = [],
-    onClearExternalParticipants
+    onClearExternalParticipants,
+    onRemoveExternalParticipant
 }) => {
     const [participants, setParticipants] = useState<string[]>([]);
     const [inputValue, setInputValue] = useState('');
@@ -243,6 +245,13 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
         }
     };
 
+    const handleRemoveParticipant = (name: string) => {
+        setParticipants(prev => prev.filter(p => p !== name));
+        if (onRemoveExternalParticipant) {
+            onRemoveExternalParticipant(name);
+        }
+    };
+
     return (
         <div className="flex flex-col lg:flex-row gap-8 h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Sidebar Controls */}
@@ -302,9 +311,16 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
                     </div>
                     <div className="flex-grow overflow-y-auto custom-scrollbar space-y-1">
                         {participants.map((name, i) => (
-                            <div key={i} className="flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-100 bg-gray-50 dark:bg-[#1e293b] px-3 py-2 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm">
+                            <div key={i} className="group flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-100 bg-gray-50 dark:bg-[#1e293b] px-3 py-2 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm hover:border-gray-300 dark:hover:border-white/10 transition-all">
                                 <span className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm" style={{ backgroundColor: colors[i % colors.length] }} />
-                                <span className="truncate font-bold">{name}</span>
+                                <span className="truncate font-bold flex-grow">{name}</span>
+                                <button
+                                    onClick={() => handleRemoveParticipant(name)}
+                                    className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                                    title="Remover participante"
+                                >
+                                    <TrashIcon className="w-3.5 h-3.5" />
+                                </button>
                             </div>
                         ))}
                     </div>

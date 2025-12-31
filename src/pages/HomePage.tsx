@@ -1408,6 +1408,13 @@ export const HomePage: React.FC = () => {
                                 activeChatters={activeChatters}
                                 externalParticipants={Array.from(giveawayParticipants)}
                                 onClearExternalParticipants={() => setGiveawayParticipants(new Set())}
+                                onRemoveExternalParticipant={(name) => {
+                                    setGiveawayParticipants(prev => {
+                                        const next = new Set(prev);
+                                        next.delete(name);
+                                        return next;
+                                    });
+                                }}
                             />
                         )}
 
