@@ -246,7 +246,7 @@ export const HomePage: React.FC = () => {
                     if (key === 'user' && strValue.startsWith('@') && text.includes('@{user}')) {
                         strValue = strValue.substring(1);
                     }
-                    text = text.replace(new RegExp(`{${key} } `, 'g'), strValue);
+                    text = text.replace(new RegExp(`\\{${key}\\}`, 'g'), strValue);
                 });
             }
             console.log(`[sendBotMessage] Enviando mensagem "${messageKey}": `, text);
