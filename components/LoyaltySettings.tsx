@@ -15,6 +15,14 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
     const [isLoading, setIsLoading] = React.useState(false);
     const [searchTerm, setSearchTerm] = React.useState('');
     const [pointsToUpdate, setPointsToUpdate] = React.useState<number>(100);
+    const [manualUsername, setManualUsername] = React.useState('');
+    const [manualAmount, setManualAmount] = React.useState<number>(100);
+    const [notification, setNotification] = React.useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification(null), 3000);
+    };
 
     const fetchLeaderboard = React.useCallback(async () => {
         if (!session?.user?.id) return;
@@ -51,19 +59,28 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
     };
 
     const handleManualPoints = async (username: string, amount: number) => {
-        if (!session?.user?.id) return;
+        if (!session?.user?.id || !username.trim()) return;
+        setIsLoading(true);
         try {
             const { error } = await supabase.rpc('increment_loyalty_points', {
-                p_username: username,
+                p_username: username.trim(),
                 p_points: amount,
                 p_owner_id: session.user.id
             });
 
             if (error) throw error;
+            showNotification(`Pontos atualizados com sucesso para ${username}!`);
             fetchLeaderboard();
+            if (username === manualUsername) {
+                setManualUsername('');
+            }
         } catch (err) {
             console.error('Error updating points:', err);
-            alert('Erro ao atualizar pontos.');
+            showNotification('Erro ao atualizar pontos.', 'error');
+        } finally {
+            setIsLoading(true);
+            // Re-fetch to ensure loading state is cleared by fetchLeaderboard or manually
+            setTimeout(() => setIsLoading(false), 500);
         }
     };
 
@@ -202,7 +219,48 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
                                 />
                             </div>
                         </div>
+
+                        {/* Add Points Manually Section */}
+                        <div className="mt-4 p-4 bg-amber-500/5 dark:bg-amber-500/10 rounded-xl border border-amber-500/20">
+                            <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] mb-3">Dar Pontos para Qualquer Usuário</h4>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Nome do usuário"
+                                    value={manualUsername}
+                                    onChange={(e) => setManualUsername(e.target.value)}
+                                    className="flex-grow bg-white dark:bg-[#0F172A] border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 text-xs font-medium dark:text-white outline-none focus:ring-1 focus:ring-amber-500/50"
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Quantia"
+                                    value={manualAmount}
+                                    onChange={(e) => setManualAmount(parseInt(e.target.value) || 0)}
+                                    className="w-full sm:w-24 bg-white dark:bg-[#0F172A] border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 text-xs font-bold text-center dark:text-white outline-none focus:ring-1 focus:ring-amber-500/50"
+                                />
+                                <button
+                                    onClick={() => handleManualPoints(manualUsername, manualAmount)}
+                                    disabled={!manualUsername.trim() || isLoading}
+                                    className="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all shadow-lg shadow-amber-500/20"
+                                >
+                                    Adicionar
+                                </button>
+                            </div>
+                        </div>
                     </header>
+
+                    {/* Notification Overlay */}
+                    {notification && (
+                        <div className={`absolute top-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 fade-in duration-300`}>
+                            <div className={`px-4 py-2 rounded-full shadow-2xl border text-xs font-bold flex items-center gap-2 ${notification.type === 'success'
+                                    ? 'bg-emerald-500 border-emerald-400 text-white'
+                                    : 'bg-red-500 border-red-400 text-white'
+                                }`}>
+                                {notification.type === 'success' ? <PlusIcon className="w-3 h-3" /> : <MinusIcon className="w-3 h-3" />}
+                                {notification.message}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="flex-grow overflow-y-auto custom-scrollbar p-6 space-y-3">
                         {isLoading && filteredLeaderboard.length === 0 ? (
