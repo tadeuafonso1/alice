@@ -162,8 +162,8 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
                         <textarea
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
-                            placeholder="Um nome por linha ou separado por vírgula..."
-                            className="w-full h-32 bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl p-3 text-sm focus:ring-2 focus:ring-cyan-500 outline-none transition-all resize-none"
+                            placeholder="Um nome por linha..."
+                            className="w-full h-32 bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl p-3 text-sm text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 focus:ring-2 focus:ring-cyan-500 outline-none transition-all resize-none"
                         />
                         <button
                             onClick={handleAddParticipant}
@@ -196,7 +196,7 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
                     </div>
                     <div className="flex-grow overflow-y-auto custom-scrollbar space-y-1">
                         {participants.map((name, i) => (
-                            <div key={i} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-[#162036] px-3 py-1.5 rounded-lg">
+                            <div key={i} className="flex items-center gap-2 text-sm text-gray-700 dark:text-zinc-200 bg-gray-50 dark:bg-[#162036] px-3 py-1.5 rounded-lg border border-transparent dark:border-white/5">
                                 <span className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: colors[i % colors.length] }} />
                                 <span className="truncate font-medium">{name}</span>
                             </div>
