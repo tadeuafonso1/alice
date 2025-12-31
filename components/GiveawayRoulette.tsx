@@ -12,7 +12,56 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
     const [winner, setWinner] = useState<string | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const spinAngleRef = useRef(0);
+    const lastTickAngleRef = useRef(0);
     const animationFrameRef = useRef<number | undefined>(undefined);
+    const audioCtxRef = useRef<AudioContext | null>(null);
+
+    // Initialize Audio Context on demand
+    const getAudioCtx = () => {
+        if (!audioCtxRef.current) {
+            audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        return audioCtxRef.current;
+    };
+
+    const playTickSound = useCallback(() => {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.1);
+
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start();
+        osc.stop(ctx.currentTime + 0.1);
+    }, []);
+
+    const playWinSound = useCallback(() => {
+        const ctx = getAudioCtx();
+        const playNote = (freq: number, time: number, duration: number) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
+            gain.gain.setValueAtTime(0.05, ctx.currentTime + time);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + time + duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + time);
+            osc.stop(ctx.currentTime + time + duration);
+        };
+
+        playNote(523.25, 0, 0.1); // C5
+        playNote(659.25, 0.1, 0.1); // E5
+        playNote(783.99, 0.2, 0.3); // G5
+    }, []);
 
     const colors = ['#3ABEF9', '#F9C80E', '#F87060', '#A1E887', '#9D4EDD', '#F15BB5'];
 
@@ -104,6 +153,14 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
             const easeOut = 1 - Math.pow(1 - progress, 3);
             spinAngleRef.current = startAngle + totalRotation * easeOut;
 
+            // Simple tick sound when crossing a segment
+            const arc = (Math.PI * 2) / participants.length;
+            const currentAngle = spinAngleRef.current;
+            if (Math.floor(currentAngle / arc) !== Math.floor(lastTickAngleRef.current / arc)) {
+                playTickSound();
+            }
+            lastTickAngleRef.current = currentAngle;
+
             drawWheel();
 
             if (progress < 1) {
@@ -119,6 +176,7 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
                 if (winningIndex < 0) winningIndex += participants.length;
 
                 setWinner(participants[winningIndex]);
+                playWinSound();
             }
         };
 
