@@ -18,6 +18,7 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
     const [manualUsername, setManualUsername] = React.useState('');
     const [manualAmount, setManualAmount] = React.useState<number>(100);
     const [notification, setNotification] = React.useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [userPointInputs, setUserPointInputs] = React.useState<Record<string, number>>({});
 
     const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
         setNotification({ message, type });
@@ -331,24 +332,42 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            value={userPointInputs[user.username] || 0}
+                                            onChange={(e) => setUserPointInputs(prev => ({
+                                                ...prev,
+                                                [user.username]: parseInt(e.target.value) || 0
+                                            }))}
+                                            placeholder="Pontos"
+                                            className="w-20 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1.5 text-xs font-bold text-center dark:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                        />
                                         <button
-                                            onClick={() => handleManualPoints(user.username, -pointsToUpdate)}
-                                            className="p-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg transition-all"
-                                            title={`Remover ${pointsToUpdate} pontos`}
+                                            onClick={() => {
+                                                const amount = userPointInputs[user.username] || 0;
+                                                if (amount !== 0) handleManualPoints(user.username, -amount);
+                                            }}
+                                            disabled={!userPointInputs[user.username] || userPointInputs[user.username] === 0}
+                                            className="p-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg transition-all opacity-0 group-hover:opacity-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                            title="Remover pontos"
                                         >
                                             <MinusIcon className="w-3.5 h-3.5" />
                                         </button>
                                         <button
-                                            onClick={() => handleManualPoints(user.username, pointsToUpdate)}
-                                            className="p-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white rounded-lg transition-all"
-                                            title={`Adicionar ${pointsToUpdate} pontos`}
+                                            onClick={() => {
+                                                const amount = userPointInputs[user.username] || 0;
+                                                if (amount !== 0) handleManualPoints(user.username, amount);
+                                            }}
+                                            disabled={!userPointInputs[user.username] || userPointInputs[user.username] === 0}
+                                            className="p-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white rounded-lg transition-all opacity-0 group-hover:opacity-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                            title="Adicionar pontos"
                                         >
                                             <PlusIcon className="w-3.5 h-3.5" />
                                         </button>
                                         <button
                                             onClick={() => handleDeleteUser(user.username)}
-                                            className="p-2 bg-gray-500/10 hover:bg-gray-600 text-gray-500 hover:text-white rounded-lg transition-all"
+                                            className="p-2 bg-gray-500/10 hover:bg-gray-600 text-gray-500 hover:text-white rounded-lg transition-all opacity-0 group-hover:opacity-100"
                                             title="Excluir usuário"
                                         >
                                             <TrashIcon className="w-3.5 h-3.5" />
