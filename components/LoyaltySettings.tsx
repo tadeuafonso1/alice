@@ -27,6 +27,7 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({
     const [isLoadingRanking, setIsLoadingRanking] = React.useState(false);
     const [isAddingPoints, setIsAddingPoints] = React.useState(false);
     const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
+    const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
     const fetchLeaderboard = React.useCallback(async () => {
         if (!currentOwnerId) return;
@@ -95,17 +96,29 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({
                             </div>
                             <button
                                 onClick={async () => {
-                                    if (!manualUser) return alert('Digite o nome do usuário');
+                                    const normalizedUser = manualUser.trim().replace(/^@/, '');
+                                    if (!normalizedUser) return alert('Digite o nome do usuário');
+
                                     setIsAddingPoints(true);
-                                    const success = await onAddPoints(manualUser, manualPoints);
-                                    if (success) {
-                                        setSuccessMessage(`Pontos adicionados para @${manualUser}!`);
-                                        setTimeout(() => setSuccessMessage(null), 5000);
-                                        setManualUser('');
-                                        setManualPoints(0);
-                                        fetchLeaderboard();
+                                    setSuccessMessage(null);
+                                    setErrorMessage(null);
+
+                                    try {
+                                        const success = await onAddPoints(normalizedUser, manualPoints);
+                                        if (success) {
+                                            setSuccessMessage(`✅ Sucesso! @${normalizedUser} recebeu os pontos.`);
+                                            setManualUser('');
+                                            setManualPoints(0);
+                                            fetchLeaderboard();
+                                            setTimeout(() => setSuccessMessage(null), 8000);
+                                        } else {
+                                            setErrorMessage(`❌ Erro ao adicionar pontos para @${normalizedUser}. Verifique o nome.`);
+                                        }
+                                    } catch (err) {
+                                        setErrorMessage("❌ Ocorreu um erro inesperado.");
+                                    } finally {
+                                        setIsAddingPoints(false);
                                     }
-                                    setIsAddingPoints(false);
                                 }}
                                 disabled={isAddingPoints}
                                 className={`w-full py-3 text-white rounded-xl font-bold shadow-lg transition-all active:scale-95 ${isAddingPoints ? 'bg-gray-400 cursor-not-allowed' : 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-900/20'}`}
@@ -113,11 +126,18 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({
                                 {isAddingPoints ? 'Adicionando...' : 'Adicionar Pontos'}
                             </button>
 
-                            {successMessage && (
-                                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-500 text-xs font-bold animate-pulse text-center">
-                                    {successMessage}
-                                </div>
-                            )}
+                            <div className="space-y-2">
+                                {successMessage && (
+                                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-500 text-xs font-bold text-center">
+                                        {successMessage}
+                                    </div>
+                                )}
+                                {errorMessage && (
+                                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-xs font-bold text-center">
+                                        {errorMessage}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 

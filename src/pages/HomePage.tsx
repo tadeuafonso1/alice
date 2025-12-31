@@ -508,17 +508,21 @@ export const HomePage: React.FC = () => {
 
     const handleAddManualPoints = useCallback(async (username: string, points: number) => {
         try {
+            // Normalizar username para minúsculas para evitar duplicidade por case
+            const normalizedUsername = username.trim().replace(/^@/, '').toLowerCase();
+            if (!normalizedUsername) return false;
+
             const { data: { session: currentSession } } = await supabase.auth.getSession();
             if (!currentSession?.user?.id) return false;
 
             const { error } = await supabase.rpc('increment_loyalty_points', {
-                p_username: username,
+                p_username: normalizedUsername,
                 p_points: points,
                 p_owner_id: currentSession.user.id
             });
 
             if (error) throw error;
-            addBotMessage(`Pontos de ${username} atualizados com sucesso (${points > 0 ? '+' : ''}${points}).`);
+            addBotMessage(`Pontos de ${normalizedUsername} atualizados com sucesso (${points > 0 ? '+' : ''}${points}).`);
             return true;
         } catch (error: any) {
             console.error("Error adding manual points:", error);
@@ -724,7 +728,7 @@ export const HomePage: React.FC = () => {
                     const { data, error } = await supabase
                         .from('loyalty_points')
                         .select('points')
-                        .eq('username', author)
+                        .eq('username', author.toLowerCase())
                         .eq('owner_id', currentSession.user.id)
                         .maybeSingle();
 
@@ -1195,7 +1199,7 @@ export const HomePage: React.FC = () => {
                         // Upsert pontos para todos os usuários ativos
                         for (const username of chatters) {
                             const { error } = await supabase.rpc('increment_loyalty_points', {
-                                p_username: username,
+                                p_username: username.toLowerCase(),
                                 p_points: loyalty.pointsPerInterval,
                                 p_owner_id: currentSession.user.id
                             });
