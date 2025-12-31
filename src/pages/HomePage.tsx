@@ -29,6 +29,7 @@ const defaultSettings: AppSettings = {
         reset: { command: '!resetar', enabled: true },
         queueList: { command: '!fila', enabled: true },
         playingList: { command: '!jogando', enabled: true },
+        participate: { command: '!participar', enabled: true },
     },
     messages: {
         userExistsQueue: { text: '@{user}, você já está na fila na posição {position}.', enabled: true },
@@ -52,6 +53,7 @@ const defaultSettings: AppSettings = {
         queueListEmpty: { text: 'A fila de espera está vazia.', enabled: true },
         playingList: { text: 'Jogando agora: {list}', enabled: true },
         playingListEmpty: { text: 'Ninguém está jogando no momento.', enabled: true },
+        userParticipating: { text: '✅ @{user}, você entrou no sorteio!', enabled: true },
     },
     customCommands: [],
     youtubeChannelId: '',
@@ -74,6 +76,7 @@ export const HomePage: React.FC = () => {
     const [appSettings, setAppSettings] = useState<AppSettings>(defaultSettings);
     const [warningSentUsers, setWarningSentUsers] = useState<Set<string>>(new Set());
     const [activeChatters, setActiveChatters] = useState<Record<string, number>>({});
+    const [giveawayParticipants, setGiveawayParticipants] = useState<Set<string>>(new Set());
 
     // Estado para a conexão com o YouTube
     const [liveChatId, setLiveChatId] = useState<string>('');
@@ -274,12 +277,18 @@ export const HomePage: React.FC = () => {
 
                 // Restaurar timers dos usuários usando timer_start_time do banco
                 const initialTimers = queueData.reduce((acc, q) => {
-                    // Usar timer_start_time se disponível, caso contrário joined_at
                     const timerTime = q.timer_start_time || q.joined_at;
                     acc[q.username] = new Date(timerTime).getTime();
                     return acc;
                 }, {} as Record<string, number>);
                 setUserTimers(initialTimers);
+
+                // Também pré-popula o activeChatters com quem já está na fila/jogo
+                const initialActive = [...queueData, ...playingData].reduce((acc, u) => {
+                    acc[u.username] = Date.now(); // Assume ativo agora por estar na fila
+                    return acc;
+                }, {} as Record<string, number>);
+                setActiveChatters(prev => ({ ...initialActive, ...prev }));
 
                 // Restaurar avisos enviados
                 const warningsSet = new Set<string>();
@@ -488,12 +497,11 @@ export const HomePage: React.FC = () => {
         const userMessage: Message = { author, text, type: 'user' };
         setMessages(prev => [...prev, userMessage]);
 
-        if (author !== adminName) {
-            setActiveChatters(prev => ({
-                ...prev,
-                [author]: Date.now()
-            }));
-        }
+        // Rastreia como chatter ativo - Incluído Admin para facilitar testes
+        setActiveChatters(prev => ({
+            ...prev,
+            [author]: Date.now()
+        }));
 
 
         const normalizeText = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -669,6 +677,15 @@ export const HomePage: React.FC = () => {
             } else {
                 sendBotMessage('playingListEmpty');
             }
+        } else if (commands.participate.enabled && commandText === commands.participate.command) {
+            setGiveawayParticipants(prev => {
+                const next = new Set(prev);
+                if (!next.has(author)) {
+                    next.add(author);
+                    sendBotMessage('userParticipating', { user: author });
+                }
+                return next;
+            });
         } else {
             const customCommand = customCommands.find(c => normalizeText(c.command) === commandText);
             if (customCommand) {
@@ -1387,7 +1404,11 @@ export const HomePage: React.FC = () => {
                         )}
 
                         {activeTab === 'giveaway' && (
-                            <GiveawayRoulette activeChatters={activeChatters} />
+                            <GiveawayRoulette
+                                activeChatters={activeChatters}
+                                externalParticipants={Array.from(giveawayParticipants)}
+                                onClearExternalParticipants={() => setGiveawayParticipants(new Set())}
+                            />
                         )}
 
                     </div>

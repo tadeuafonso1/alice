@@ -29,6 +29,7 @@ const translations = {
     timerOff: 'Comando Admin: Desativar Timer',
     queueList: 'Comando Público: Listar Fila',
     playingList: 'Comando Público: Listar Jogadores',
+    participate: 'Comando: Entrar no Sorteio',
   },
   messages: {
     userExistsQueue: 'Usuário já existe na fila',
@@ -52,6 +53,7 @@ const translations = {
     queueListEmpty: 'Resposta para !fila (vazia)',
     playingList: 'Resposta para !jogando',
     playingListEmpty: 'Resposta para !jogando (vazio)',
+    userParticipating: 'Confirmação de entrada no sorteio',
   },
 };
 

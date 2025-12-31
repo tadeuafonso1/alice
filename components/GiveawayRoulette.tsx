@@ -3,11 +3,27 @@ import { GiftIcon, RefreshCwIcon, TrophyIcon, UsersIcon, TimerIcon } from './Ico
 
 interface GiveawayRouletteProps {
     activeChatters: Record<string, number>;
+    externalParticipants?: string[];
+    onClearExternalParticipants?: () => void;
 }
 
-export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatters }) => {
+export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({
+    activeChatters,
+    externalParticipants = [],
+    onClearExternalParticipants
+}) => {
     const [participants, setParticipants] = useState<string[]>([]);
     const [inputValue, setInputValue] = useState('');
+
+    // Auto-import external participants (!participar command)
+    useEffect(() => {
+        if (externalParticipants.length > 0) {
+            setParticipants(prev => {
+                const combined = Array.from(new Set([...prev, ...externalParticipants])).slice(0, 100);
+                return combined;
+            });
+        }
+    }, [externalParticipants]);
     const [isSpinning, setIsSpinning] = useState(false);
     const [winner, setWinner] = useState<string | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -191,9 +207,10 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
     };
 
     const handlePullChatters = (minutes?: number) => {
+        console.log('[Giveaway] Puxando chatters, minutos:', minutes, 'Ativos:', activeChatters);
         const chatterEntries = Object.entries(activeChatters);
         if (chatterEntries.length === 0) {
-            alert('Nenhum chatter ativo detectado ainda.');
+            alert('Nenhum chatter ativo detectado ainda. Tente digitar algo no chat primeiro ou aguarde mensagens do YouTube.');
             return;
         }
 
@@ -212,7 +229,7 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
             filteredNames = chatterEntries.map(([name]) => name);
         }
 
-        setParticipants(Array.from(new Set(filteredNames)));
+        setParticipants(prev => Array.from(new Set([...prev, ...filteredNames])).slice(0, 100));
     };
 
     const handleClearParticipants = () => {
@@ -220,6 +237,9 @@ export const GiveawayRoulette: React.FC<GiveawayRouletteProps> = ({ activeChatte
             setParticipants([]);
             setWinner(null);
             spinAngleRef.current = 0;
+            if (onClearExternalParticipants) {
+                onClearExternalParticipants();
+            }
         }
     };
 

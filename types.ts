@@ -25,6 +25,7 @@ export interface CommandSettings {
   timerOff: CommandSetting;
   queueList: CommandSetting;
   playingList: CommandSetting;
+  participate: CommandSetting;
 }
 
 export interface MessageSetting {
@@ -54,6 +55,7 @@ export interface MessageSettings {
   queueListEmpty: MessageSetting;
   playingList: MessageSetting;
   playingListEmpty: MessageSetting;
+  userParticipating: MessageSetting;
 }
 
 export interface CustomCommand {
