@@ -295,6 +295,13 @@ export const HomePage: React.FC = () => {
                             }
                         }
                     }
+
+                    if (dbSettings.loyalty) {
+                        mergedSettings.loyalty = {
+                            ...mergedSettings.loyalty,
+                            ...dbSettings.loyalty
+                        };
+                    }
                     mergedSettings.customCommands = dbSettings.customCommands || [];
                     if (dbSettings.youtubeChannelId) mergedSettings.youtubeChannelId = dbSettings.youtubeChannelId;
 
