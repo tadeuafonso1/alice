@@ -20,8 +20,8 @@ export const PrivacyPolicyPage: React.FC = () => {
                 </header>
 
                 <main className="pt-6 space-y-4 text-sm text-gray-600 dark:text-gray-300">
-                    <p className="font-semibold">Última atualização: [Data]</p>
-                    
+                    <p className="font-semibold">Última atualização: 03/01/2026</p>
+
                     <p>Agradecemos por usar o Gerenciador de Fila ("Aplicativo"). Esta Política de Privacidade explica como coletamos, usamos e protegemos suas informações.</p>
 
                     <h3 className="text-lg font-semibold pt-2">1. Informações que Coletamos</h3>
@@ -46,7 +46,7 @@ export const PrivacyPolicyPage: React.FC = () => {
 
                     <h3 className="text-lg font-semibold pt-2">4. Compartilhamento de Informações</h3>
                     <p>Não compartilhamos suas informações pessoais com terceiros, exceto conforme necessário para fornecer o serviço (por exemplo, interações com as APIs do Google/YouTube e armazenamento no Supabase).</p>
-                    
+
                     <h3 className="text-lg font-semibold pt-2">5. Seus Direitos</h3>
                     <p>Você pode, a qualquer momento, resetar a fila e os dados dos jogadores através do painel de administrador, o que removerá as informações do nosso banco de dados.</p>
 

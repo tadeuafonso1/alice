@@ -144,6 +144,42 @@ export const HomePage: React.FC = () => {
         }
     }, [session, channelTitle]);
 
+    // Listener para deletar dados (Disparado pelo SettingsModal)
+    useEffect(() => {
+        const handleDeleteData = async () => {
+            console.log('[HomePage] Iniciando exclusão de dados do usuário...');
+            try {
+                const { error } = await supabase.rpc('delete_user_data');
+                if (error) throw error;
+
+                console.log('[HomePage] Dados excluídos com sucesso no Banco de Dados.');
+
+                // Limpar estados locais
+                setQueue([]);
+                setPlayingUsers([]);
+                setUserTimers({});
+                setWarningSentUsers(new Set());
+                setAppSettings(defaultSettings);
+
+                // Limpar local storage
+                localStorage.removeItem('alice_queue_state');
+                localStorage.removeItem('alice_active_tab');
+                localStorage.removeItem('alice_sidebar_open');
+                localStorage.removeItem('alice_giveaway_external');
+
+                alert('Todos os seus dados foram apagados. Você será desconectado.');
+                await handleSignOut();
+
+            } catch (error: any) {
+                console.error('[HomePage] Erro ao deletar dados:', error);
+                alert(`Erro ao apagar dados: ${error.message}`);
+            }
+        };
+
+        window.addEventListener('deleteUserData', handleDeleteData);
+        return () => window.removeEventListener('deleteUserData', handleDeleteData);
+    }, []);
+
     // Persistir aba ativa no localStorage
     useEffect(() => {
         localStorage.setItem('alice_active_tab', activeTab);

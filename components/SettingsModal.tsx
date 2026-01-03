@@ -321,6 +321,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
         <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 text-center">
           Variáveis disponíveis: {'{user}'}, {'{position}'}, {'{join}'}, {'{minutes}'}, {'{nickname}'}
         </p>
+
+        <section className="mt-8 border-t border-red-200 dark:border-red-900/30 pt-4">
+          <h3 className="text-lg font-bold mb-4 text-red-600 dark:text-red-500 flex items-center gap-2">
+            <TrashIcon className="w-5 h-5" />
+            Zona de Perigo
+          </h3>
+          <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-lg p-4">
+            <h4 className="font-semibold text-red-900 dark:text-red-200 mb-2">Apagar Todos os Dados</h4>
+            <p className="text-sm text-red-700 dark:text-red-300 mb-4">
+              Esta ação é irreversível. Ela apagará todas as suas configurações, filas salvas, pontos de fidelidade e tokens de acesso do nosso banco de dados.
+            </p>
+            <button
+              onClick={() => {
+                if (window.confirm('TEM CERTEZA? Isso apagará TUDO permanentemente.')) {
+                  // Dispara evento customizado para o pai lidar ou chama função direta se passarmos via props
+                  // Como não temos a prop aqui, vamos usar um evento global ou passar via prop no futuro.
+                  // Por enquanto, vamos fazer um dispatchEvent para o App ouvir, ou melhor, adicionar a prop onDeleteData.
+                  const event = new CustomEvent('deleteUserData');
+                  window.dispatchEvent(event);
+                  onClose();
+                }
+              }}
+              className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-md transition-colors flex items-center justify-center gap-2"
+            >
+              <TrashIcon className="w-4 h-4" />
+              Apagar Todos e Desconectar
+            </button>
+          </div>
+        </section>
       </main>
 
       <footer className={`flex items-center justify-end gap-4 border-t border-gray-200 dark:border-gray-700 ${isInline ? 'pt-6' : 'p-4 bg-white dark:bg-gray-800/50'}`}>

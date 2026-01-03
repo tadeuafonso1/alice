@@ -20,13 +20,13 @@ export const TermsOfServicePage: React.FC = () => {
                 </header>
 
                 <main className="pt-6 space-y-4 text-sm text-gray-600 dark:text-gray-300">
-                    <p className="font-semibold">Última atualização: [Data]</p>
-          
+                    <p className="font-semibold">Última atualização: 03/01/2026</p>
+
                     <p>Bem-vindo ao Gerenciador de Fila ("Aplicativo"). Ao usar nosso aplicativo, você concorda com estes Termos de Serviço.</p>
 
                     <h3 className="text-lg font-semibold pt-2">1. Uso do Aplicativo</h3>
                     <p>Este aplicativo foi projetado para ajudar criadores de conteúdo a gerenciar uma fila de participantes durante transmissões ao vivo no YouTube. Você concorda em usar o aplicativo apenas para os fins a que se destina e em conformidade com todas as leis aplicáveis.</p>
-                    
+
                     <h3 className="text-lg font-semibold pt-2">2. Conta de Usuário</h3>
                     <p>Para usar o painel de administrador, você deve se autenticar usando sua conta Google. Você é responsável por manter a segurança de sua conta e por todas as atividades que ocorrem sob sua conta.</p>
 
