@@ -130,6 +130,31 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
         }
     };
 
+    const handleResetAllPoints = async () => {
+        if (!session?.user?.id) return;
+
+        const confirmed = window.confirm('TEM CERTEZA? Isso irá ZERAR os pontos de TODOS os usuários. Esta ação não pode ser desfeita.');
+        if (!confirmed) return;
+
+        setIsLoading(true);
+        try {
+            const { error } = await supabase
+                .from('loyalty_points')
+                .update({ points: 0 })
+                .eq('owner_id', session.user.id);
+
+            if (error) throw error;
+
+            showNotification('Todos os pontos foram zerados com sucesso!');
+            fetchLeaderboard();
+        } catch (err: any) {
+            console.error('[LoyaltySettings] Erro ao zerar pontos:', err);
+            showNotification(`Erro: ${err.message || 'Erro ao zerar pontos'}`, 'error');
+        } finally {
+            setTimeout(() => setIsLoading(false), 500);
+        }
+    };
+
     const filteredLeaderboard = leaderboard.filter(user =>
         user.username.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -240,6 +265,14 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
                                 title="Atualizar Lista"
                             >
                                 <RefreshCwIcon className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                            </button>
+                            <button
+                                onClick={handleResetAllPoints}
+                                disabled={isLoading}
+                                className="p-2 hover:bg-red-200 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition-all ml-2"
+                                title="Zerar Todos os Pontos"
+                            >
+                                <TrashIcon className="w-4 h-4" />
                             </button>
                         </div>
 
