@@ -66,6 +66,7 @@ export interface LoyaltySettings {
   pointsPerMessage: number;
   pointsPerInterval: number;
   intervalMinutes: number;
+  requireOnline: boolean;
 }
 
 export interface CustomCommand {

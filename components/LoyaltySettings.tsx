@@ -234,6 +234,30 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
                                         />
                                     </div>
 
+                                    <div className="flex items-center justify-between p-5 bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-amber-500/10 rounded-lg">
+                                                <div className={`w-2 h-2 rounded-full ${settings.loyalty.requireOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500">Live Online</label>
+                                                <p className="text-xs text-gray-400">Distribuir apenas quando "Ao Vivo"</p>
+                                            </div>
+                                        </div>
+                                        <label className="flex items-center cursor-pointer">
+                                            <div className="relative">
+                                                <input
+                                                    type="checkbox"
+                                                    className="sr-only"
+                                                    checked={settings.loyalty.requireOnline ?? true}
+                                                    onChange={(e) => handleLoyaltyChange('requireOnline', e.target.checked)}
+                                                />
+                                                <div className={`block w-10 h-6 rounded-full transition-colors ${settings.loyalty.requireOnline ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+                                                <div className={`dot absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ease-in-out ${settings.loyalty.requireOnline ? 'translate-x-4' : ''}`}></div>
+                                            </div>
+                                        </label>
+                                    </div>
+
                                     <div className="p-5 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-500/20 rounded-2xl flex items-start gap-4">
                                         <div className="p-2 bg-white dark:bg-[#1E293B] rounded-lg shadow-sm">
                                             <SettingsIcon className="w-5 h-5 text-amber-500" />
@@ -417,6 +441,6 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
                     </footer>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };

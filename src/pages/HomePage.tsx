@@ -64,6 +64,7 @@ const defaultSettings: AppSettings = {
         pointsPerMessage: 10,
         pointsPerInterval: 50,
         intervalMinutes: 5,
+        requireOnline: true,
     },
     youtubeChannelId: '',
 };
@@ -1318,6 +1319,11 @@ export const HomePage: React.FC = () => {
     useEffect(() => {
         if (!appSettings.loyalty.enabled || !session?.user?.id) return;
 
+        // Se a opção de exigir online estiver ativa, verifica se está fazendo polling (conectado)
+        if (appSettings.loyalty.requireOnline && !isPolling) {
+            return;
+        }
+
         const intervalId = setInterval(() => {
             const now = Date.now();
             const intervalMs = appSettings.loyalty.intervalMinutes * 60 * 1000;
@@ -1340,7 +1346,7 @@ export const HomePage: React.FC = () => {
         }, 60000); // Verifica a cada 1 minuto
 
         return () => clearInterval(intervalId);
-    }, [appSettings.loyalty, activeChatters, session?.user?.id]);
+    }, [appSettings.loyalty, activeChatters, session?.user?.id, isPolling]);
 
 
 
