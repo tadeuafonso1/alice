@@ -269,10 +269,11 @@ export const LoyaltySettings: React.FC<LoyaltySettingsProps> = ({ settings, onSa
                             <button
                                 onClick={handleResetAllPoints}
                                 disabled={isLoading}
-                                className="p-2 hover:bg-red-200 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition-all ml-2"
+                                className="flex items-center gap-2 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-all ml-2"
                                 title="Zerar Todos os Pontos"
                             >
                                 <TrashIcon className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Zerar Pontos</span>
                             </button>
                         </div>
 
