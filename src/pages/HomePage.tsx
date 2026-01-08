@@ -1098,14 +1098,16 @@ export const HomePage: React.FC = () => {
             const { data: { session: currentSession } } = await supabase.auth.getSession();
             const storedChannelId = appSettings.youtubeChannelId || localStorage.getItem('alice_yt_channel_id');
 
-            // Sincronizar tokens se acabamos de conectar/reconectar
-            if (currentSession?.provider_token) {
+            // Sincronizar tokens APENAS se tivermos um refresh_token (geralmente logo após login/redirect)
+            const refreshToken = (currentSession as any)?.provider_refresh_token;
+
+            if (currentSession?.provider_token && refreshToken) {
                 console.log("Sincronizando tokens do YouTube com o banco de dados...");
                 try {
                     await supabase.functions.invoke('youtube-token-sync', {
                         body: {
                             access_token: currentSession.provider_token,
-                            refresh_token: (currentSession as any).provider_refresh_token, // Pode estar aqui após redirect
+                            refresh_token: refreshToken,
                             expires_in: (currentSession as any).expires_in,
                             channelId: storedChannelId
                         }
@@ -1113,6 +1115,8 @@ export const HomePage: React.FC = () => {
                 } catch (syncError) {
                     console.error("Erro ao sincronizar tokens:", syncError);
                 }
+            } else if (currentSession?.provider_token) {
+                console.log("Sessão carregada (sem refresh token novo).");
             }
 
             if (!liveChatId && !isFindingChat && !hasAutoSearchedRef.current) {

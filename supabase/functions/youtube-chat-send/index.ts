@@ -145,7 +145,7 @@ serve(async (req) => {
 
             let hint = "";
             if (response.status === 401) {
-                hint = " (Sua conexão expirou. Tente desconectar e conectar o YouTube novamente nas configurações)";
+                hint = " (Sua conexão expirou. Por favor, faça LOGOUT (Sair) do bot e faça LOGIN novamente para renovar a permissão.)";
             }
 
             // Append detailed renewal log if available to help debugging
