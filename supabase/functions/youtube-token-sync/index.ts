@@ -39,15 +39,21 @@ serve(async (req) => {
         const expiresAt = expires_in ? new Date(Date.now() + expires_in * 1000).toISOString() : null;
 
         // Upsert na tabela de tokens
+        const payload: any = {
+            user_id: user.id,
+            access_token,
+            expires_at: expiresAt,
+            channel_id: channelId,
+        };
+
+        // Só atualiza o refresh_token se ele vier na requisição (evita sobrescrever com null se o Google não mandar um novo)
+        if (refresh_token) {
+            payload.refresh_token = refresh_token;
+        }
+
         const { error: upsertError } = await supabaseClient
             .from('youtube_tokens')
-            .upsert({
-                user_id: user.id,
-                access_token,
-                refresh_token,
-                expires_at: expiresAt,
-                channel_id: channelId,
-            }, { onConflict: 'user_id' });
+            .upsert(payload, { onConflict: 'user_id' });
 
         if (upsertError) throw upsertError;
 

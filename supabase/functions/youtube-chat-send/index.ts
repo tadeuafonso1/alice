@@ -140,12 +140,17 @@ serve(async (req) => {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            const googleError = errorData.error?.message || response.statusText;
+            let googleError = errorData.error?.message || response.statusText;
             console.error("Erro da API do YouTube (envio):", errorData);
 
             let hint = "";
             if (response.status === 401) {
-                hint = " (Sua conexão expirou. Clique em 'Reconectar' nas configurações)";
+                hint = " (Sua conexão expirou. Tente desconectar e conectar o YouTube novamente nas configurações)";
+            }
+
+            // Append detailed renewal log if available to help debugging
+            if (renewalLog.length > 0) {
+                googleError += ` | Debug: ${renewalLog.join(' -> ')}`;
             }
 
             return new Response(JSON.stringify({
