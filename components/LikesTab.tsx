@@ -182,7 +182,7 @@ export const LikesTab: React.FC = () => {
                                     style={{ width: `${progress}%`, backgroundColor: barColor, boxShadow: `0 0 10px ${barColor}66` }}
                                 />
                             </div>
-                            <p className="text-xs" style={{ color: textColor }}>{likes.toLocaleString()} / {goal.toLocaleString()}</p>
+                            <p className="text-xs font-black uppercase tracking-widest" style={{ color: textColor }}>LIKE {likes.toLocaleString()} / {goal.toLocaleString()}</p>
                         </div>
                     </div>
 
