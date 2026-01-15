@@ -114,8 +114,7 @@ export const LikesTab: React.FC = () => {
                 body: {
                     goal: goal,
                     step: step,
-                    goal: goal,
-                    step: step,
+
                     auto_update: autoUpdate,
                     bar_color: barColor,
                     bg_color: bgColor,
@@ -321,7 +320,7 @@ export const LikesTab: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                            )}
+
 
                             <button
                                 onClick={saveSettings}
