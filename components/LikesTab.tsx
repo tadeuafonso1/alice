@@ -17,6 +17,7 @@ export const LikesTab: React.FC = () => {
     const [copied, setCopied] = useState<boolean>(false);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
     const [lastServerGoal, setLastServerGoal] = useState<number | null>(null);
+    const [isSaving, setIsSaving] = useState<boolean>(false);
 
     const obsUrl = session ? `${window.location.origin}/obs/likes/${session.user.id}` : '';
 
@@ -82,6 +83,7 @@ export const LikesTab: React.FC = () => {
 
     const saveSettings = async () => {
         if (!session || !isInitialized) return;
+        setIsSaving(true);
         console.log("Saving Like Settings:", { goal, step, autoUpdate });
         const { error } = await supabase.from('like_goals').upsert({
             user_id: session.user.id,
@@ -90,13 +92,14 @@ export const LikesTab: React.FC = () => {
             auto_update: autoUpdate
         });
         if (error) console.error('Error saving settings', error);
+        setTimeout(() => setIsSaving(false), 500);
     };
 
     // Save on change (debounce could be added but simple is fine for now)
     useEffect(() => {
         const timeout = setTimeout(saveSettings, 1000);
         return () => clearTimeout(timeout);
-    }, [goal, step, autoUpdate]);
+    }, [goal, step, autoUpdate, isInitialized]);
 
     useEffect(() => {
         fetchLikes();
@@ -183,7 +186,10 @@ export const LikesTab: React.FC = () => {
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-2">Meta Atual</label>
+                                <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-2 flex justify-between">
+                                    <span>Meta Atual</span>
+                                    {isSaving && <span className="text-xs text-cyan-500 animate-pulse">Salvando...</span>}
+                                </label>
                                 <input
                                     type="number"
                                     value={goal}
