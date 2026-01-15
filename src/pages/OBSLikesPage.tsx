@@ -47,18 +47,20 @@ export const OBSLikesPage: React.FC = () => {
                 - Bold, readable fonts
                 - Minimal strokes
              */}
-            <div className="w-[600px] bg-slate-900/90 border-2 border-slate-700/50 rounded-2xl p-6 shadow-2xl backdrop-blur-sm relative overflow-hidden">
+            <div className="w-[600px] p-6 relative overflow-hidden">
                 <div className="flex items-end justify-between mb-2">
                     <div className="flex flex-col">
-                        <span className="text-cyan-400 font-bold text-xs uppercase tracking-[0.2em] mb-1">Meta de Likes</span>
+                        <span className="text-cyan-400 font-bold text-xs uppercase tracking-[0.2em] mb-1 drop-shadow-md shadow-black">Meta de Likes</span>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-5xl font-black text-white leading-none filter drop-shadow-md">{likes.toLocaleString()}</span>
+                            <span className="text-6xl font-black text-white leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ textShadow: '0px 0px 10px rgba(0,0,0,0.5)' }}>
+                                {likes.toLocaleString()}
+                            </span>
                         </div>
                     </div>
-                    <span className="text-xl font-bold text-slate-500 mb-1">/ {goal.toLocaleString()}</span>
+                    <span className="text-2xl font-bold text-white mb-1 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">/ {goal.toLocaleString()}</span>
                 </div>
 
-                <div className="w-full h-4 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                <div className="w-full h-4 bg-black/50 rounded-full overflow-hidden backdrop-blur-sm border border-white/10">
                     <div
                         className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-all duration-1000 ease-out"
                         style={{ width: `${progress}%` }}
