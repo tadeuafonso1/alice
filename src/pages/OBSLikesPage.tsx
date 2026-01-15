@@ -35,16 +35,25 @@ export const OBSLikesPage: React.FC = () => {
     }, [userId]);
 
     // Force transparent background on body/html for OBS
+    // Force transparent background on body/html for OBS
     useEffect(() => {
+        // Helper to force style
+        const setTransparent = (el: HTMLElement | null) => {
+            if (el) el.style.setProperty('background-color', 'transparent', 'important');
+        };
+
         const originalBodyBg = document.body.style.backgroundColor;
         const originalHtmlBg = document.documentElement.style.backgroundColor;
+        const root = document.getElementById('root');
 
-        document.body.style.backgroundColor = 'transparent';
-        document.documentElement.style.backgroundColor = 'transparent';
+        setTransparent(document.body);
+        setTransparent(document.documentElement);
+        setTransparent(root);
 
         return () => {
             document.body.style.backgroundColor = originalBodyBg;
             document.documentElement.style.backgroundColor = originalHtmlBg;
+            if (root) root.style.removeProperty('background-color');
         };
     }, []);
 
