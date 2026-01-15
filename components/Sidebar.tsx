@@ -52,6 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         },
         { id: 'timer', label: 'Timer Inatividade', icon: TimerIcon },
         { id: 'loyalty', label: 'Lealdade', icon: CrownIcon },
+        { id: 'likes', label: 'Contador de Likes', icon: ThumbsUpIcon },
         { id: 'giveaway', label: 'Sorteio', icon: GiftIcon },
     ];
 
@@ -140,11 +141,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                     </div>
                 )}
-
-                {/* Like Goal Widget */}
-                <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-2">
-                    <LikeGoalWidget isOpen={isOpen} />
-                </div>
 
                 {!isOpen && (
                     <button

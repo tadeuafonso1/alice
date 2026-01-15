@@ -6,6 +6,7 @@ import { HomePage } from './src/pages/HomePage';
 import { CommandsPage } from './src/pages/CommandsPage';
 import { PrivacyPolicyPage } from './src/pages/PrivacyPolicyPage';
 import { TermsOfServicePage } from './src/pages/TermsOfServicePage';
+import { OBSLikesPage } from './src/pages/OBSLikesPage';
 
 const AppRoutes: React.FC = () => {
     const { session, loading } = useSession();
@@ -24,6 +25,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/comandos" element={<CommandsPage />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/terms" element={<TermsOfServicePage />} />
+            <Route path="/obs/likes/:userId" element={<OBSLikesPage />} />
         </Routes>
     );
 };

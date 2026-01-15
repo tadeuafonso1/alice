@@ -14,36 +14,69 @@ serve(async (req) => {
     }
 
     try {
+        // Prepare Supabase Client (Service Role for OBS access, User Auth for Dashboard)
         const supabaseClient = createClient(
             // @ts-ignore
             Deno.env.get('SUPABASE_URL') ?? '',
             // @ts-ignore
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
             {
-                auth: {
-                    persistSession: false,
-                },
+                auth: { persistSession: false },
             }
         );
 
-        // 1. Authenticate Supabase User
-        const authHeader = req.headers.get('Authorization')!;
-        const { data: { user }, error: userError } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''));
+        let userId: string;
 
-        if (userError || !user) throw new Error("Usuário não autenticado");
+        // Check if request has a specific target (OBS mode) or uses header (Dashboard mode)
+        const reqJson = await req.json().catch(() => ({}));
+        const { target_user_id } = reqJson;
 
-        // 2. Get YouTube Token from DB
+        if (target_user_id) {
+            userId = target_user_id;
+        } else {
+            // Dashboard Mode: Authenticate User
+            const authHeader = req.headers.get('Authorization');
+            if (!authHeader) throw new Error("Usuário não autenticado e nenhum target_user_id fornecido.");
+
+            const { data: { user }, error: userError } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''));
+            if (userError || !user) throw new Error("Usuário não autenticado");
+            userId = user.id;
+        }
+
+        // 1. Get YouTube Token from DB
         const { data: tokenData, error: tokenError } = await supabaseClient
             .from('youtube_tokens')
             .select('access_token')
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
             .single();
 
-        if (tokenError || !tokenData) throw new Error("Token do YouTube não encontrado. Faça login novamente.");
+        if (tokenError || !tokenData) {
+            // Friendly error for OBS
+            return new Response(JSON.stringify({
+                error: "Token do YouTube não encontrado. O usuário precisa fazer login no painel.",
+                code: "NO_TOKEN",
+                likes: 0
+            }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200, // Return 200 so OBS doesn't show a generic network error
+            });
+        }
 
+        // 2. Get Goal Settings from DB
+        const { data: goalData, error: goalError } = await supabaseClient
+            .from('like_goals')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        // Defaults
+        let currentGoal = goalData?.current_goal ?? 100;
+        let step = goalData?.step ?? 50;
+        let autoUpdate = goalData?.auto_update ?? true;
+
+        // 3. Fetch YouTube Data
         const accessToken = tokenData.access_token;
 
-        // 3. Helper to make YouTube requests
         const fetchYouTube = async (url: string) => {
             const res = await fetch(url, {
                 headers: {
@@ -53,54 +86,58 @@ serve(async (req) => {
             });
             const json = await res.json();
             if (!res.ok) {
-                // If 401, likely token expired
-                if (res.status === 401) {
-                    throw new Error("YOUTUBE_TOKEN_EXPIRED");
-                }
+                if (res.status === 401) throw new Error("YOUTUBE_TOKEN_EXPIRED");
                 throw new Error(`YouTube API Error: ${json.error?.message || res.statusText}`);
             }
             return json;
         }
 
-        // 4. Find Active Live Broadcast
-        // mine=true ensures we look at the user's channel
-        const broadcastUrl = `https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet&broadcastStatus=active&broadcastType=all&mine=true`;
-        const broadcastData = await fetchYouTube(broadcastUrl);
+        let likeCount = 0;
+        let streamFound = false;
 
-        if (!broadcastData.items || broadcastData.items.length === 0) {
-            // Fallback: If no active live stream, maybe return 0 or check for most recent video?
-            // For now, let's just return 0 to indicate no live stream found.
-            return new Response(JSON.stringify({
-                likes: 0,
-                streamFound: false,
-                message: "Nenhuma live ativa encontrada."
-            }), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200,
+        try {
+            const broadcastUrl = `https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet&broadcastStatus=active&broadcastType=all&mine=true`;
+            const broadcastData = await fetchYouTube(broadcastUrl);
+
+            if (broadcastData.items && broadcastData.items.length > 0) {
+                streamFound = true;
+                const videoId = broadcastData.items[0].id;
+                const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoId}`;
+                const videoData = await fetchYouTube(videoUrl);
+
+                if (videoData.items && videoData.items.length > 0) {
+                    likeCount = parseInt(videoData.items[0].statistics.likeCount || "0", 10);
+                }
+            }
+        } catch (fetchError: any) {
+            // Handle specific fetch errors if needed, but for now propagate
+            if (fetchError.message === "YOUTUBE_TOKEN_EXPIRED") throw fetchError;
+            console.error("Fetch warning:", fetchError);
+        }
+
+        // 4. Update Goal Logic (Server-side)
+        let goalUpdated = false;
+        if (autoUpdate && likeCount >= currentGoal) {
+            const diff = likeCount - currentGoal;
+            const stepsToAdd = Math.floor(diff / step) + 1;
+            currentGoal = currentGoal + (step * stepsToAdd);
+            goalUpdated = true;
+
+            // Persist new goal
+            await supabaseClient.from('like_goals').upsert({
+                user_id: userId,
+                current_goal: currentGoal,
+                step: step,
+                auto_update: autoUpdate
             });
         }
 
-        const videoId = broadcastData.items[0].id;
-        const videoTitle = broadcastData.items[0].snippet.title;
-
-        // 5. Fetch Video Stats (Likes)
-        const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoId}`;
-        const videoData = await fetchYouTube(videoUrl);
-
-        if (!videoData.items || videoData.items.length === 0) {
-            throw new Error("Vídeo encontrado mas detalhes não disponíveis.");
-        }
-
-        const stats = videoData.items[0].statistics;
-        const likeCount = parseInt(stats.likeCount || "0", 10);
-        // Note: viewCount is also available in stats
-
         return new Response(JSON.stringify({
             likes: likeCount,
-            videoId: videoId,
-            videoTitle: videoTitle,
-            streamFound: true,
-            success: true
+            goal: currentGoal,
+            step: step,
+            streamFound: streamFound,
+            goalUpdated: goalUpdated
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
@@ -108,16 +145,14 @@ serve(async (req) => {
 
     } catch (error: any) {
         console.error("Erro na Edge Function youtube-stats-fetch:", error.message);
-
         const isExpired = error.message === "YOUTUBE_TOKEN_EXPIRED";
-        const status = isExpired ? 401 : 500;
 
         return new Response(JSON.stringify({
             error: error.message,
             code: isExpired ? "TOKEN_EXPIRED" : "INTERNAL_ERROR"
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: status,
+            status: isExpired ? 401 : 500,
         });
     }
 });

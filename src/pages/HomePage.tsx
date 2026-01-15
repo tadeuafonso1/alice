@@ -9,6 +9,7 @@ import { YouTubeSettings } from '@/components/YouTubeSettings';
 import { TimerSettings } from '@/components/TimerSettings';
 import { GiveawayRoulette } from '@/components/GiveawayRoulette';
 import { LoyaltySettings } from '@/components/LoyaltySettings';
+import { LikesTab } from '@/components/LikesTab';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings, CommandSetting } from '@/types';
 import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, UsersIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon } from '@/components/Icons';
 import { supabase } from '@/integrations/supabase/client';
@@ -1638,6 +1639,8 @@ export const HomePage: React.FC = () => {
                                 onSave={handleSettingsSave}
                             />
                         )}
+
+                        {activeTab === 'likes' && <LikesTab />}
 
                         {activeTab === 'giveaway' && (
                             <GiveawayRoulette
