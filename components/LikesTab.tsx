@@ -25,6 +25,7 @@ export const LikesTab: React.FC = () => {
         setError(null);
         try {
             const { data, error } = await supabase.functions.invoke('youtube-stats-fetch', {
+                method: 'GET',
                 headers: {
                     Authorization: `Bearer ${session?.access_token}`
                 }
