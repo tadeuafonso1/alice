@@ -34,6 +34,20 @@ export const OBSLikesPage: React.FC = () => {
         return () => clearInterval(interval);
     }, [userId]);
 
+    // Force transparent background on body/html for OBS
+    useEffect(() => {
+        const originalBodyBg = document.body.style.backgroundColor;
+        const originalHtmlBg = document.documentElement.style.backgroundColor;
+
+        document.body.style.backgroundColor = 'transparent';
+        document.documentElement.style.backgroundColor = 'transparent';
+
+        return () => {
+            document.body.style.backgroundColor = originalBodyBg;
+            document.documentElement.style.backgroundColor = originalHtmlBg;
+        };
+    }, []);
+
     // Progress
     const progress = Math.min((likes / goal) * 100, 100);
 

@@ -13,7 +13,10 @@ export const LikesTab: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [streamFound, setStreamFound] = useState<boolean>(true);
     const [copied, setCopied] = useState<boolean>(false);
+    const [streamFound, setStreamFound] = useState<boolean>(true);
+    const [copied, setCopied] = useState<boolean>(false);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
+    const [lastServerGoal, setLastServerGoal] = useState<number | null>(null);
 
     const obsUrl = session ? `${window.location.origin}/obs/likes/${session.user.id}` : '';
 
@@ -38,12 +41,31 @@ export const LikesTab: React.FC = () => {
 
             setLikes(data.likes || 0);
 
-            // Only update local state from DB if this is the first load or if we want to sync
-            // ideally we only sync initally to avoid overwriting user edits in progress (though rare with polling)
-            // But since the backend also auto-updates the goal, we should accept updates if they change.
-            if (data.goal) setGoal(data.goal);
-            if (data.step) setStep(data.step);
-            // Handling undefined auto_update might be tricky if not sent, check edge function return
+            setLikes(data.likes || 0);
+
+            // Logic to prevent overwriting user changes while typing:
+            // 1. If it's the first load (!isInitialized), set everything.
+            // 2. If the server says the goal was auto-updated (data.goalUpdated), accept the new goal.
+            // 3. Otherwise, do NOT overwrite 'goal', 'step', or 'autoUpdate' from the poll, 
+            //    because the user might be editing them locally and we don't want to revert their changes.
+
+            if (!isInitialized) {
+                if (data.goal) {
+                    setGoal(data.goal);
+                    setLastServerGoal(data.goal);
+                }
+                if (data.step) setStep(data.step);
+                if (data.auto_update !== undefined) setAutoUpdate(data.auto_update);
+            } else if (data.goalUpdated) {
+                // Server auto-incremented the goal, so we must sync.
+                if (data.goal) {
+                    setGoal(data.goal);
+                    setLastServerGoal(data.goal);
+                }
+            } else {
+                // Optional: If we want to sync across tabs, we could check if data.goal != lastServerGoal
+                // But for now, let's prioritize "Don't Overwrite Input".
+            }
 
         } catch (err: any) {
             console.error('Error fetching likes:', err);
