@@ -14,8 +14,10 @@ import {
     GlobeIcon,
     CopyIcon,
     CrownIcon,
-    GiftIcon
+    GiftIcon,
+    ThumbsUpIcon
 } from './Icons';
+import { LikeGoalWidget } from './LikeGoalWidget';
 
 interface SidebarProps {
     activeTab: string;
@@ -138,6 +140,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                     </div>
                 )}
+
+                {/* Like Goal Widget */}
+                <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-2">
+                    <LikeGoalWidget isOpen={isOpen} />
+                </div>
 
                 {!isOpen && (
                     <button
