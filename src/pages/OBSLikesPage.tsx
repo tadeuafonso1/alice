@@ -73,7 +73,7 @@ export const OBSLikesPage: React.FC = () => {
                 {/* Bar */}
                 <div className="w-full h-12 rounded-full overflow-hidden bg-white/10 backdrop-blur-sm border-2 border-white/20">
                     <div
-                        className="h-full bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.6)] transition-all duration-700 ease-out flex items-center justify-end pr-2"
+                        className="h-full bg-blue-600 transition-all duration-700 ease-out"
                         style={{ width: `${progress}%` }}
                     />
                 </div>
