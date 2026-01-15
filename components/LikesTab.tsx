@@ -13,11 +13,12 @@ export const LikesTab: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [streamFound, setStreamFound] = useState<boolean>(true);
     const [copied, setCopied] = useState<boolean>(false);
+    const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
     const obsUrl = session ? `${window.location.origin}/obs/likes/${session.user.id}` : '';
 
     const fetchLikes = async () => {
-        setLoading(true);
+        if (!isInitialized) setLoading(true);
         setError(null);
         try {
             const { data, error } = await supabase.functions.invoke('youtube-stats-fetch', {
@@ -36,23 +37,30 @@ export const LikesTab: React.FC = () => {
             }
 
             setLikes(data.likes || 0);
+
+            // Only update local state from DB if this is the first load or if we want to sync
+            // ideally we only sync initally to avoid overwriting user edits in progress (though rare with polling)
+            // But since the backend also auto-updates the goal, we should accept updates if they change.
             if (data.goal) setGoal(data.goal);
             if (data.step) setStep(data.step);
+            // Handling undefined auto_update might be tricky if not sent, check edge function return
 
         } catch (err: any) {
             console.error('Error fetching likes:', err);
             if (err.message === 'YOUTUBE_TOKEN_EXPIRED') {
                 setError('Token expirado. Reconecte o YouTube na aba "YouTube Chat".');
             } else {
-                setError('Erro ao buscar likes.');
+                // Keep silent on minor errors unless critical
             }
         } finally {
             setLoading(false);
+            setIsInitialized(true);
         }
     };
 
     const saveSettings = async () => {
-        if (!session) return;
+        if (!session || !isInitialized) return;
+        console.log("Saving Like Settings:", { goal, step, autoUpdate });
         const { error } = await supabase.from('like_goals').upsert({
             user_id: session.user.id,
             current_goal: goal,

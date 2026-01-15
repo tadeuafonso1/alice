@@ -60,7 +60,7 @@ export const OBSLikesPage: React.FC = () => {
                     <span className="text-2xl font-bold text-white mb-1 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">/ {goal.toLocaleString()}</span>
                 </div>
 
-                <div className="w-full h-4 bg-black/50 rounded-full overflow-hidden backdrop-blur-sm border border-white/10">
+                <div className="w-full h-4 rounded-full overflow-hidden">
                     <div
                         className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-all duration-1000 ease-out"
                         style={{ width: `${progress}%` }}
