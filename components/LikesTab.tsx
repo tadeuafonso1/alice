@@ -15,7 +15,9 @@ export const LikesTab: React.FC = () => {
     const [copied, setCopied] = useState<boolean>(false);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
     const [lastServerGoal, setLastServerGoal] = useState<number | null>(null);
+    const [lastServerGoal, setLastServerGoal] = useState<number | null>(null);
     const [isSaving, setIsSaving] = useState<boolean>(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
 
     const obsUrl = session ? `${window.location.origin}/obs/likes/${session.user.id}` : '';
 
@@ -80,6 +82,7 @@ export const LikesTab: React.FC = () => {
     const saveSettings = async () => {
         if (!session || !isInitialized) return;
         setIsSaving(true);
+        setSaveError(null);
         console.log("Saving Like Settings:", { goal, step, autoUpdate });
         const { error } = await supabase.from('like_goals').upsert({
             user_id: session.user.id,
@@ -87,7 +90,10 @@ export const LikesTab: React.FC = () => {
             step: step,
             auto_update: autoUpdate
         });
-        if (error) console.error('Error saving settings', error);
+        if (error) {
+            console.error('Error saving settings', error);
+            setSaveError(error.message);
+        }
         setTimeout(() => setIsSaving(false), 500);
     };
 
@@ -221,6 +227,20 @@ export const LikesTab: React.FC = () => {
                                     Se ativado, a meta aumentará automaticamente em {step} likes sempre que for atingida.
                                 </p>
                             </div>
+
+                            {saveError && (
+                                <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-lg">
+                                    Erro ao salvar: {saveError}
+                                </div>
+                            )}
+
+                            <button
+                                onClick={saveSettings}
+                                disabled={isSaving}
+                                className="w-full py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                {isSaving ? 'Salvando...' : 'Salvar Configurações'}
+                            </button>
                         </div>
                     </div>
 
