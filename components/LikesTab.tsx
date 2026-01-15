@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ThumbsUpIcon, RefreshCwIcon, AlertTriangleIcon, CopyIcon, LinkIcon, SettingsIcon } from './Icons';
+import { ThumbsUpIcon, RefreshCwIcon, AlertTriangleIcon, CopyIcon, LinkIcon, SettingsIcon, CheckIcon } from './Icons';
 import { useSession } from '../src/contexts/SessionContext';
 
 export const LikesTab: React.FC = () => {
@@ -12,6 +12,7 @@ export const LikesTab: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [streamFound, setStreamFound] = useState<boolean>(true);
+    const [copied, setCopied] = useState<boolean>(false);
 
     const obsUrl = session ? `${window.location.origin}/obs/likes/${session.user.id}` : '';
 
@@ -157,7 +158,7 @@ export const LikesTab: React.FC = () => {
                                     type="number"
                                     value={goal}
                                     onChange={(e) => setGoal(Number(e.target.value))}
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all"
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all"
                                 />
                             </div>
                             <div>
@@ -167,7 +168,7 @@ export const LikesTab: React.FC = () => {
                                         type="number"
                                         value={step}
                                         onChange={(e) => setStep(Number(e.target.value))}
-                                        className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all"
+                                        className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all"
                                     />
                                     <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
                                         <input
@@ -208,12 +209,14 @@ export const LikesTab: React.FC = () => {
                             <button
                                 onClick={() => {
                                     navigator.clipboard.writeText(obsUrl);
-                                    // Could add toast here
+                                    setCopied(true);
+                                    setTimeout(() => setCopied(false), 2000);
                                 }}
-                                className="bg-cyan-500 hover:bg-cyan-400 text-white p-3 rounded-lg transition-colors font-bold shadow-lg shadow-cyan-900/50"
+                                className={`p-3 rounded-lg transition-all font-bold shadow-lg flex items-center justify-center gap-2 ${copied ? 'bg-green-500 hover:bg-green-600' : 'bg-cyan-500 hover:bg-cyan-400'} text-white`}
                                 title="Copiar Link"
                             >
-                                <CopyIcon className="w-5 h-5" />
+                                {copied ? <CheckIcon className="w-5 h-5" /> : <CopyIcon className="w-5 h-5" />}
+                                {copied && <span className="text-xs">Copiado!</span>}
                             </button>
                         </div>
                         <div className="mt-4 flex gap-4 text-xs text-slate-400 relative z-10">
