@@ -109,11 +109,8 @@ export const LikesTab: React.FC = () => {
         }
     };
 
-    // Save on change (debounce could be added but simple is fine for now)
-    useEffect(() => {
-        const timeout = setTimeout(saveSettings, 1000);
-        return () => clearTimeout(timeout);
-    }, [goal, step, autoUpdate, isInitialized]);
+    // Auto-save removed as per user request. 
+    // Settings now only save when the button is clicked.
 
     useEffect(() => {
         fetchLikes();
@@ -208,7 +205,6 @@ export const LikesTab: React.FC = () => {
                                     type="number"
                                     value={goal}
                                     onChange={(e) => setGoal(Number(e.target.value))}
-                                    onBlur={saveSettings}
                                     className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all"
                                 />
                             </div>
@@ -219,7 +215,6 @@ export const LikesTab: React.FC = () => {
                                         type="number"
                                         value={step}
                                         onChange={(e) => setStep(Number(e.target.value))}
-                                        onBlur={saveSettings}
                                         className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all"
                                     />
                                     <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
