@@ -8,6 +8,12 @@ export const OBSLikesPage: React.FC = () => {
     const [goal, setGoal] = useState<number>(100);
     const [loading, setLoading] = useState<boolean>(true);
 
+    // Customization State
+    const [barColor, setBarColor] = useState<string>('#2563eb');
+    const [bgColor, setBgColor] = useState<string>('#ffffff1a');
+    const [borderColor, setBorderColor] = useState<string>('#ffffffcc');
+    const [textColor, setTextColor] = useState<string>('#ffffff');
+
     const fetchStats = async () => {
         if (!userId) return;
         try {
@@ -19,6 +25,13 @@ export const OBSLikesPage: React.FC = () => {
             if (data && !error) {
                 setLikes(data.likes || 0);
                 setGoal(data.goal || 100);
+
+                if (data.colors) {
+                    setBarColor(data.colors.bar || '#2563eb');
+                    setBgColor(data.colors.bg || '#ffffff1a');
+                    setBorderColor(data.colors.border || '#ffffffcc');
+                    setTextColor(data.colors.text || '#ffffff');
+                }
             }
         } catch (err) {
             console.error(err);
@@ -64,17 +77,18 @@ export const OBSLikesPage: React.FC = () => {
                 - Minimal strokes
              */}
             <div className="w-[600px] p-6 relative flex flex-col items-center justify-center">
-                {/* Text: 0/100 */}
-                <h1 className="text-8xl font-black text-white leading-none drop-shadow-[0_4px_4px_rgba(0,0,0,1)] tracking-tighter mb-4"
-                    style={{ textShadow: '4px 4px 0px #000' }}>
-                    {likes}/{goal}
+                {/* Text: LIKE 0/100 */}
+                <h1 className="text-8xl font-black leading-none drop-shadow-[0_4px_4px_rgba(0,0,0,1)] tracking-tighter mb-4 uppercase"
+                    style={{ textShadow: '4px 4px 0px #000', color: textColor }}>
+                    LIKE {likes}/{goal}
                 </h1>
 
                 {/* Bar */}
-                <div className="w-full h-12 rounded-full overflow-hidden bg-white/10 backdrop-blur-sm border-4 border-white/80">
+                <div className="w-full h-12 rounded-full overflow-hidden backdrop-blur-sm"
+                    style={{ backgroundColor: bgColor, border: `4px solid ${borderColor}` }}>
                     <div
-                        className="h-full bg-blue-600 transition-all duration-700 ease-out"
-                        style={{ width: `${progress}%` }}
+                        className="h-full transition-all duration-700 ease-out"
+                        style={{ width: `${progress}%`, backgroundColor: barColor, boxShadow: `0 0 20px ${barColor}99` }}
                     />
                 </div>
             </div>
