@@ -15,7 +15,6 @@ export const LikesTab: React.FC = () => {
     const [copied, setCopied] = useState<boolean>(false);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
     const [lastServerGoal, setLastServerGoal] = useState<number | null>(null);
-    const [lastServerGoal, setLastServerGoal] = useState<number | null>(null);
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const [saveError, setSaveError] = useState<string | null>(null);
 
