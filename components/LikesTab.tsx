@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ThumbsUpIcon, RefreshCwIcon, AlertTriangleIcon, CopyIcon, LinkIcon, SettingsIcon, CheckIcon } from './Icons';
+import { ThumbsUpIcon, RefreshCwIcon, AlertTriangleIcon, CopyIcon, LinkIcon, SettingsIcon, CheckIcon, PaletteIcon } from './Icons';
 import { useSession } from '../src/contexts/SessionContext';
 
 export const LikesTab: React.FC = () => {
@@ -267,55 +267,72 @@ export const LikesTab: React.FC = () => {
                             )}
 
                             {/* Customization Section */}
-                            <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                                <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-4">Personalização Visual</label>
+                            <div className="pt-6 mt-6 border-t border-slate-200 dark:border-slate-700">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className="p-2 bg-purple-500/10 rounded-lg">
+                                        <PaletteIcon className="w-5 h-5 text-purple-500" />
+                                    </div>
+                                    <h4 className="font-bold text-slate-700 dark:text-slate-200">Personalização Visual</h4>
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs text-slate-500 mb-1">Cor da Barra</label>
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="color"
-                                                value={barColor}
-                                                onChange={(e) => setBarColor(e.target.value)}
-                                                className="w-8 h-8 rounded cursor-pointer border-0 p-0"
-                                            />
-                                            <span className="text-xs font-mono text-slate-500">{barColor}</span>
+                                    <div className="group">
+                                        <label className="block text-xs font-medium text-slate-500 mb-2 group-hover:text-cyan-500 transition-colors">Cor da Barra</label>
+                                        <div className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-cyan-500/50 transition-colors">
+                                            <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 shadow-sm">
+                                                <input
+                                                    type="color"
+                                                    value={barColor}
+                                                    onChange={(e) => setBarColor(e.target.value)}
+                                                    className="absolute -top-2 -left-2 w-16 h-16 p-0 border-0 cursor-pointer"
+                                                />
+                                            </div>
+                                            <span className="font-mono text-xs text-slate-600 dark:text-slate-400 uppercase">{barColor}</span>
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs text-slate-500 mb-1">Cor do Fundo</label>
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="color"
-                                                value={bgColor.substring(0, 7)} // input color only takes hex 6
-                                                onChange={(e) => setBgColor(e.target.value + '1a')} // simple fix for now, keep transparency static or add alpha slider later
-                                                className="w-8 h-8 rounded cursor-pointer border-0 p-0"
-                                            />
-                                            <span className="text-xs font-mono text-slate-500">Transparente</span>
+
+                                    <div className="group">
+                                        <label className="block text-xs font-medium text-slate-500 mb-2 group-hover:text-cyan-500 transition-colors">Cor de Fundo</label>
+                                        <div className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-cyan-500/50 transition-colors">
+                                            <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 shadow-sm">
+                                                <input
+                                                    type="color"
+                                                    value={bgColor.substring(0, 7)}
+                                                    onChange={(e) => setBgColor(e.target.value + '1a')}
+                                                    className="absolute -top-2 -left-2 w-16 h-16 p-0 border-0 cursor-pointer"
+                                                />
+                                            </div>
+                                            <span className="font-mono text-xs text-slate-600 dark:text-slate-400 uppercase">{bgColor.substring(0, 7)}</span>
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs text-slate-500 mb-1">Cor da Borda</label>
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="color"
-                                                value={borderColor.substring(0, 7)}
-                                                onChange={(e) => setBorderColor(e.target.value + 'cc')}
-                                                className="w-8 h-8 rounded cursor-pointer border-0 p-0"
-                                            />
-                                            <span className="text-xs font-mono text-slate-500">Borda</span>
+
+                                    <div className="group">
+                                        <label className="block text-xs font-medium text-slate-500 mb-2 group-hover:text-cyan-500 transition-colors">Borda</label>
+                                        <div className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-cyan-500/50 transition-colors">
+                                            <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 shadow-sm">
+                                                <input
+                                                    type="color"
+                                                    value={borderColor.substring(0, 7)}
+                                                    onChange={(e) => setBorderColor(e.target.value + 'cc')}
+                                                    className="absolute -top-2 -left-2 w-16 h-16 p-0 border-0 cursor-pointer"
+                                                />
+                                            </div>
+                                            <span className="font-mono text-xs text-slate-600 dark:text-slate-400 uppercase">{borderColor.substring(0, 7)}</span>
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs text-slate-500 mb-1">Cor do Texto</label>
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="color"
-                                                value={textColor}
-                                                onChange={(e) => setTextColor(e.target.value)}
-                                                className="w-8 h-8 rounded cursor-pointer border-0 p-0"
-                                            />
-                                            <span className="text-xs font-mono text-slate-500">{textColor}</span>
+
+                                    <div className="group">
+                                        <label className="block text-xs font-medium text-slate-500 mb-2 group-hover:text-cyan-500 transition-colors">Texto</label>
+                                        <div className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-cyan-500/50 transition-colors">
+                                            <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 shadow-sm">
+                                                <input
+                                                    type="color"
+                                                    value={textColor}
+                                                    onChange={(e) => setTextColor(e.target.value)}
+                                                    className="absolute -top-2 -left-2 w-16 h-16 p-0 border-0 cursor-pointer"
+                                                />
+                                            </div>
+                                            <span className="font-mono text-xs text-slate-600 dark:text-slate-400 uppercase">{textColor}</span>
                                         </div>
                                     </div>
                                 </div>
