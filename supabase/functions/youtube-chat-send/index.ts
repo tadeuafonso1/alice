@@ -85,57 +85,83 @@ serve(async (req) => {
             });
         };
 
-        let response = await sendMessage(providerToken || '');
-
-        // Renovação automática
+        // Lógica Principal: Tenta enviar -> Se 401/403, tenta renovar -> Re-tenta enviar
+        let response;
         let renewalLog = [];
-        if (!response.ok && response.status === 401) {
-            renewalLog.push("YouTube retornou 401.");
 
+        // 1. Tentar com o token recebido (se houver)
+        if (providerToken) {
+            response = await sendMessage(providerToken);
+        }
+
+        // 2. Se não tinha token, ou se falhou com auth error, tenta buscar do banco e renovar
+        if (!providerToken || (response && (response.status === 401 || response.status === 403))) {
+            renewalLog.push(providerToken ? `Falha inicial (${response.status})` : "Token ausente no request");
+
+            // Só conseguimos renovar se tivermos um usuário autenticado no Supabase
             if (!isAuthValid) {
-                renewalLog.push("Erro: Sessão Supabase inválida.");
+                renewalLog.push("Impossível renovar: Sessão Supabase inválida/ausente");
+                // Se não tínhamos response ainda (caso providerToken null), criamos uma response fake de erro
+                if (!response) {
+                    response = new Response(JSON.stringify({ error: "Token ausente e sessão inválida" }), { status: 401 });
+                }
             } else {
                 const { data: userData, error: userError } = await supabaseClient.auth.getUser(authHeader!.replace('Bearer ', ''));
                 const user = userData?.user;
 
                 if (userError || !user) {
-                    renewalLog.push(`Erro Supabase Auth: ${userError?.message || 'Usuário não encontrado'}`);
+                    renewalLog.push(`Erro User Supabase: ${userError?.message || 'User null'}`);
                 } else {
-                    renewalLog.push(`Usuário: ${user.id.substring(0, 5)}...`);
                     const { data: tokenData, error: dbError } = await supabaseClient
                         .from('youtube_tokens')
                         .select('refresh_token')
                         .eq('user_id', user.id)
                         .maybeSingle();
 
-                    if (dbError) {
-                        renewalLog.push(`Erro DB: ${dbError.message}`);
-                    } else if (!tokenData?.refresh_token) {
-                        renewalLog.push("Erro: Refresh Token não encontrado no banco.");
+                    if (dbError || !tokenData?.refresh_token) {
+                        renewalLog.push(dbError ? `Erro DB: ${dbError.message}` : "Refresh Token não achado no DB");
                     } else {
                         try {
-                            renewalLog.push("Solicitando novo token ao Google...");
+                            renewalLog.push("Renovando token via Google...");
                             const newTokenData = await getNewToken(tokenData.refresh_token);
                             const newAccessToken = newTokenData.access_token;
-                            renewalLog.push("Novo token OK! Salvando...");
 
-                            await supabaseClient
-                                .from('youtube_tokens')
-                                .update({
+                            if (newAccessToken) {
+                                renewalLog.push("Token renovado com sucesso");
+                                // Salva novo token e expiração
+                                await supabaseClient.from('youtube_tokens').update({
                                     access_token: newAccessToken,
-                                    expires_at: new Date(Date.now() + newTokenData.expires_in * 1000).toISOString()
-                                })
-                                .eq('user_id', user.id);
+                                    expires_at: new Date(Date.now() + (newTokenData.expires_in * 1000)).toISOString()
+                                }).eq('user_id', user.id);
 
-                            renewalLog.push("Banco atualizado. Re-tentando YouTube...");
-                            response = await sendMessage(newAccessToken);
-                            if (!response.ok) renewalLog.push(`Re-tentativa falhou (${response.status})`);
-                        } catch (renewalError: any) {
-                            renewalLog.push(`Falha crítica Google: ${renewalError.message}`);
+                                // Tenta enviar novamente com o novo token
+                                response = await sendMessage(newAccessToken);
+                                if (response.ok) {
+                                    renewalLog.push("Envio com novo token: SUCESSO");
+                                } else {
+                                    renewalLog.push(`Envio com novo token: FALHA (${response.status})`);
+                                }
+                            } else {
+                                renewalLog.push("Google não retornou access_token");
+                            }
+                        } catch (e: any) {
+                            renewalLog.push(`Exceção na renovação: ${e.message}`);
                         }
                     }
                 }
             }
+        }
+
+        // Caso onde providerToken era null e não conseguimos renovar (response ainda undefined)
+        if (!response) {
+            console.error("Falha: Sem token e sem refresh success");
+            return new Response(JSON.stringify({
+                success: false,
+                error: `Erro de Autenticação: Token ausente e falha na renovação. Detalhes: ${renewalLog.join(' -> ')}`
+            }), {
+                status: 200, // Retornamos 200 pro front tratar o erro JSON
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
         }
 
         if (!response.ok) {
