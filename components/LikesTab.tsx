@@ -13,8 +13,6 @@ export const LikesTab: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [streamFound, setStreamFound] = useState<boolean>(true);
     const [copied, setCopied] = useState<boolean>(false);
-    const [streamFound, setStreamFound] = useState<boolean>(true);
-    const [copied, setCopied] = useState<boolean>(false);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
     const [lastServerGoal, setLastServerGoal] = useState<number | null>(null);
     const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -39,8 +37,6 @@ export const LikesTab: React.FC = () => {
             } else {
                 setStreamFound(true);
             }
-
-            setLikes(data.likes || 0);
 
             setLikes(data.likes || 0);
 
