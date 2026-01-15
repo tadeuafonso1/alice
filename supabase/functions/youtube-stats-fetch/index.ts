@@ -43,6 +43,25 @@ serve(async (req) => {
             userId = user.id;
         }
 
+        if (req.method === 'POST') {
+            const { goal, step, auto_update } = reqJson;
+
+            // Persist updates
+            const { error: upsertError } = await supabaseClient.from('like_goals').upsert({
+                user_id: userId,
+                current_goal: goal,
+                step: step,
+                auto_update: auto_update
+            });
+
+            if (upsertError) throw upsertError;
+
+            return new Response(JSON.stringify({ success: true }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200,
+            });
+        }
+
         // 1. Get YouTube Token from DB
         const { data: tokenData, error: tokenError } = await supabaseClient
             .from('youtube_tokens')

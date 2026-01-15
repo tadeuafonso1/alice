@@ -82,18 +82,30 @@ export const LikesTab: React.FC = () => {
         if (!session || !isInitialized) return;
         setIsSaving(true);
         setSaveError(null);
-        console.log("Saving Like Settings:", { goal, step, autoUpdate });
-        const { error } = await supabase.from('like_goals').upsert({
-            user_id: session.user.id,
-            current_goal: goal,
-            step: step,
-            auto_update: autoUpdate
-        });
-        if (error) {
-            console.error('Error saving settings', error);
-            setSaveError(error.message);
+        console.log("Saving Settings via Edge Function:", { goal, step, autoUpdate });
+
+        try {
+            const { data, error } = await supabase.functions.invoke('youtube-stats-fetch', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${session?.access_token}`
+                },
+                body: {
+                    goal: goal,
+                    step: step,
+                    auto_update: autoUpdate
+                }
+            });
+
+            if (error) throw error;
+            if (data && data.error) throw new Error(data.error);
+
+        } catch (err: any) {
+            console.error('Error saving settings', err);
+            setSaveError(err.message || 'Unknown error');
+        } finally {
+            setTimeout(() => setIsSaving(false), 500);
         }
-        setTimeout(() => setIsSaving(false), 500);
     };
 
     // Save on change (debounce could be added but simple is fine for now)
