@@ -63,22 +63,17 @@ export const OBSLikesPage: React.FC = () => {
                 - Bold, readable fonts
                 - Minimal strokes
              */}
-            <div className="w-[600px] p-6 relative overflow-hidden">
-                <div className="flex items-end justify-between mb-2">
-                    <div className="flex flex-col">
-                        <span className="text-cyan-400 font-bold text-xs uppercase tracking-[0.2em] mb-1 drop-shadow-md shadow-black">Meta de Likes</span>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-6xl font-black text-white leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ textShadow: '0px 0px 10px rgba(0,0,0,0.5)' }}>
-                                {likes.toLocaleString()}
-                            </span>
-                        </div>
-                    </div>
-                    <span className="text-2xl font-bold text-white mb-1 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">/ {goal.toLocaleString()}</span>
-                </div>
+            <div className="w-[600px] p-6 relative flex flex-col items-center justify-center">
+                {/* Text: 0/100 */}
+                <h1 className="text-8xl font-black text-white leading-none drop-shadow-[0_4px_4px_rgba(0,0,0,1)] tracking-tighter mb-4"
+                    style={{ textShadow: '4px 4px 0px #000' }}>
+                    {likes}/{goal}
+                </h1>
 
-                <div className="w-full h-4 rounded-full overflow-hidden bg-black/30 backdrop-blur-sm border border-white/10">
+                {/* Bar */}
+                <div className="w-full h-12 rounded-full overflow-hidden bg-white/10 backdrop-blur-sm border-2 border-white/20">
                     <div
-                        className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-all duration-1000 ease-out"
+                        className="h-full bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.6)] transition-all duration-700 ease-out flex items-center justify-end pr-2"
                         style={{ width: `${progress}%` }}
                     />
                 </div>
