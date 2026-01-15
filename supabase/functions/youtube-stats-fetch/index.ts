@@ -44,14 +44,18 @@ serve(async (req) => {
         }
 
         if (req.method === 'POST') {
-            const { goal, step, auto_update } = reqJson;
+            const { goal, step, auto_update, bar_color, bg_color, border_color, text_color } = reqJson;
 
             // Persist updates
             const { error: upsertError } = await supabaseClient.from('like_goals').upsert({
                 user_id: userId,
                 current_goal: goal,
                 step: step,
-                auto_update: auto_update
+                auto_update: auto_update,
+                bar_color: bar_color,
+                bg_color: bg_color,
+                border_color: border_color,
+                text_color: text_color
             });
 
             if (upsertError) throw upsertError;
@@ -92,6 +96,12 @@ serve(async (req) => {
         let currentGoal = goalData?.current_goal ?? 100;
         let step = goalData?.step ?? 50;
         let autoUpdate = goalData?.auto_update ?? true;
+
+        // Color defaults
+        let barColor = goalData?.bar_color ?? '#2563eb';
+        let bgColor = goalData?.bg_color ?? '#ffffff1a';
+        let borderColor = goalData?.border_color ?? '#ffffffcc';
+        let textColor = goalData?.text_color ?? '#ffffff';
 
         // 3. Fetch YouTube Data
         const accessToken = tokenData.access_token;
@@ -147,7 +157,11 @@ serve(async (req) => {
                 user_id: userId,
                 current_goal: currentGoal,
                 step: step,
-                auto_update: autoUpdate
+                auto_update: autoUpdate,
+                bar_color: barColor,
+                bg_color: bgColor,
+                border_color: borderColor,
+                text_color: textColor
             });
         }
 
@@ -156,7 +170,13 @@ serve(async (req) => {
             goal: currentGoal,
             step: step,
             streamFound: streamFound,
-            goalUpdated: goalUpdated
+            goalUpdated: goalUpdated,
+            colors: {
+                bar: barColor,
+                bg: bgColor,
+                border: borderColor,
+                text: textColor
+            }
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,

@@ -18,6 +18,12 @@ export const LikesTab: React.FC = () => {
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const [saveError, setSaveError] = useState<string | null>(null);
 
+    // Customization State
+    const [barColor, setBarColor] = useState<string>('#2563eb');
+    const [bgColor, setBgColor] = useState<string>('#ffffff1a');
+    const [borderColor, setBorderColor] = useState<string>('#ffffffcc');
+    const [textColor, setTextColor] = useState<string>('#ffffff');
+
     const obsUrl = session ? `${window.location.origin}/obs/likes/${session.user.id}` : '';
 
     const fetchLikes = async () => {
@@ -61,9 +67,23 @@ export const LikesTab: React.FC = () => {
                     setGoal(data.goal);
                     setLastServerGoal(data.goal);
                 }
+            } else if (data.goalUpdated) {
+                // Server auto-incremented the goal, so we must sync.
+                if (data.goal) {
+                    setGoal(data.goal);
+                    setLastServerGoal(data.goal);
+                }
             } else {
                 // Optional: If we want to sync across tabs, we could check if data.goal != lastServerGoal
                 // But for now, let's prioritize "Don't Overwrite Input".
+            }
+
+            // Sync colors if available (and only on first load to avoiding jumping inputs)
+            if (!isInitialized && data.colors) {
+                setBarColor(data.colors.bar || '#2563eb');
+                setBgColor(data.colors.bg || '#ffffff1a');
+                setBorderColor(data.colors.border || '#ffffffcc');
+                setTextColor(data.colors.text || '#ffffff');
             }
 
         } catch (err: any) {
@@ -94,7 +114,13 @@ export const LikesTab: React.FC = () => {
                 body: {
                     goal: goal,
                     step: step,
-                    auto_update: autoUpdate
+                    goal: goal,
+                    step: step,
+                    auto_update: autoUpdate,
+                    bar_color: barColor,
+                    bg_color: bgColor,
+                    border_color: borderColor,
+                    text_color: textColor
                 }
             });
 
@@ -151,13 +177,13 @@ export const LikesTab: React.FC = () => {
                                 <span className="text-xl font-medium text-slate-500">/ {goal.toLocaleString()}</span>
                             </div>
 
-                            <div className="w-full h-3 bg-slate-700/50 rounded-full overflow-hidden mb-2">
+                            <div className="w-full h-3 rounded-full overflow-hidden mb-2" style={{ backgroundColor: bgColor, border: `1px solid ${borderColor}` }}>
                                 <div
-                                    className="h-full bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.6)] transition-all duration-700"
-                                    style={{ width: `${progress}%` }}
+                                    className="h-full transition-all duration-700"
+                                    style={{ width: `${progress}%`, backgroundColor: barColor, boxShadow: `0 0 10px ${barColor}66` }}
                                 />
                             </div>
-                            <p className="text-xs text-slate-400">Atualizado a cada 60s</p>
+                            <p className="text-xs" style={{ color: textColor }}>{likes.toLocaleString()} / {goal.toLocaleString()}</p>
                         </div>
                     </div>
 
@@ -239,6 +265,62 @@ export const LikesTab: React.FC = () => {
                                 <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-lg">
                                     Erro ao salvar: {saveError}
                                 </div>
+                            )}
+
+                            {/* Customization Section */}
+                            <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                                <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-4">Personalização Visual</label>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-slate-500 mb-1">Cor da Barra</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="color"
+                                                value={barColor}
+                                                onChange={(e) => setBarColor(e.target.value)}
+                                                className="w-8 h-8 rounded cursor-pointer border-0 p-0"
+                                            />
+                                            <span className="text-xs font-mono text-slate-500">{barColor}</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-500 mb-1">Cor do Fundo</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="color"
+                                                value={bgColor.substring(0, 7)} // input color only takes hex 6
+                                                onChange={(e) => setBgColor(e.target.value + '1a')} // simple fix for now, keep transparency static or add alpha slider later
+                                                className="w-8 h-8 rounded cursor-pointer border-0 p-0"
+                                            />
+                                            <span className="text-xs font-mono text-slate-500">Transparente</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-500 mb-1">Cor da Borda</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="color"
+                                                value={borderColor.substring(0, 7)}
+                                                onChange={(e) => setBorderColor(e.target.value + 'cc')}
+                                                className="w-8 h-8 rounded cursor-pointer border-0 p-0"
+                                            />
+                                            <span className="text-xs font-mono text-slate-500">Borda</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-500 mb-1">Cor do Texto</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="color"
+                                                value={textColor}
+                                                onChange={(e) => setTextColor(e.target.value)}
+                                                className="w-8 h-8 rounded cursor-pointer border-0 p-0"
+                                            />
+                                            <span className="text-xs font-mono text-slate-500">{textColor}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             )}
 
                             <button
