@@ -22,15 +22,11 @@ export const OBSLikesPage: React.FC = () => {
             return;
         }
         try {
-            // Direct fetch to avoid client-side invoke issues in OBS Browser Source
+            // Simple fetch without custom headers to avoid preflight (OPTIONS) block in OBS
             const functionUrl = `https://nvtlirmfavhahwtsdchk.supabase.co/functions/v1/youtube-stats-fetch?target_user_id=${userId}`;
 
             const response = await fetch(functionUrl, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-target-user-id': userId
-                }
+                method: 'GET'
             });
 
             if (!response.ok) {
