@@ -1661,7 +1661,7 @@ export const HomePage: React.FC = () => {
                         )}
 
                         {activeTab === 'livepix' && (
-                            <LivePixSettings />
+                            <LivePixSettings userId={session?.user?.id} />
                         )}
 
                         {activeTab === 'subscriber_goals' && (

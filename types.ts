@@ -50,7 +50,6 @@ export interface MessageSettings {
   reset: MessageSetting;
   timerOn: MessageSetting;
   timerOff: MessageSetting;
-  thisIsAWarning: MessageSetting;
   removedForInactivityQueue: MessageSetting;
   thirtySecondWarning: MessageSetting;
   queueList: MessageSetting;
