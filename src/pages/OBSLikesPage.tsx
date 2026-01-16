@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
+// Supabase Anon Key for public access to the Edge Function from OBS
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52dGxpcm1mYXZoYWh3dHNkY2hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5MDgwNDQsImV4cCI6MjA3OTQ4NDA0NH0.KCq4Mre83Iwqppt70XXXOkVTvnwDJE9Ss341jyRAOCI";
+
 export const OBSLikesPage: React.FC = () => {
     const { userId } = useParams<{ userId: string }>();
     const [likes, setLikes] = useState<number>(0);
@@ -25,8 +28,13 @@ export const OBSLikesPage: React.FC = () => {
             // Simple fetch without custom headers to avoid preflight (OPTIONS) block in OBS
             const functionUrl = `https://nvtlirmfavhahwtsdchk.supabase.co/functions/v1/youtube-stats-fetch?target_user_id=${userId}`;
 
+            // Fetch with apikey and Authorization headers to satisfy Supabase gateway
             const response = await fetch(functionUrl, {
-                method: 'GET'
+                method: 'GET',
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                }
             });
 
             if (!response.ok) {
