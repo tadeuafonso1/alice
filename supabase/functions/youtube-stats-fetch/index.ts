@@ -173,6 +173,11 @@ serve(async (req) => {
             step: step,
             streamFound: streamFound,
             goalUpdated: goalUpdated,
+            debug: {
+                userId,
+                method: req.method,
+                hasToken: !!tokenData
+            },
             colors: {
                 bar: barColor,
                 bg: bgColor,
@@ -190,10 +195,11 @@ serve(async (req) => {
 
         return new Response(JSON.stringify({
             error: error.message,
-            code: isExpired ? "TOKEN_EXPIRED" : "INTERNAL_ERROR"
+            code: isExpired ? "TOKEN_EXPIRED" : "INTERNAL_ERROR",
+            debug_userId: "ERROR_CATCH"
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: isExpired ? 401 : 500,
+            status: 200, // Return 200 to allow the frontend to see the error message
         });
     }
 });

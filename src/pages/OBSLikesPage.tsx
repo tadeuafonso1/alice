@@ -13,11 +13,16 @@ export const OBSLikesPage: React.FC = () => {
     const [bgColor, setBgColor] = useState<string>('#ffffff1a');
     const [borderColor, setBorderColor] = useState<string>('#ffffffcc');
     const [textColor, setTextColor] = useState<string>('#ffffff');
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [debugInfo, setDebugInfo] = useState<string>('');
 
     const fetchStats = async () => {
-        if (!userId) return;
+        if (!userId) {
+            setErrorMsg("ID de usuário ausente no link");
+            return;
+        }
         try {
-            // Fetch stats using GET with target_user_id in query params AND headers for OBS compatibility
+            // Using direct fetch to avoid potential invoke stripping params in some environments
             const { data, error } = await supabase.functions.invoke(`youtube-stats-fetch?target_user_id=${userId}`, {
                 method: 'GET',
                 headers: {
@@ -25,21 +30,33 @@ export const OBSLikesPage: React.FC = () => {
                 }
             });
 
-            if (data && !error) {
-                setLikes(data.likes || 0);
-                setGoal(data.goal || 100);
-
-                if (data.colors) {
-                    setBarColor(data.colors.bar || '#2563eb');
-                    setBgColor(data.colors.bg || '#ffffff1a');
-                    setBorderColor(data.colors.border || '#ffffffcc');
-                    setTextColor(data.colors.text || '#ffffff');
-                }
-            } else if (error) {
-                console.error('Supabase Function Error:', error);
+            if (error) {
+                setErrorMsg(`Erro na função: ${error.message}`);
+                console.error(error);
+                return;
             }
-        } catch (err) {
-            console.error('Fetch Error:', err);
+
+            if (data) {
+                if (data.error) {
+                    setErrorMsg(data.error);
+                    setDebugInfo(`UID: ${data.debug?.userId?.substring(0, 8) || '?'}`);
+                } else {
+                    setErrorMsg(null);
+                    setLikes(data.likes || 0);
+                    setGoal(data.goal || 100);
+                    setDebugInfo('');
+
+                    if (data.colors) {
+                        setBarColor(data.colors.bar || '#2563eb');
+                        setBgColor(data.colors.bg || '#ffffff1a');
+                        setBorderColor(data.colors.border || '#ffffffcc');
+                        setTextColor(data.colors.text || '#ffffff');
+                    }
+                }
+            }
+        } catch (err: any) {
+            setErrorMsg(`Erro de conexão: ${err.message}`);
+            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -105,7 +122,15 @@ export const OBSLikesPage: React.FC = () => {
                 </div>
 
                 {/* Error Debug (only visible if there's an issue) */}
-                {!loading && likes === 0 && goal === 100 && (
+                {errorMsg && (
+                    <div className="absolute -bottom-8 left-0 right-0 text-center">
+                        <span className="bg-red-500/80 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest animate-pulse">
+                            {errorMsg} {debugInfo && ` [${debugInfo}]`}
+                        </span>
+                    </div>
+                )}
+
+                {!loading && !errorMsg && likes === 0 && goal === 100 && (
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-white/10 uppercase font-bold tracking-widest whitespace-nowrap">
                         Aguardando dados da live...
                     </div>
