@@ -276,11 +276,13 @@ serve(async (req) => {
         return new Response(JSON.stringify({
             likes: likeCount,
             goal: currentGoal,
+            step: stepCount,
+            auto_update: autoUpdate,
             streamFound,
             goalUpdated,
             colors: { bar: barColor, bg: bgColor, border: borderColor, text: textColor },
             debug: debugInfo,
-            version: '2.0-DIAGNOSTIC'
+            version: '2.1-FIXED-SAVE'
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,

@@ -13,6 +13,7 @@ export const LikesTab: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [streamFound, setStreamFound] = useState<boolean>(true);
     const [copied, setCopied] = useState<boolean>(false);
+    const [showSuccess, setShowSuccess] = useState<boolean>(false);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
     const [lastServerGoal, setLastServerGoal] = useState<number | null>(null);
     const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -119,6 +120,10 @@ export const LikesTab: React.FC = () => {
 
             if (error) throw error;
             if (data && data.error) throw new Error(data.error);
+
+            setShowSuccess(true);
+            setTimeout(() => setShowSuccess(false), 3000);
+            setSaveError(null);
 
         } catch (err: any) {
             console.error('Error saving settings', err);
@@ -336,9 +341,14 @@ export const LikesTab: React.FC = () => {
                             <button
                                 onClick={saveSettings}
                                 disabled={isSaving}
-                                className="w-full py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20 transition-all active:scale-95 disabled:opacity-50"
+                                className={`w-full py-3 ${showSuccess ? 'bg-green-500 hover:bg-green-600' : 'bg-cyan-500 hover:bg-cyan-600'} text-white rounded-xl font-bold shadow-lg transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2`}
                             >
-                                {isSaving ? 'Salvando...' : 'Salvar Configurações'}
+                                {isSaving ? 'Salvando...' : showSuccess ? (
+                                    <>
+                                        <CheckIcon className="w-5 h-5" />
+                                        Configurações Salvas!
+                                    </>
+                                ) : 'Salvar Configurações'}
                             </button>
                         </div>
                     </div>
