@@ -7,10 +7,11 @@ export const OBSAlertsPage: React.FC = () => {
     const { userId } = useParams<{ userId: string }>();
     const [alert, setAlert] = useState<{ message: string; id: number } | null>(null);
     const [phase, setPhase] = useState<'idle' | 'takeoff' | 'flight' | 'explosion'>('idle');
+    const [audioPrimed, setAudioPrimed] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // Audio source - the reliable rocket sound
-    const audioUrl = "https://www.soundboard.com/handler/DownLoadTrack.ashx?cliptoken=6697a8e2-c081-4389-8b01-38dc1a007304";
+    // Audio source - the reliable Pixabay CDN rocket sound
+    const audioUrl = "https://cdn.pixabay.com/audio/2022/03/10/audio_c8deec9833.mp3";
 
     const triggerExplosion = () => {
         const count = 300;
@@ -87,10 +88,34 @@ export const OBSAlertsPage: React.FC = () => {
         };
     }, [userId, runAlertSequence]);
 
+    const handlePrimeAudio = () => {
+        if (audioRef.current) {
+            audioRef.current.play().then(() => {
+                audioRef.current!.pause();
+                audioRef.current!.currentTime = 0;
+                setAudioPrimed(true);
+            }).catch(() => {
+                setAudioPrimed(true);
+            });
+        }
+    };
+
     const rocketImageUrl = `${window.location.origin}/rocket_alert.png`;
 
     return (
         <div className="min-h-screen bg-transparent flex flex-col items-center justify-start pt-32 overflow-hidden font-sans relative">
+            {/* 
+                HIDDEN AUDIO UNLOCKER: 
+                An invisible layer that covers the entire screen until clicked.
+                Necessary for OBS audio compliance without ruins transparency.
+            */}
+            {!audioPrimed && (
+                <div
+                    onClick={handlePrimeAudio}
+                    className="fixed inset-0 z-[9999] cursor-pointer"
+                />
+            )}
+
             <audio
                 ref={audioRef}
                 src={audioUrl}
@@ -110,7 +135,7 @@ export const OBSAlertsPage: React.FC = () => {
                     </div>
                 )}
 
-                {/* 2nd Part: Message Card (Refined: No extra icon as requested) */}
+                {/* 2nd Part: Message Card */}
                 <div style={{
                     backgroundColor: '#0f172a',
                     backgroundImage: 'linear-gradient(135deg, #1e293b 0%, #020617 100%)',
