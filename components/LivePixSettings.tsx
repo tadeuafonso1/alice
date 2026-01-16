@@ -232,10 +232,32 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
                                 Copiar
                             </button>
                         </div>
-                        <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
-                            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                                Recomendado: 1920x1080 (Transparente). O alerta aparecerá no topo da tela.
-                            </p>
+                        <div className="flex gap-2">
+                            <div className="flex-grow p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+                                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium leading-tight">
+                                    Recomendado: 1920x1080 (Transparente). O alerta aparecerá no topo da tela.
+                                </p>
+                            </div>
+                            <button
+                                onClick={async () => {
+                                    if (!userId) return;
+                                    try {
+                                        const { error } = await supabase.from('bot_notifications').insert({
+                                            user_id: userId,
+                                            message: '🚀 TESTE: Alguém acabou de furar a fila! 🚀',
+                                            type: 'livepix_alert',
+                                            created_at: new Date().toISOString()
+                                        });
+                                        if (error) throw error;
+                                        alert('Alerta de teste enviado! Verifique seu OBS.');
+                                    } catch (err: any) {
+                                        alert('Erro ao testar: ' + err.message);
+                                    }
+                                }}
+                                className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-500/20 transition-all active:scale-95"
+                            >
+                                Testar Alerta
+                            </button>
                         </div>
                     </div>
                 </div>
