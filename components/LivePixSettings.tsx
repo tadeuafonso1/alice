@@ -9,6 +9,7 @@ interface Props {
 
 export const LivePixSettings: React.FC<Props> = ({ userId }) => {
     const [settings, setSettings] = useState<LivePixSettingsType>({
+        user_id: userId || '',
         enabled: false,
         client_id: '',
         client_secret: '',
@@ -35,13 +36,12 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
                 if (error) throw error;
                 if (data) {
                     setSettings({
-                        enabled: data.enabled,
+                        ...data,
+                        user_id: data.user_id || userId || '',
+                        skip_queue_price: Number(data.skip_queue_price),
                         client_id: data.client_id || '',
                         client_secret: data.client_secret || '',
-                        skip_queue_enabled: data.skip_queue_enabled,
-                        skip_queue_price: Number(data.skip_queue_price),
                         skip_queue_message: data.skip_queue_message || '',
-                        points_per_real: data.points_per_real,
                         webhook_secret: data.webhook_secret || '',
                     });
                 }
@@ -155,7 +155,7 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
                             <p className="text-xs text-amber-500 font-medium leading-relaxed">
                                 💡 Você encontra essas credenciais nas configurações da sua conta LivePix em <strong>Aplicações</strong>.
                             </p>
-                            <a href="https://livepix.gg/dashboard/settings/applications" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[10px] font-black text-amber-600 uppercase mt-2 hover:underline">
+                            <a href="https://dashboard.livepix.gg/settings/applications" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[10px] font-black text-amber-600 uppercase mt-2 hover:underline">
                                 Abrir LivePix <ExternalLinkIcon className="w-3 h-3" />
                             </a>
                         </div>
