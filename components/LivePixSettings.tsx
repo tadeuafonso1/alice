@@ -201,6 +201,44 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
                         </div>
                     </div>
                 </div>
+
+                {/* OBS Alert Section */}
+                <div className="bg-white dark:bg-[#131b2e] rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-lg">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-blue-500/10 rounded-lg">
+                            <BotIcon className="w-5 h-5 text-blue-500" />
+                        </div>
+                        <h4 className="font-bold text-gray-900 dark:text-white uppercase text-sm tracking-widest">Link de Alerta (OBS)</h4>
+                    </div>
+
+                    <div className="space-y-4">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Adicione este link como <strong>Fonte de Navegador</strong> no OBS para mostrar alertas na tela.
+                        </p>
+                        <div className="relative group">
+                            <input
+                                type="text"
+                                readOnly
+                                value={`${window.location.origin}/obs/alerts/${userId}`}
+                                className="w-full bg-gray-100 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-[10px] font-mono focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-blue-400"
+                            />
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}/obs/alerts/${userId}`);
+                                    alert('Link de alerta copiado!');
+                                }}
+                                className="absolute right-2 top-1.5 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-[10px] font-bold uppercase shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+                            >
+                                Copiar
+                            </button>
+                        </div>
+                        <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+                            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                                Recomendado: 1920x1080 (Transparente). O alerta aparecerá no topo da tela.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Automation Section */}
