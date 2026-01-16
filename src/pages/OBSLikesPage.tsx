@@ -55,7 +55,7 @@ export const OBSLikesPage: React.FC = () => {
                 setBorderColor(data.border_color || '#ffffffcc');
                 setTextColor(data.text_color || '#ffffff');
             } else {
-                setErrorMsg("Nenhuma meta configurada para este ID.");
+                setErrorMsg(`Meta não encontrada para o ID: ${cleanUserId.substring(0, 8)}...`);
             }
         } catch (err: any) {
             if (retryCount < 2) {
