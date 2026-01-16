@@ -95,7 +95,9 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
                         <h3 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3">
-                            <img src="https://livepix.gg/favicon.ico" className="w-6 h-6 rounded" alt="LivePix" />
+                            <div className="w-8 h-8 rounded-lg bg-[#3b82f6] flex items-center justify-center p-1.5 shadow-lg shadow-blue-500/20">
+                                <RocketIcon className="w-full h-full text-white" />
+                            </div>
                             Integração LivePix
                         </h3>
                         <p className="text-gray-400 mt-2 max-w-xl">
