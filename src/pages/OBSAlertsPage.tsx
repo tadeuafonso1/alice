@@ -7,11 +7,9 @@ export const OBSAlertsPage: React.FC = () => {
     const { userId } = useParams<{ userId: string }>();
     const [alert, setAlert] = useState<{ message: string; id: number } | null>(null);
     const [phase, setPhase] = useState<'idle' | 'takeoff' | 'flight' | 'explosion'>('idle');
-    const [audioTestStatus, setAudioTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
-    const [audioPrimed, setAudioPrimed] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // Audio source - switching to a more reliable rocket sound
+    // Audio source - the reliable rocket sound
     const audioUrl = "https://www.soundboard.com/handler/DownLoadTrack.ashx?cliptoken=6697a8e2-c081-4389-8b01-38dc1a007304";
 
     const triggerExplosion = () => {
@@ -38,16 +36,11 @@ export const OBSAlertsPage: React.FC = () => {
 
         // Sound: Liftoff
         if (audioRef.current) {
-            audioRef.current.dispatchEvent(new Event('play')); // Some environments respond better to events
             audioRef.current.volume = 1.0;
             audioRef.current.currentTime = 0;
-            const playPromise = audioRef.current.play();
-
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.error("Audio playback failed:", error);
-                });
-            }
+            audioRef.current.play().catch(e => {
+                console.warn("Audio playback might be blocked without user interaction.", e);
+            });
         }
 
         setTimeout(() => {
@@ -94,63 +87,10 @@ export const OBSAlertsPage: React.FC = () => {
         };
     }, [userId, runAlertSequence]);
 
-    const handlePrimeAudio = () => {
-        if (audioRef.current) {
-            audioRef.current.play().then(() => {
-                audioRef.current!.pause();
-                audioRef.current!.currentTime = 0;
-                setAudioPrimed(true);
-            }).catch(() => {
-                setAudioPrimed(true);
-            });
-        }
-    };
-
-    const testAudio = () => {
-        setAudioTestStatus('testing');
-        if (audioRef.current) {
-            audioRef.current.currentTime = 0;
-            audioRef.current.play()
-                .then(() => setAudioTestStatus('success'))
-                .catch(() => setAudioTestStatus('error'));
-        } else {
-            setAudioTestStatus('error');
-        }
-    };
-
     const rocketImageUrl = `${window.location.origin}/rocket_alert.png`;
 
     return (
         <div className="min-h-screen bg-transparent flex flex-col items-center justify-start pt-32 overflow-hidden font-sans relative">
-            {/* Audio Interaction Overlay */}
-            {!audioPrimed && phase === 'idle' && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md">
-                    <div className="flex flex-col items-center gap-6 p-10 bg-gray-900 border-4 border-cyan-500 rounded-[3rem] shadow-[0_0_50px_rgba(6,182,212,0.4)]">
-                        <button
-                            onClick={handlePrimeAudio}
-                            className="bg-cyan-600 hover:bg-cyan-500 text-white px-10 py-5 rounded-3xl text-2xl font-black shadow-[0_0_30px_rgba(6,182,212,0.5)] animate-pulse border-2 border-white/20 uppercase tracking-widest"
-                        >
-                            🔊 CLIQUE PARA ATIVAR O ALERTA
-                        </button>
-
-                        <div className="flex flex-col items-center gap-2">
-                            <button
-                                onClick={testAudio}
-                                className="text-cyan-400 text-sm font-bold hover:text-white transition-colors"
-                            >
-                                {audioTestStatus === 'idle' && "🔧 Testar Som agora (Diagnóstico)"}
-                                {audioTestStatus === 'testing' && "⌛ Testando..."}
-                                {audioTestStatus === 'success' && "✅ Som Funcionando!"}
-                                {audioTestStatus === 'error' && "❌ Erro no Som! (Verifique Saída de Áudio do OBS)"}
-                            </button>
-                            <span className="text-gray-500 text-[10px] max-w-xs text-center">
-                                * No OBS, use "Interagir" para clicar. Certifique-se que "Controlar áudio via OBS" está marcado.
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             <audio
                 ref={audioRef}
                 src={audioUrl}
@@ -158,7 +98,7 @@ export const OBSAlertsPage: React.FC = () => {
             />
 
             <div className="relative w-[1000px] h-[1000px] flex items-center justify-center">
-                {/* 1st Transition: Rocket Takeoff (ALWAYS kept as user loved it) */}
+                {/* 1st Transition: Rocket Takeoff */}
                 {(phase === 'takeoff' || phase === 'flight') && (
                     <div className={`
                         absolute bottom-0 w-80 h-auto transition-all duration-[1200ms] ease-in
@@ -190,8 +130,6 @@ export const OBSAlertsPage: React.FC = () => {
                     position: 'relative',
                     zIndex: 50
                 }}>
-                    {/* User requested to remove the icon from here */}
-
                     <div className="space-y-6">
                         <h1 style={{ color: '#22d3ee', fontWeight: 900, fontSize: '3.5rem', textTransform: 'uppercase', letterSpacing: '0.4em', textShadow: '0 0 20px rgba(34, 211, 238, 0.7)' }}>
                             🚀 COMPROU FILA! 🚀
