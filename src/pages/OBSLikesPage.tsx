@@ -16,40 +16,44 @@ export const OBSLikesPage: React.FC = () => {
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [debugInfo, setDebugInfo] = useState<string>('');
 
-    const fetchStats = async () => {
+    const fetchStats = async (retryCount = 0) => {
         const pathParts = window.location.pathname.split('/');
         const idFromPath = pathParts[pathParts.length - 1];
         const cleanUserId = (idFromPath || userId)?.trim();
 
         if (!cleanUserId || cleanUserId === 'undefined' || cleanUserId.length < 20) {
-            setErrorMsg("ID de Usuário Inválido");
+            setErrorMsg("ID de Usuário Inválido (Verifique o link)");
             return;
         }
 
         try {
-            // Using RAW fetch with apikey in URL to bypass CORS preflight and library issues
-            const baseUrl = "https://nvtlirmfavhahwtsdchk.supabase.co/functions/v1/youtube-stats-fetch";
-            const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52dGxpcm1mYXZoYWh3dHNkY2hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5MDgwNDQsImV4cCI6MjA3OTQ4NDA0NH0.KCq4Mre83Iwqppt70XXXOkVTvnwDJE9Ss341jyRAOCI";
-            const functionUrl = `${baseUrl}?apikey=${anonKey}&target_user_id=${cleanUserId}`;
-
-            console.log(`[OBS] Connecting to: ${baseUrl}...`);
-
-            const response = await fetch(functionUrl, {
+            // Primary method: Official Supabase client invoke
+            const { data, error } = await supabase.functions.invoke(`youtube-stats-fetch?target_user_id=${cleanUserId}`, {
                 method: 'GET'
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                setErrorMsg(`Erro ${response.status}: ${errorText.substring(0, 30)}`);
-                console.error('Fetch error:', response.status, errorText);
+            if (error) {
+                // If it's a connection error and we have retries left, wait and try again
+                if (retryCount < 2) {
+                    console.log(`[OBS] Erro na tentativa ${retryCount + 1}, tentando novamente em 2s...`);
+                    setTimeout(() => fetchStats(retryCount + 1), 2000);
+                    return;
+                }
+
+                let detail = error.message;
+                try {
+                    // Try to extract more details if it's a JSON string
+                    const parsed = JSON.parse(error.message);
+                    detail = parsed.message || parsed.error || error.message;
+                } catch (e) { }
+
+                setErrorMsg(`Erro ${error.status || 'Conexão'}: ${detail}`);
                 return;
             }
 
-            const data = await response.json();
-
             if (data) {
                 if (data.error) {
-                    setErrorMsg(`Erro: ${data.error}`);
+                    setErrorMsg(`Erro no Servidor: ${data.error}`);
                     setDebugInfo(`UID: ${data.debug?.userId?.substring(0, 5) || '?'}`);
                 } else {
                     setErrorMsg(null);
@@ -66,10 +70,14 @@ export const OBSLikesPage: React.FC = () => {
                 }
             }
         } catch (err: any) {
-            setErrorMsg(`CORS ou Rede: Verifique o Firewall`);
-            console.error('Connection failure:', err);
+            if (retryCount < 2) {
+                setTimeout(() => fetchStats(retryCount + 1), 2000);
+                return;
+            }
+            setErrorMsg(`Falha Total: ${err.message}`);
+            console.error('Fatal crash:', err);
         } finally {
-            setLoading(false);
+            if (retryCount === 0) setLoading(false);
         }
     };
 

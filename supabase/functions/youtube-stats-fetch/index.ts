@@ -7,11 +7,12 @@ const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-target-user-id',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Max-Age': '86400',
 };
 
 serve(async (req) => {
     if (req.method === 'OPTIONS') {
-        return new Response(null, { headers: corsHeaders, status: 204 });
+        return new Response('ok', { headers: corsHeaders, status: 200 });
     }
 
     try {
