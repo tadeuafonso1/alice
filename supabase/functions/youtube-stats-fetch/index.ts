@@ -3,6 +3,35 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 // @ts-ignore
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
+async function getNewToken(refreshToken: string) {
+    // @ts-ignore
+    const client_id = Deno.env.get('GOOGLE_CLIENT_ID');
+    // @ts-ignore
+    const client_secret = Deno.env.get('GOOGLE_CLIENT_SECRET');
+
+    if (!client_id || !client_secret) {
+        throw new Error("GOOGLE_CLIENT_ID ou GOOGLE_CLIENT_SECRET não configurados.");
+    }
+
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            client_id,
+            client_secret,
+            refresh_token: refreshToken,
+            grant_type: 'refresh_token',
+        }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(`Falha ao renovar token: ${JSON.stringify(error)}`);
+    }
+
+    return await response.json();
+}
+
 serve(async (req) => {
     const origin = req.headers.get('Origin') || '*';
     const corsHeaders = {
@@ -130,12 +159,50 @@ serve(async (req) => {
         let streamFound = false;
 
         try {
-            const broadcastUrl = `https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet&broadcastStatus=active&broadcastType=all&mine=true`;
-            const broadcastData = await fetchYouTube(broadcastUrl);
+            // Broaden search: list mine but filter manually
+            const broadcastUrl = `https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,status&mine=true&maxResults=10`;
+            let broadcastData;
 
-            if (broadcastData.items && broadcastData.items.length > 0) {
+            try {
+                broadcastData = await fetchYouTube(broadcastUrl);
+            } catch (err: any) {
+                if (err.message === "YOUTUBE_TOKEN_EXPIRED") {
+                    console.log("[Stats-Fetch] Token expired, attempting refresh...");
+                    const { data: fullTokenData } = await supabaseClient
+                        .from('youtube_tokens')
+                        .select('refresh_token')
+                        .eq('user_id', userId)
+                        .single();
+
+                    if (fullTokenData?.refresh_token) {
+                        const newToken = await getNewToken(fullTokenData.refresh_token);
+                        tokenData.access_token = newToken.access_token;
+
+                        await supabaseClient
+                            .from('youtube_tokens')
+                            .update({
+                                access_token: newToken.access_token,
+                                expires_at: new Date(Date.now() + newToken.expires_in * 1000).toISOString()
+                            })
+                            .eq('user_id', userId);
+
+                        broadcastData = await fetchYouTube(broadcastUrl);
+                    } else {
+                        throw err;
+                    }
+                } else {
+                    throw err;
+                }
+            }
+
+            const activeBroadcast = broadcastData.items?.find((item: any) =>
+                item.status?.lifeCycleStatus === 'live' ||
+                item.status?.lifeCycleStatus === 'liveStarting'
+            );
+
+            if (activeBroadcast) {
                 streamFound = true;
-                const videoId = broadcastData.items[0].id;
+                const videoId = activeBroadcast.id;
                 const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoId}`;
                 const videoData = await fetchYouTube(videoUrl);
 
@@ -144,8 +211,9 @@ serve(async (req) => {
                 }
             }
         } catch (fetchError: any) {
+            console.error("[Stats-Fetch] Error fetching from YouTube:", fetchError.message);
+            // Optionally surface this to the user via the return
             if (fetchError.message === "YOUTUBE_TOKEN_EXPIRED") throw fetchError;
-            console.error("Fetch warning:", fetchError);
         }
 
         let goalUpdated = false;
