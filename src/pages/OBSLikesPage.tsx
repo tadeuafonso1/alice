@@ -46,8 +46,8 @@ export const OBSLikesPage: React.FC = () => {
 
             if (data) {
                 setErrorMsg(null);
-                setLikes(data.current_likes || 0);
-                setGoal(data.current_goal || 100);
+                setLikes(data.current_likes ?? 0);
+                setGoal(data.current_goal ?? 100);
                 setDebugInfo('');
 
                 setBarColor(data.bar_color || '#2563eb');
