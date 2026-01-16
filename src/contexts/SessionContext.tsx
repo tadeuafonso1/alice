@@ -36,7 +36,7 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     return (
         <SessionContext.Provider value={value}>
-            {!loading && children}
+            {children}
         </SessionContext.Provider>
     );
 };

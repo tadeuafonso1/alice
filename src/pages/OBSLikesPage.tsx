@@ -69,33 +69,47 @@ export const OBSLikesPage: React.FC = () => {
     }, []);
 
     // Progress
-    const progress = Math.min((likes / goal) * 100, 100);
+    const progress = goal > 0 ? Math.min((likes / goal) * 100, 100) : 0;
 
-    if (loading && likes === 0) return null;
+    // Show a minimal "Loading" indicator for OBS (often invisible but helpful)
+    if (loading && likes === 0) {
+        return (
+            <div className="w-full h-screen flex items-center justify-center bg-transparent">
+                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+            </div>
+        );
+    }
 
     return (
-        <div className="w-full h-screen flex items-center justify-center bg-transparent">
+        <div className="w-full h-screen flex items-center justify-center bg-transparent overflow-hidden">
             {/* 
                 Design optimized for OBS:
-                - Transparent background (handled by container)
+                - Transparent background
                 - Bold, readable fonts
                 - Minimal strokes
              */}
-            <div className="w-[600px] p-6 relative flex flex-col items-center justify-center">
+            <div className="w-[600px] p-6 relative flex flex-col items-center justify-center animate-fadeIn">
                 {/* Text: LIKE 0/100 */}
-                <h1 className="text-8xl font-black leading-none drop-shadow-[0_4px_4px_rgba(0,0,0,1)] tracking-tighter mb-4 uppercase"
+                <h1 className="text-8xl font-black leading-none drop-shadow-[0_4px_4px_rgba(0,0,0,1)] tracking-tighter mb-4 uppercase transition-all duration-500"
                     style={{ textShadow: '4px 4px 0px #000', color: textColor }}>
                     LIKE {likes}/{goal}
                 </h1>
 
                 {/* Bar */}
-                <div className="w-full h-12 rounded-full overflow-hidden backdrop-blur-sm"
+                <div className="w-full h-12 rounded-full overflow-hidden backdrop-blur-sm shadow-2xl"
                     style={{ backgroundColor: bgColor, border: `4px solid ${borderColor}` }}>
                     <div
-                        className="h-full transition-all duration-700 ease-out"
-                        style={{ width: `${progress}%`, backgroundColor: barColor, boxShadow: `0 0 20px ${barColor}99` }}
+                        className="h-full transition-all duration-1000 ease-out"
+                        style={{ width: `${progress}%`, backgroundColor: barColor, boxShadow: `0 0 30px ${barColor}99` }}
                     />
                 </div>
+
+                {/* Error Debug (only visible if there's an issue) */}
+                {!loading && likes === 0 && goal === 100 && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-white/10 uppercase font-bold tracking-widest whitespace-nowrap">
+                        Aguardando dados da live...
+                    </div>
+                )}
             </div>
         </div>
     );

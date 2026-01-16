@@ -11,10 +11,17 @@ import { OBSLikesPage } from './src/pages/OBSLikesPage';
 const AppRoutes: React.FC = () => {
     const { session, loading } = useSession();
 
-    if (loading) {
+    const isPublicRoute = window.location.pathname.startsWith('/obs/') ||
+        window.location.pathname === '/privacy' ||
+        window.location.pathname === '/terms';
+
+    if (loading && !isPublicRoute) {
         return (
-            <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-                <p className="text-gray-500 dark:text-gray-400">Carregando...</p>
+            <div className="min-h-screen bg-transparent flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">Carregando...</p>
+                </div>
             </div>
         );
     }
