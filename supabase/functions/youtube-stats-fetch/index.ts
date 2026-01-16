@@ -119,7 +119,8 @@ serve(async (req) => {
             return new Response(JSON.stringify({
                 error: "Token do YouTube não encontrado.",
                 code: "NO_TOKEN",
-                likes: 0
+                likes: 0,
+                debug: { hasUserId: !!userId, noToken: true }
             }), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 status: 200,
@@ -262,7 +263,8 @@ serve(async (req) => {
                     current_likes: likeCount,
                     current_goal: currentGoal,
                     stream_found: streamFound,
-                    updated_at: new Date().toISOString()
+                    updated_at: new Date().toISOString(),
+                    debug_log: JSON.stringify(debugInfo)
                 })
                 .eq('user_id', userId);
         } catch (dbErr) {
@@ -286,7 +288,8 @@ serve(async (req) => {
         return new Response(JSON.stringify({
             error: error.message,
             code: error.message === "YOUTUBE_TOKEN_EXPIRED" ? "TOKEN_EXPIRED" : "INTERNAL_ERROR",
-            userId
+            userId,
+            debug: { hasUserId: !!userId, error: error.message, stack: error.stack?.substring(0, 100) }
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
