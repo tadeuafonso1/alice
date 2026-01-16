@@ -61,7 +61,48 @@ export const OBSAlertsPage: React.FC = () => {
             noise.start();
             noise.stop(ctx.currentTime + 4);
         } catch (e) {
-            console.error("Synthesizer failed:", e);
+            console.error("Rocket synthesizer failed:", e);
+        }
+    }, []);
+
+    // SYNTHESIZED EXPLOSION SOUND
+    const playSynthesizedExplosion = useCallback(() => {
+        try {
+            const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+            if (!AudioContextClass || !audioContextRef.current) return;
+
+            const ctx = audioContextRef.current;
+            if (ctx.state === 'suspended') ctx.resume();
+
+            const bufferSize = 1 * ctx.sampleRate;
+            const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1; // White noise
+            }
+
+            const noise = ctx.createBufferSource();
+            noise.buffer = noiseBuffer;
+
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1000, ctx.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.5);
+
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.01); // Instant peak
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.0); // Natural decay
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+
+            noise.start();
+            noise.stop(ctx.currentTime + 1);
+        } catch (e) {
+            console.error("Explosion synthesizer failed:", e);
         }
     }, []);
 
@@ -89,6 +130,8 @@ export const OBSAlertsPage: React.FC = () => {
             setTimeout(() => {
                 setPhase('explosion');
                 triggerExplosion();
+                playSynthesizedExplosion(); // Trigger the synth explosion
+
                 setTimeout(() => {
                     setPhase('idle');
                     setAlert(null);
