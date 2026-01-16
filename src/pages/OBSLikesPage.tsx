@@ -28,52 +28,41 @@ export const OBSLikesPage: React.FC = () => {
         }
 
         try {
-            // Attempt to use a simplified invoke to reduce preflight complexity
-            const { data, error } = await supabase.functions.invoke(`youtube-stats-fetch?target_user_id=${cleanUserId}`);
+            // DIRECT DB POLL: Most stable way for OBS Browser Source
+            const { data, error } = await supabase
+                .from('like_goals')
+                .select('*')
+                .eq('user_id', cleanUserId)
+                .maybeSingle();
 
             if (error) {
                 if (retryCount < 2) {
-                    console.log(`[OBS] Erro na tentativa ${retryCount + 1}, tentando novamente em 2s...`);
                     setTimeout(() => fetchStats(retryCount + 1), 2000);
                     return;
                 }
-
-                // Detailed error for OBS debugging
-                let msg = error.message || 'Erro desconhecido';
-                if (error instanceof TypeError && msg.includes('fetch')) {
-                    msg = "Bloqueio de CORS ou Firewall do Windows";
-                }
-
-                setErrorMsg(`Erro: ${msg}`);
-                setDebugInfo(`Status: ${error.status || '?'}`);
+                setErrorMsg(`Erro de Banco: ${error.message}`);
                 return;
             }
 
             if (data) {
-                if (data.error) {
-                    setErrorMsg(`Servidor: ${data.error}`);
-                    setDebugInfo(`UID: ${data.debug?.userId?.substring(0, 5) || '?'}`);
-                } else {
-                    setErrorMsg(null);
-                    setLikes(data.likes || 0);
-                    setGoal(data.goal || 100);
-                    setDebugInfo('');
+                setErrorMsg(null);
+                setLikes(data.current_likes || 0);
+                setGoal(data.current_goal || 100);
+                setDebugInfo('');
 
-                    if (data.colors) {
-                        setBarColor(data.colors.bar || '#2563eb');
-                        setBgColor(data.colors.bg || '#ffffff1a');
-                        setBorderColor(data.colors.border || '#ffffffcc');
-                        setTextColor(data.colors.text || '#ffffff');
-                    }
-                }
+                setBarColor(data.bar_color || '#2563eb');
+                setBgColor(data.bg_color || '#ffffff1a');
+                setBorderColor(data.border_color || '#ffffffcc');
+                setTextColor(data.text_color || '#ffffff');
+            } else {
+                setErrorMsg("Nenhuma meta configurada para este ID.");
             }
         } catch (err: any) {
             if (retryCount < 2) {
                 setTimeout(() => fetchStats(retryCount + 1), 2000);
                 return;
             }
-            setErrorMsg(`Falha Crítica: ${err.message || 'Sem conexão'}`);
-            console.error(err);
+            setErrorMsg(`Erro de Rede: ${err.message}`);
         } finally {
             if (retryCount === 0) setLoading(false);
         }

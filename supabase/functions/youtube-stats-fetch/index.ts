@@ -17,42 +17,27 @@ serve(async (req) => {
         return new Response('ok', { headers: corsHeaders, status: 200 });
     }
 
-    // Log headers for debugging (will see in Supabase Logs)
-    console.log(`[Stats-Fetch] Method: ${req.method} | Origin: ${origin}`);
-    console.log(`[Stats-Fetch] URL: ${req.url}`);
+    const url = new URL(req.url);
+    const idFromPath = url.pathname.split('/').pop();
+    const idFromQuery = url.searchParams.get('target_user_id') || url.searchParams.get('uid');
+    const idFromHeader = req.headers.get('x-target-user-id');
+    const potentialId = (idFromQuery || idFromHeader || idFromPath || '').trim();
+
+    let userId: string | null = null;
 
     try {
-        // Prepare Supabase Client (Service Role for OBS access, User Auth for Dashboard)
         const supabaseClient = createClient(
-            // @ts-ignore
             Deno.env.get('SUPABASE_URL') ?? '',
-            // @ts-ignore
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-            {
-                auth: { persistSession: false },
-            }
+            { auth: { persistSession: false } }
         );
-
-        // Support for GET requests (for stats fetching) and POST (for saving settings)
-        const url = new URL(req.url);
-
-        // Multi-source ID detection
-        const idFromPath = url.pathname.split('/').pop();
-        const idFromQuery = url.searchParams.get('target_user_id') || url.searchParams.get('uid');
-        const idFromHeader = req.headers.get('x-target-user-id');
-
-        // Validation: Must look like a UUID or at least be a string
-        const potentialId = (idFromQuery || idFromHeader || idFromPath || '').trim();
-        let userId: string | null = null;
 
         if (potentialId && potentialId.length > 20 && potentialId !== 'youtube-stats-fetch') {
             userId = potentialId;
         } else {
-            // Dashboard Mode: Authenticate User
             const authHeader = req.headers.get('Authorization');
             if (authHeader && !authHeader.includes('undefined')) {
                 const token = authHeader.replace('Bearer ', '');
-                // Skip if it looks like the Anon Key
                 if (!(token.length > 200 && token.includes('eyJhbGci'))) {
                     const { data: { user } } = await supabaseClient.auth.getUser(token);
                     if (user) userId = user.id;
@@ -62,11 +47,11 @@ serve(async (req) => {
 
         if (!userId) {
             return new Response(JSON.stringify({
-                error: "Dificuldade em identificar o usuário. Verifique o link no OBS.",
+                error: "Dificuldade em identificar o usuário.",
                 debug: { path: idFromPath, query: idFromQuery, header: idFromHeader }
             }), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200, // Return 200 to show the error nicely in UI
+                status: 200,
             });
         }
 
@@ -74,7 +59,6 @@ serve(async (req) => {
             const reqJson = await req.json().catch(() => ({}));
             const { goal, step, auto_update, bar_color, bg_color, border_color, text_color } = reqJson;
 
-            // Only save if actual setting data is provided in the body
             if (goal !== undefined || bar_color !== undefined) {
                 const { error: upsertError } = await supabaseClient.from('like_goals').upsert({
                     user_id: userId,
@@ -96,7 +80,6 @@ serve(async (req) => {
             }
         }
 
-        // 1. Get YouTube Token from DB
         const { data: tokenData, error: tokenError } = await supabaseClient
             .from('youtube_tokens')
             .select('access_token')
@@ -104,42 +87,34 @@ serve(async (req) => {
             .single();
 
         if (tokenError || !tokenData) {
-            // Friendly error for OBS
             return new Response(JSON.stringify({
-                error: "Token do YouTube não encontrado. O usuário precisa fazer login no painel.",
+                error: "Token do YouTube não encontrado.",
                 code: "NO_TOKEN",
                 likes: 0
             }), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200, // Return 200 so OBS doesn't show a generic network error
+                status: 200,
             });
         }
 
-        // 2. Get Goal Settings from DB
         const { data: goalData, error: goalError } = await supabaseClient
             .from('like_goals')
             .select('*')
             .eq('user_id', userId)
             .maybeSingle();
 
-        // Defaults
         let currentGoal = goalData?.current_goal ?? 100;
-        let step = goalData?.step ?? 50;
+        let stepCount = goalData?.step ?? 50;
         let autoUpdate = goalData?.auto_update ?? true;
-
-        // Color defaults
         let barColor = goalData?.bar_color ?? '#2563eb';
         let bgColor = goalData?.bg_color ?? '#ffffff1a';
         let borderColor = goalData?.border_color ?? '#ffffffcc';
         let textColor = goalData?.text_color ?? '#ffffff';
 
-        // 3. Fetch YouTube Data
-        const accessToken = tokenData.access_token;
-
         const fetchYouTube = async (url: string) => {
             const res = await fetch(url, {
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
+                    'Authorization': `Bearer ${tokenData.access_token}`,
                     'Accept': 'application/json',
                 },
             });
@@ -169,24 +144,21 @@ serve(async (req) => {
                 }
             }
         } catch (fetchError: any) {
-            // Handle specific fetch errors if needed, but for now propagate
             if (fetchError.message === "YOUTUBE_TOKEN_EXPIRED") throw fetchError;
             console.error("Fetch warning:", fetchError);
         }
 
-        // 4. Update Goal Logic (Server-side)
         let goalUpdated = false;
         if (autoUpdate && likeCount >= currentGoal) {
             const diff = likeCount - currentGoal;
-            const stepsToAdd = Math.floor(diff / step) + 1;
-            currentGoal = currentGoal + (step * stepsToAdd);
+            const stepsToAdd = Math.floor(diff / stepCount) + 1;
+            currentGoal = currentGoal + (stepCount * stepsToAdd);
             goalUpdated = true;
 
-            // Persist new goal
             await supabaseClient.from('like_goals').upsert({
                 user_id: userId,
                 current_goal: currentGoal,
-                step: step,
+                step: stepCount,
                 auto_update: autoUpdate,
                 bar_color: barColor,
                 bg_color: bgColor,
@@ -195,45 +167,40 @@ serve(async (req) => {
             });
         }
 
-        const responseData = {
+        try {
+            await supabaseClient
+                .from('like_goals')
+                .update({
+                    current_likes: likeCount,
+                    current_goal: currentGoal,
+                    stream_found: streamFound,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('user_id', userId);
+        } catch (dbErr) {
+            console.error('[Stats-Fetch] DB Failure:', dbErr);
+        }
+
+        return new Response(JSON.stringify({
             likes: likeCount,
             goal: currentGoal,
-            step: step,
-            streamFound: streamFound,
-            goalUpdated: goalUpdated,
-            debug: {
-                userId,
-                received_path_id: idFromPath,
-                received_query_id: idFromQuery,
-                received_header_id: idFromHeader,
-                method: req.method
-            },
-            colors: {
-                bar: barColor,
-                bg: bgColor,
-                border: borderColor,
-                text: textColor
-            }
-        };
-
-        console.log(`[youtube-stats-fetch] Success for user ${userId}. Data:`, responseData);
-
-        return new Response(JSON.stringify(responseData), {
+            streamFound,
+            goalUpdated,
+            colors: { bar: barColor, bg: bgColor, border: borderColor, text: textColor }
+        }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
         });
 
     } catch (error: any) {
-        console.error("Erro na Edge Function youtube-stats-fetch:", error.message);
-        const isExpired = error.message === "YOUTUBE_TOKEN_EXPIRED";
-
+        console.error("Erro na Edge Function:", error.message);
         return new Response(JSON.stringify({
             error: error.message,
-            code: isExpired ? "TOKEN_EXPIRED" : "INTERNAL_ERROR",
-            debug_userId: "ERROR_CATCH"
+            code: error.message === "YOUTUBE_TOKEN_EXPIRED" ? "TOKEN_EXPIRED" : "INTERNAL_ERROR",
+            userId
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200, // Return 200 to allow the frontend to see the error message
+            status: 200,
         });
     }
 });
