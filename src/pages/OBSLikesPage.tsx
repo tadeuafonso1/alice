@@ -17,9 +17,12 @@ export const OBSLikesPage: React.FC = () => {
     const fetchStats = async () => {
         if (!userId) return;
         try {
-            // Fetch stats using GET with target_user_id in query params
+            // Fetch stats using GET with target_user_id in query params AND headers for OBS compatibility
             const { data, error } = await supabase.functions.invoke(`youtube-stats-fetch?target_user_id=${userId}`, {
-                method: 'GET'
+                method: 'GET',
+                headers: {
+                    'x-target-user-id': userId
+                }
             });
 
             if (data && !error) {
@@ -32,9 +35,11 @@ export const OBSLikesPage: React.FC = () => {
                     setBorderColor(data.colors.border || '#ffffffcc');
                     setTextColor(data.colors.text || '#ffffff');
                 }
+            } else if (error) {
+                console.error('Supabase Function Error:', error);
             }
         } catch (err) {
-            console.error(err);
+            console.error('Fetch Error:', err);
         } finally {
             setLoading(false);
         }

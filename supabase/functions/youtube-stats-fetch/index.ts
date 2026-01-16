@@ -5,7 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-target-user-id',
 };
 
 serve(async (req) => {
@@ -28,7 +28,7 @@ serve(async (req) => {
         // Support for GET requests (for stats fetching) and POST (for saving settings)
         let userId: string;
         const url = new URL(req.url);
-        const target_user_id = url.searchParams.get('target_user_id');
+        const target_user_id = url.searchParams.get('target_user_id') || req.headers.get('x-target-user-id');
 
         if (target_user_id) {
             userId = target_user_id;
