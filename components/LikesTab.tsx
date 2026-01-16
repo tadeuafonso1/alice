@@ -17,6 +17,7 @@ export const LikesTab: React.FC = () => {
     const [lastServerGoal, setLastServerGoal] = useState<number | null>(null);
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const [saveError, setSaveError] = useState<string | null>(null);
+    const [debugInfo, setDebugInfo] = useState<any>(null);
 
     // Customization State
     const [barColor, setBarColor] = useState<string>('#2563eb');
@@ -39,6 +40,8 @@ export const LikesTab: React.FC = () => {
 
             if (error) throw error;
             if (data.error) throw new Error(data.error);
+
+            setDebugInfo(data.debug || null);
 
             if (data.streamFound === false) {
                 setStreamFound(false);
@@ -187,9 +190,16 @@ export const LikesTab: React.FC = () => {
                     </div>
 
                     {!streamFound && (
-                        <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 text-sm rounded-lg flex items-center gap-2">
-                            <AlertTriangleIcon className="w-4 h-4" />
-                            Nenhuma live ativa detectada no momento.
+                        <div className="mt-4 space-y-2">
+                            <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 text-sm rounded-lg flex items-center gap-2">
+                                <AlertTriangleIcon className="w-4 h-4" />
+                                Nenhuma live ativa detectada no momento.
+                            </div>
+                            {debugInfo && (
+                                <div className="p-3 bg-slate-100 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-[10px] font-mono rounded-lg overflow-hidden">
+                                    <p>DEBUG: ID:{debugInfo.hasChannelId ? 'OK' : 'MISSING'} | BC:{debugInfo.broadcastCount} | SV:{debugInfo.foundViaSearch ? 'YES' : 'NO'} | VID:{debugInfo.videoId || 'NONE'}</p>
+                                </div>
+                            )}
                         </div>
                     )}
 

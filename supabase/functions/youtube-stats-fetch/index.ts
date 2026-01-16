@@ -67,7 +67,7 @@ serve(async (req) => {
             const authHeader = req.headers.get('Authorization');
             if (authHeader && !authHeader.includes('undefined')) {
                 const token = authHeader.replace('Bearer ', '');
-                if (!(token.length > 200 && token.includes('eyJhbGci'))) {
+                if (token.length > 200 && token.includes('eyJhbGci')) {
                     const { data: { user } } = await supabaseClient.auth.getUser(token);
                     if (user) userId = user.id;
                 }
@@ -111,7 +111,7 @@ serve(async (req) => {
 
         const { data: tokenData, error: tokenError } = await supabaseClient
             .from('youtube_tokens')
-            .select('access_token')
+            .select('access_token, channel_id')
             .eq('user_id', userId)
             .single();
 
@@ -157,11 +157,12 @@ serve(async (req) => {
 
         let likeCount = 0;
         let streamFound = false;
+        let broadcastData: any = null;
+        let activeBroadcast: any = null;
 
         try {
             // Broaden search: list mine but filter manually
             const broadcastUrl = `https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,status&mine=true&maxResults=10`;
-            let broadcastData;
 
             try {
                 broadcastData = await fetchYouTube(broadcastUrl);
@@ -195,10 +196,23 @@ serve(async (req) => {
                 }
             }
 
-            const activeBroadcast = broadcastData.items?.find((item: any) =>
+            activeBroadcast = broadcastData.items?.find((item: any) =>
                 item.status?.lifeCycleStatus === 'live' ||
                 item.status?.lifeCycleStatus === 'liveStarting'
             );
+
+            // Fallback: If no broadcast found via mine=true, try search with channelId
+            if (!activeBroadcast && tokenData.channel_id) {
+                console.log("[Stats-Fetch] No active broadcast found via mine=true, trying search fallback for channel:", tokenData.channel_id);
+                const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=id&channelId=${tokenData.channel_id}&type=video&eventType=live&maxResults=1`;
+                const searchData = await fetchYouTube(searchUrl);
+
+                if (searchData.items && searchData.items.length > 0) {
+                    const foundVideoId = searchData.items[0].id.videoId;
+                    console.log("[Stats-Fetch] Found live video via search fallback:", foundVideoId);
+                    activeBroadcast = { id: foundVideoId }; // Mock an activeBroadcast object
+                }
+            }
 
             if (activeBroadcast) {
                 streamFound = true;
@@ -212,9 +226,15 @@ serve(async (req) => {
             }
         } catch (fetchError: any) {
             console.error("[Stats-Fetch] Error fetching from YouTube:", fetchError.message);
-            // Optionally surface this to the user via the return
             if (fetchError.message === "YOUTUBE_TOKEN_EXPIRED") throw fetchError;
         }
+
+        const debugInfo = {
+            hasChannelId: !!tokenData.channel_id,
+            broadcastCount: broadcastData?.items?.length || 0,
+            foundViaSearch: !broadcastData.items?.find((item: any) => item.status?.lifeCycleStatus === 'live' || item.status?.lifeCycleStatus === 'liveStarting') && !!activeBroadcast,
+            videoId: activeBroadcast?.id || null,
+        };
 
         let goalUpdated = false;
         if (autoUpdate && likeCount >= currentGoal) {
@@ -254,7 +274,8 @@ serve(async (req) => {
             goal: currentGoal,
             streamFound,
             goalUpdated,
-            colors: { bar: barColor, bg: bgColor, border: borderColor, text: textColor }
+            colors: { bar: barColor, bg: bgColor, border: borderColor, text: textColor },
+            debug: debugInfo
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
