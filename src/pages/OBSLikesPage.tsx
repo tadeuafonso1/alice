@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
-// Supabase Anon Key for public access to the Edge Function from OBS
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52dGxpcm1mYXZoYWh3dHNkY2hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5MDgwNDQsImV4cCI6MjA3OTQ4NDA0NH0.KCq4Mre83Iwqppt70XXXOkVTvnwDJE9Ss341jyRAOCI";
-
 export const OBSLikesPage: React.FC = () => {
     const { userId } = useParams<{ userId: string }>();
     const [likes, setLikes] = useState<number>(0);
@@ -30,22 +27,17 @@ export const OBSLikesPage: React.FC = () => {
         }
 
         try {
-            // Using query parameters for BOTH ID and API Key to avoid 'CORS preflight' (OPTIONS request) 
-            // which often fails in OBS Browser Sources. This makes it a 'simple request'.
-            const functionUrl = `https://nvtlirmfavhahwtsdchk.supabase.co/functions/v1/youtube-stats-fetch?apikey=${SUPABASE_ANON_KEY}&target_user_id=${cleanUserId}`;
-
-            const response = await fetch(functionUrl, {
+            // Restore use of supabase.functions.invoke which already has the correct keys
+            // No custom headers to minimize the complexity of the preflight request
+            const { data, error } = await supabase.functions.invoke(`youtube-stats-fetch?target_user_id=${cleanUserId}`, {
                 method: 'GET'
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                setErrorMsg(`Erro ${response.status}: Servidor indisponível`);
-                console.error('Server error:', errorText);
+            if (error) {
+                setErrorMsg(`Erro de Conexão: ${error.message}`);
+                console.error('Invoke error:', error);
                 return;
             }
-
-            const data = await response.json();
 
             if (data) {
                 if (data.error) {
