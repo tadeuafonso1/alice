@@ -7,11 +7,15 @@ export const OBSAlertsPage: React.FC = () => {
     const { userId } = useParams<{ userId: string }>();
     const [alert, setAlert] = useState<{ message: string; id: number } | null>(null);
     const [phase, setPhase] = useState<'idle' | 'takeoff' | 'flight' | 'explosion'>('idle');
-    const [audioPrimed, setAudioPrimed] = useState(false);
+    const [audioUnlocked, setAudioUnlocked] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
 
-    // Audio source - the reliable Pixabay CDN rocket sound
-    const audioUrl = "https://cdn.pixabay.com/audio/2022/03/10/audio_c8deec9833.mp3";
+    // Multiple sources for redundancy
+    const audioSources = [
+        "https://cdn.pixabay.com/audio/2022/03/10/audio_c8deec9833.mp3",
+        "https://actions.google.com/sounds/v1/science_fiction/rocket_launch.ogg"
+    ];
 
     const triggerExplosion = () => {
         const count = 300;
@@ -35,13 +39,22 @@ export const OBSAlertsPage: React.FC = () => {
         setAlert({ message, id });
         setPhase('takeoff');
 
-        // Sound: Liftoff
+        // Robust Playback Strategy:
+        // 1. Try playing through the audio element
         if (audioRef.current) {
             audioRef.current.volume = 1.0;
             audioRef.current.currentTime = 0;
-            audioRef.current.play().catch(e => {
-                console.warn("Audio playback might be blocked without user interaction.", e);
-            });
+            const playPromise = audioRef.current.play();
+
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.error("Standard playback failed, attempting Web Audio API Resume...", error);
+                    // 2. Fallback: try to resume AudioContext if available
+                    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+                        audioContextRef.current.resume();
+                    }
+                });
+            }
         }
 
         setTimeout(() => {
@@ -57,6 +70,31 @@ export const OBSAlertsPage: React.FC = () => {
             }, 900);
         }, 2000);
     }, []);
+
+    const handleInteraction = () => {
+        // Unlock AudioContext (Standard way for modern browsers/OBS)
+        const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass && !audioContextRef.current) {
+            audioContextRef.current = new AudioContextClass();
+        }
+
+        if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+            audioContextRef.current.resume();
+        }
+
+        // Also prime the audio element
+        if (audioRef.current) {
+            audioRef.current.play().then(() => {
+                audioRef.current!.pause();
+                audioRef.current!.currentTime = 0;
+                setAudioUnlocked(true);
+            }).catch(() => {
+                setAudioUnlocked(true); // Still set as unlocked to remove the div
+            });
+        } else {
+            setAudioUnlocked(true);
+        }
+    };
 
     useEffect(() => {
         if (!userId) return;
@@ -85,42 +123,32 @@ export const OBSAlertsPage: React.FC = () => {
 
         return () => {
             supabase.removeChannel(channel);
+            if (audioContextRef.current) {
+                audioContextRef.current.close();
+            }
         };
     }, [userId, runAlertSequence]);
-
-    const handlePrimeAudio = () => {
-        if (audioRef.current) {
-            audioRef.current.play().then(() => {
-                audioRef.current!.pause();
-                audioRef.current!.currentTime = 0;
-                setAudioPrimed(true);
-            }).catch(() => {
-                setAudioPrimed(true);
-            });
-        }
-    };
 
     const rocketImageUrl = `${window.location.origin}/rocket_alert.png`;
 
     return (
         <div className="min-h-screen bg-transparent flex flex-col items-center justify-start pt-32 overflow-hidden font-sans relative">
             {/* 
-                HIDDEN AUDIO UNLOCKER: 
-                An invisible layer that covers the entire screen until clicked.
-                Necessary for OBS audio compliance without ruins transparency.
+                INVISIBE INTERACTION LAYER:
+                Tapping anywhere on the source in OBS (using Interact) will unlock audio.
             */}
-            {!audioPrimed && (
+            {!audioUnlocked && (
                 <div
-                    onClick={handlePrimeAudio}
+                    onClick={handleInteraction}
                     className="fixed inset-0 z-[9999] cursor-pointer"
+                    style={{ background: 'transparent' }}
                 />
             )}
 
-            <audio
-                ref={audioRef}
-                src={audioUrl}
-                preload="auto"
-            />
+            <audio ref={audioRef} preload="auto">
+                <source src={audioSources[0]} type="audio/mpeg" />
+                <source src={audioSources[1]} type="audio/ogg" />
+            </audio>
 
             <div className="relative w-[1000px] h-[1000px] flex items-center justify-center">
                 {/* 1st Transition: Rocket Takeoff */}
