@@ -16,6 +16,39 @@ const AppRoutes: React.FC = () => {
         window.location.pathname === '/privacy' ||
         window.location.pathname === '/terms';
 
+    const isOBSRoute = window.location.pathname.startsWith('/obs/');
+
+    React.useEffect(() => {
+        const rootElement = document.getElementById('root');
+        const htmlElement = document.documentElement;
+
+        if (isOBSRoute) {
+            // Force transparency on all root layers
+            htmlElement.style.backgroundColor = 'transparent';
+            htmlElement.classList.remove('dark'); // Remove dark mode for OBS to avoid global dark bg
+
+            document.body.style.backgroundColor = 'transparent';
+            document.body.classList.add('bg-transparent-important');
+
+            if (rootElement) {
+                rootElement.style.backgroundColor = 'transparent';
+                rootElement.classList.add('bg-transparent-important');
+            }
+        } else {
+            // Restore defaults
+            htmlElement.style.backgroundColor = '';
+            htmlElement.classList.add('dark'); // Restore dark mode
+
+            document.body.style.backgroundColor = '';
+            document.body.classList.remove('bg-transparent-important');
+
+            if (rootElement) {
+                rootElement.style.backgroundColor = '';
+                rootElement.classList.remove('bg-transparent-important');
+            }
+        }
+    }, [isOBSRoute]);
+
     if (loading && !isPublicRoute) {
         return (
             <div className="min-h-screen bg-transparent flex items-center justify-center">
