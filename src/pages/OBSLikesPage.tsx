@@ -20,20 +20,23 @@ export const OBSLikesPage: React.FC = () => {
     const [debugInfo, setDebugInfo] = useState<string>('');
 
     const fetchStats = async () => {
-        if (!userId) {
+        const cleanUserId = userId?.trim();
+        if (!cleanUserId) {
             setErrorMsg("ID de usuário ausente no link");
             return;
         }
+        console.log(`[OBS] Buscando dados para: ${cleanUserId}`);
         try {
             // Simple fetch without custom headers to avoid preflight (OPTIONS) block in OBS
-            const functionUrl = `https://nvtlirmfavhahwtsdchk.supabase.co/functions/v1/youtube-stats-fetch?target_user_id=${userId}`;
+            const functionUrl = `https://nvtlirmfavhahwtsdchk.supabase.co/functions/v1/youtube-stats-fetch?target_user_id=${cleanUserId}`;
 
             // Fetch with apikey and Authorization headers to satisfy Supabase gateway
             const response = await fetch(functionUrl, {
                 method: 'GET',
                 headers: {
                     'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'x-target-user-id': cleanUserId
                 }
             });
 

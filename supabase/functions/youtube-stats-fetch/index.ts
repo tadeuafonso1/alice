@@ -26,21 +26,41 @@ serve(async (req) => {
         );
 
         // Support for GET requests (for stats fetching) and POST (for saving settings)
-        let userId: string;
+        let userId: string | null = null;
         const url = new URL(req.url);
-        const target_user_id = url.searchParams.get('target_user_id') || req.headers.get('x-target-user-id');
 
-        if (target_user_id) {
-            userId = target_user_id;
+        console.log(`[youtube-stats-fetch] Request URL: ${req.url}`);
+        console.log(`[youtube-stats-fetch] Method: ${req.method}`);
+
+        const paramId = url.searchParams.get('target_user_id');
+        const headerId = req.headers.get('x-target-user-id');
+
+        console.log(`[youtube-stats-fetch] Param ID: ${paramId}, Header ID: ${headerId}`);
+
+        if (paramId) {
+            userId = paramId;
+        } else if (headerId) {
+            userId = headerId;
         } else {
             // Dashboard Mode: Authenticate User
             const authHeader = req.headers.get('Authorization');
-            if (!authHeader) throw new Error("Usuário não autenticado e nenhum target_user_id fornecido.");
+            if (!authHeader || authHeader.includes('undefined')) {
+                throw new Error("ID de usuário não encontrado (nenhum target_user_id ou token de sessão).");
+            }
 
-            const { data: { user }, error: userError } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''));
-            if (userError || !user) throw new Error("Usuário não autenticado");
+            const token = authHeader.replace('Bearer ', '');
+            // If the token is just the anon key, this is a public request missing a target_user_id
+            if (token.length > 200 && token.includes('eyJhbGci')) {
+                // Potential Anon Key but no target_user_id provided
+                throw new Error("ID de usuário ausente no pedido público (overlay).");
+            }
+
+            const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+            if (userError || !user) throw new Error("Usuário não autenticado ou sessão expirada.");
             userId = user.id;
         }
+
+        if (!userId) throw new Error("Falha crítica ao identificar o proprietário da meta.");
 
         if (req.method === 'POST') {
             const reqJson = await req.json().catch(() => ({}));
