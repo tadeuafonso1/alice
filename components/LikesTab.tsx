@@ -45,7 +45,10 @@ export const LikesTab: React.FC = () => {
             if (error) throw error;
 
             if (data && data.debug) {
-                setDebugInfo(data.debug);
+                console.log("[LikesTab] Received debugInfo:", data.debug);
+                setDebugInfo({ ...data.debug, version: data.version });
+            } else if (data && data.version) {
+                setDebugInfo({ version: data.version });
             }
 
             if (data.error) throw new Error(data.error);
@@ -202,7 +205,11 @@ export const LikesTab: React.FC = () => {
                     </div>
 
                     <div className="mt-4 p-3 bg-slate-100 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-[10px] font-mono rounded-lg overflow-x-auto">
-                        <p className="whitespace-nowrap">DEBUG: {debugInfo ? JSON.stringify(debugInfo) : 'WAITING_FOR_DATA'}</p>
+                        <p className="whitespace-nowrap">
+                            DEBUG: {debugInfo ? JSON.stringify(debugInfo) : 'WAITING_FOR_DATA'}
+                            {debugInfo && debugInfo.version && <span className="ml-2 text-cyan-500">| FN_VER: {debugInfo.version}</span>}
+                            {!debugInfo?.version && <span className="ml-2 text-red-500">| FN_VER: OLD/UNKNOWN</span>}
+                        </p>
                     </div>
 
                     {!streamFound && !error && (

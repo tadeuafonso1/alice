@@ -279,7 +279,8 @@ serve(async (req) => {
             streamFound,
             goalUpdated,
             colors: { bar: barColor, bg: bgColor, border: borderColor, text: textColor },
-            debug: debugInfo
+            debug: debugInfo,
+            version: '2.0-DIAGNOSTIC'
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
