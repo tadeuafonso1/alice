@@ -113,6 +113,13 @@ const QueueItem: React.FC<{
                                 <p className="text-[10px] text-gray-500 uppercase font-medium">Na fila de espera</p>
                             )}
 
+                            {queueUser.priority_amount && queueUser.priority_amount > 0 ? (
+                                <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.2)] animate-pulse">
+                                    <span className="text-[9px] font-black text-amber-500 uppercase tracking-tighter">🏆 Prioridade</span>
+                                    <span className="text-[10px] font-black text-amber-500">R$ {queueUser.priority_amount.toFixed(2)}</span>
+                                </div>
+                            ) : null}
+
                             {/* Timer Moved Here */}
                             {isTimerActive && (
                                 <div className="font-mono text-xl font-black text-white tracking-widest pl-2 border-l-2 border-gray-700">

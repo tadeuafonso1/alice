@@ -89,17 +89,19 @@ serve(async (req: Request) => {
                 .from('queue')
                 .select('*')
                 .eq('user_id', userId)
-                .ilike('user', `%${donorName}%`)
+                .ilike('username', `%${donorName}%`)
                 .maybeSingle();
 
             if (queueUser) {
-                // Move to top: set joined_at to a very old date
+                const currentPriority = Number(queueUser.priority_amount || 0);
+                const newPriority = currentPriority + amount;
+
                 await supabase
                     .from('queue')
-                    .update({ joined_at: new Date(0).toISOString() })
+                    .update({ priority_amount: newPriority })
                     .eq('id', queueUser.id);
 
-                console.log(`[LivePix] User ${donorName} moved to top.`);
+                console.log(`[LivePix] User ${donorName} priority increased to ${newPriority}.`);
             }
         }
 

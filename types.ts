@@ -7,6 +7,7 @@ export interface Message {
 export interface QueueUser {
   user: string;
   nickname?: string;
+  priority_amount?: number;
 }
 
 export interface CommandSetting {

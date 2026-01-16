@@ -350,11 +350,16 @@ export const HomePage: React.FC = () => {
                 // Busca fila e jogadores com os novos campos de persistência
                 const { data: queueData, error: queueError } = await supabase
                     .from('queue')
-                    .select('username, nickname, joined_at, timer_start_time, warning_sent')
+                    .select('username, nickname, joined_at, timer_start_time, warning_sent, priority_amount')
+                    .order('priority_amount', { ascending: false })
                     .order('joined_at', { ascending: true });
 
                 if (queueError) throw queueError;
-                setQueue(queueData.map(q => ({ user: q.username, nickname: q.nickname })));
+                setQueue(queueData.map(q => ({
+                    user: q.username,
+                    nickname: q.nickname,
+                    priority_amount: q.priority_amount ? Number(q.priority_amount) : 0
+                })));
 
                 const { data: playingData, error: playingError } = await supabase
                     .from('playing_users')
