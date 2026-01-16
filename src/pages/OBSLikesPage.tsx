@@ -20,17 +20,19 @@ export const OBSLikesPage: React.FC = () => {
     const [debugInfo, setDebugInfo] = useState<string>('');
 
     const fetchStats = async () => {
-        const cleanUserId = userId?.trim();
-        if (!cleanUserId) {
-            setErrorMsg("ID de usuário ausente no link");
+        const pathParts = window.location.pathname.split('/');
+        const idFromPath = pathParts[pathParts.length - 1];
+        const cleanUserId = (idFromPath || userId)?.trim();
+
+        if (!cleanUserId || cleanUserId === 'undefined' || cleanUserId.length < 20) {
+            setErrorMsg("ID de usuário inválido ou ausente no link");
             return;
         }
-        console.log(`[OBS] Buscando dados para: ${cleanUserId}`);
-        try {
-            // Simple fetch without custom headers to avoid preflight (OPTIONS) block in OBS
-            const functionUrl = `https://nvtlirmfavhahwtsdchk.supabase.co/functions/v1/youtube-stats-fetch?target_user_id=${cleanUserId}`;
 
-            // Fetch with apikey and Authorization headers to satisfy Supabase gateway
+        try {
+            // Include ID in path AND query for maximum server-side detection compatibility
+            const functionUrl = `https://nvtlirmfavhahwtsdchk.supabase.co/functions/v1/youtube-stats-fetch/${cleanUserId}?target_user_id=${cleanUserId}`;
+
             const response = await fetch(functionUrl, {
                 method: 'GET',
                 headers: {
@@ -42,7 +44,7 @@ export const OBSLikesPage: React.FC = () => {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                setErrorMsg(`Erro HTTP ${response.status}: ${errorText.substring(0, 20)}`);
+                setErrorMsg(`Erro ${response.status}: Servidor indisponível`);
                 return;
             }
 

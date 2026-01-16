@@ -6,6 +6,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-target-user-id',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
 serve(async (req) => {
@@ -26,41 +27,41 @@ serve(async (req) => {
         );
 
         // Support for GET requests (for stats fetching) and POST (for saving settings)
-        let userId: string | null = null;
         const url = new URL(req.url);
 
-        console.log(`[youtube-stats-fetch] Request URL: ${req.url}`);
-        console.log(`[youtube-stats-fetch] Method: ${req.method}`);
+        // Multi-source ID detection
+        const idFromPath = url.pathname.split('/').pop();
+        const idFromQuery = url.searchParams.get('target_user_id') || url.searchParams.get('uid');
+        const idFromHeader = req.headers.get('x-target-user-id');
 
-        const paramId = url.searchParams.get('target_user_id');
-        const headerId = req.headers.get('x-target-user-id');
+        // Validation: Must look like a UUID or at least be a string
+        const potentialId = (idFromQuery || idFromHeader || idFromPath || '').trim();
+        let userId: string | null = null;
 
-        console.log(`[youtube-stats-fetch] Param ID: ${paramId}, Header ID: ${headerId}`);
-
-        if (paramId) {
-            userId = paramId;
-        } else if (headerId) {
-            userId = headerId;
+        if (potentialId && potentialId.length > 20 && potentialId !== 'youtube-stats-fetch') {
+            userId = potentialId;
         } else {
             // Dashboard Mode: Authenticate User
             const authHeader = req.headers.get('Authorization');
-            if (!authHeader || authHeader.includes('undefined')) {
-                throw new Error("ID de usuário não encontrado (nenhum target_user_id ou token de sessão).");
+            if (authHeader && !authHeader.includes('undefined')) {
+                const token = authHeader.replace('Bearer ', '');
+                // Skip if it looks like the Anon Key
+                if (!(token.length > 200 && token.includes('eyJhbGci'))) {
+                    const { data: { user } } = await supabaseClient.auth.getUser(token);
+                    if (user) userId = user.id;
+                }
             }
-
-            const token = authHeader.replace('Bearer ', '');
-            // If the token is just the anon key, this is a public request missing a target_user_id
-            if (token.length > 200 && token.includes('eyJhbGci')) {
-                // Potential Anon Key but no target_user_id provided
-                throw new Error("ID de usuário ausente no pedido público (overlay).");
-            }
-
-            const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
-            if (userError || !user) throw new Error("Usuário não autenticado ou sessão expirada.");
-            userId = user.id;
         }
 
-        if (!userId) throw new Error("Falha crítica ao identificar o proprietário da meta.");
+        if (!userId) {
+            return new Response(JSON.stringify({
+                error: "Dificuldade em identificar o usuário. Verifique o link no OBS.",
+                debug: { path: idFromPath, query: idFromQuery, header: idFromHeader }
+            }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200, // Return 200 to show the error nicely in UI
+            });
+        }
 
         if (req.method === 'POST') {
             const reqJson = await req.json().catch(() => ({}));
