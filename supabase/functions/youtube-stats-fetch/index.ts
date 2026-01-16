@@ -3,17 +3,23 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 // @ts-ignore
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-target-user-id',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Max-Age': '86400',
-};
-
 serve(async (req) => {
+    const origin = req.headers.get('Origin') || '*';
+    const corsHeaders = {
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-target-user-id, accept, origin, referer, user-agent',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE, PATCH',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Max-Age': '86400',
+    };
+
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders, status: 200 });
     }
+
+    // Log headers for debugging (will see in Supabase Logs)
+    console.log(`[Stats-Fetch] Method: ${req.method} | Origin: ${origin}`);
+    console.log(`[Stats-Fetch] URL: ${req.url}`);
 
     try {
         // Prepare Supabase Client (Service Role for OBS access, User Auth for Dashboard)

@@ -22,44 +22,48 @@ export const OBSLikesPage: React.FC = () => {
         const cleanUserId = (idFromPath || userId)?.trim();
 
         if (!cleanUserId || cleanUserId === 'undefined' || cleanUserId.length < 20) {
-            setErrorMsg("ID de Usuário Inválido (Verifique o link)");
+            setErrorMsg("Link do OBS incompleto. Copie do Dashboard.");
+            setLoading(false);
             return;
         }
 
         try {
-            // Primary method: Official Supabase client invoke
-            const { data, error } = await supabase.functions.invoke(`youtube-stats-fetch?target_user_id=${cleanUserId}`, {
-                method: 'GET'
-            });
+            // Attempt to use a simplified invoke to reduce preflight complexity
+            const { data, error } = await supabase.functions.invoke(`youtube-stats-fetch?target_user_id=${cleanUserId}`);
 
             if (error) {
-                // If it's a connection error and we have retries left, wait and try again
                 if (retryCount < 2) {
                     console.log(`[OBS] Erro na tentativa ${retryCount + 1}, tentando novamente em 2s...`);
                     setTimeout(() => fetchStats(retryCount + 1), 2000);
                     return;
                 }
 
-                let detail = error.message;
-                try {
-                    // Try to extract more details if it's a JSON string
-                    const parsed = JSON.parse(error.message);
-                    detail = parsed.message || parsed.error || error.message;
-                } catch (e) { }
+                // Detailed error for OBS debugging
+                let msg = error.message || 'Erro desconhecido';
+                if (error instanceof TypeError && msg.includes('fetch')) {
+                    msg = "Bloqueio de CORS ou Firewall do Windows";
+                }
 
-                setErrorMsg(`Erro ${error.status || 'Conexão'}: ${detail}`);
+                setErrorMsg(`Erro: ${msg}`);
+                setDebugInfo(`Status: ${error.status || '?'}`);
+                setFullErrorObject(error); // Capture full error object
+                setFullDataObject(null); // Clear previous data
                 return;
             }
 
             if (data) {
                 if (data.error) {
-                    setErrorMsg(`Erro no Servidor: ${data.error}`);
+                    setErrorMsg(`Servidor: ${data.error}`);
                     setDebugInfo(`UID: ${data.debug?.userId?.substring(0, 5) || '?'}`);
+                    setFullErrorObject(data.error); // Capture server-side error
+                    setFullDataObject(data); // Capture full data object
                 } else {
                     setErrorMsg(null);
                     setLikes(data.likes || 0);
                     setGoal(data.goal || 100);
                     setDebugInfo('');
+                    setFullErrorObject(null); // Clear error
+                    setFullDataObject(data); // Capture full data object
 
                     if (data.colors) {
                         setBarColor(data.colors.bar || '#2563eb');
@@ -74,8 +78,10 @@ export const OBSLikesPage: React.FC = () => {
                 setTimeout(() => fetchStats(retryCount + 1), 2000);
                 return;
             }
-            setErrorMsg(`Falha Total: ${err.message}`);
-            console.error('Fatal crash:', err);
+            setErrorMsg(`Falha Crítica: ${err.message || 'Sem conexão'}`);
+            setFullErrorObject(err); // Capture full error object
+            setFullDataObject(null); // Clear previous data
+            console.error(err);
         } finally {
             if (retryCount === 0) setLoading(false);
         }
