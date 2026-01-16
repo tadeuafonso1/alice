@@ -180,21 +180,16 @@ export const OBSAlertsPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-transparent flex flex-col items-center justify-start pt-32 overflow-hidden font-sans relative">
-            {/* SUBTLE ACTIVATION BUTTON */}
-            {!audioUnlocked ? (
-                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-4">
-                    <button
-                        onClick={handleInteraction}
-                        className="bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 border border-cyan-500/30 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest backdrop-blur-sm transition-all animate-pulse"
-                    >
-                        🔈 Ativar Alerta (Clique aqui no "Interagir" do OBS)
-                    </button>
-                    <span className="text-cyan-900/40 text-[10px] uppercase font-black">Áudio via Web Audio API (Nuclear Mode)</span>
-                </div>
-            ) : (
-                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 text-cyan-500/30 text-[10px] font-bold animate-fade-out">
-                    ✅ ÁUDIO PRONTO
-                </div>
+            {/* 
+                HIDDEN AUDIO UNLOCKER: 
+                Completely invisible layer for OBS audio compliance.
+            */}
+            {!audioUnlocked && (
+                <div
+                    onClick={handleInteraction}
+                    className="fixed inset-0 z-[9999] cursor-pointer"
+                    style={{ backgroundColor: 'transparent' }}
+                />
             )}
 
             <div className="relative w-[1000px] h-[1000px] flex items-center justify-center">
