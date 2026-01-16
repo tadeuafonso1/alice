@@ -7,22 +7,34 @@ export const OBSAlertsPage: React.FC = () => {
     const { userId } = useParams<{ userId: string }>();
     const [alert, setAlert] = useState<{ message: string; id: number } | null>(null);
     const [isVisible, setIsVisible] = useState(false);
+    const [status, setStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
+    const [logs, setLogs] = useState<string[]>([]);
+
+    const addLog = useCallback((msg: string) => {
+        setLogs(prev => [new Date().toLocaleTimeString() + ": " + msg, ...prev].slice(0, 5));
+    }, []);
 
     const showNextAlert = useCallback((message: string, id: number) => {
+        addLog("🔔 ALERTA: " + message);
         setAlert({ message, id });
         setIsVisible(true);
 
-        // Hide after 8 seconds
+        // Hide after 10 seconds (increased for debugging)
         setTimeout(() => {
             setIsVisible(false);
-            setTimeout(() => setAlert(null), 500); // Clear after fade out
-        }, 8000);
-    }, []);
+            setTimeout(() => setAlert(null), 500);
+        }, 10000);
+    }, [addLog]);
 
     useEffect(() => {
-        if (!userId) return;
+        if (!userId) {
+            setStatus('error');
+            addLog("❌ Erro: userId não encontrado");
+            return;
+        }
 
-        // Subscribe to real-time changes in bot_notifications
+        addLog("🔌 Conectando user: " + userId);
+
         const channel = supabase
             .channel('bot-notifications-obs')
             .on(
@@ -30,32 +42,58 @@ export const OBSAlertsPage: React.FC = () => {
                 {
                     event: 'INSERT',
                     schema: 'public',
-                    table: 'bot_notifications',
-                    filter: `user_id=eq.${userId}`
+                    table: 'bot_notifications'
                 },
                 (payload) => {
-                    if (payload.new.type === 'livepix_alert') {
+                    addLog("📥 Recebi: " + payload.new.type);
+                    if (payload.new.user_id === userId && payload.new.type === 'livepix_alert') {
                         showNextAlert(payload.new.message, payload.new.id);
 
-                        // Mark as read in background
                         supabase
                             .from('bot_notifications')
                             .update({ read: true })
-                            .eq('id', payload.new.id);
+                            .eq('id', payload.new.id)
+                            .then(({ error }) => {
+                                if (error) addLog("⚠️ Erro read: " + error.message);
+                            });
+                    } else {
+                        addLog("⏭️ Ignorado (ID/Tipo)");
                     }
                 }
             )
-            .subscribe();
+            .subscribe((status) => {
+                addLog("📡 Status: " + status);
+                if (status === 'SUBSCRIBED') setStatus('connected');
+                if (status === 'CLOSED' || status === 'CHANNEL_ERROR') setStatus('error');
+            });
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [userId, showNextAlert]);
-
-    if (!alert) return <div className="min-h-screen bg-transparent"></div>;
+    }, [userId, showNextAlert, addLog]);
 
     return (
-        <div className="min-h-screen bg-transparent flex flex-col items-center justify-start pt-20 overflow-hidden font-sans">
+        <div className="min-h-screen bg-transparent flex flex-col items-center justify-start pt-20 overflow-hidden font-sans relative">
+            {/* Visual Debug - Invisible as requested by user later, but useful now */}
+            {!alert && (
+                <div className="fixed bottom-4 left-4 p-4 bg-black/80 backdrop-blur-md rounded-2xl border border-white/10 text-[10px] text-white font-mono shadow-2xl z-50">
+                    <div className="flex items-center gap-2 mb-3">
+                        <div className={`w-3 h-3 rounded-full ${status === 'connected' ? 'bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse' : 'bg-red-500 shadow-[0_0_10px_#ef4444]'}`}></div>
+                        <span className="font-black uppercase tracking-widest text-white/90">Sistema de Alertas</span>
+                    </div>
+                    <div className="space-y-1">
+                        {logs.map((log, i) => (
+                            <div key={i} className={`p-1 rounded ${log.includes('📥') ? 'bg-blue-500/20 text-blue-300' : 'text-white/40'}`}>
+                                {log}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-white/5 text-white/30 italic text-[9px]">
+                        ID: {userId?.substring(0, 8)}...
+                    </div>
+                </div>
+            )}
+
             <div className={`
                 transition-all duration-1000 transform
                 ${isVisible ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-90'}
@@ -63,7 +101,6 @@ export const OBSAlertsPage: React.FC = () => {
                 border-2 border-cyan-500/50 rounded-2xl p-8 shadow-[0_0_50px_rgba(6,182,212,0.3)]
                 flex items-center gap-6 max-w-2xl relative
             `}>
-                {/* Glow effect */}
                 <div className="absolute inset-0 bg-cyan-500/10 blur-2xl rounded-full animate-pulse"></div>
 
                 <div className="relative z-10 p-4 bg-cyan-500/20 rounded-2xl border border-cyan-500/30">
@@ -71,15 +108,14 @@ export const OBSAlertsPage: React.FC = () => {
                 </div>
 
                 <div className="relative z-10">
-                    <h1 className="text-cyan-400 font-black text-xl uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <h1 className="text-cyan-400 font-black text-xl uppercase tracking-widest mb-2 flex items-center gap-2 text-shadow-glow">
                         🚀 NOVO PIX RECEBIDO 🚀
                     </h1>
                     <p className="text-white text-2xl font-bold leading-tight drop-shadow-md">
-                        {alert.message}
+                        {alert?.message}
                     </p>
                 </div>
 
-                {/* Particle effect simulation */}
                 <div className="absolute -top-4 -right-4 w-8 h-8 bg-cyan-500/20 blur-xl animate-ping rounded-full"></div>
                 <div className="absolute -bottom-4 -left-4 w-12 h-12 bg-blue-500/20 blur-xl animate-ping rounded-full delay-700"></div>
             </div>
