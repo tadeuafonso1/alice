@@ -17,9 +17,9 @@ export const OBSLikesPage: React.FC = () => {
     const fetchStats = async () => {
         if (!userId) return;
         try {
-            // Call generic Edge Function with target_user_id
-            const { data, error } = await supabase.functions.invoke('youtube-stats-fetch', {
-                body: { target_user_id: userId }
+            // Fetch stats using GET with target_user_id in query params
+            const { data, error } = await supabase.functions.invoke(`youtube-stats-fetch?target_user_id=${userId}`, {
+                method: 'GET'
             });
 
             if (data && !error) {

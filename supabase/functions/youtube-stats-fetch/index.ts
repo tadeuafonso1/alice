@@ -25,11 +25,10 @@ serve(async (req) => {
             }
         );
 
+        // Support for GET requests (for stats fetching) and POST (for saving settings)
         let userId: string;
-
-        // Check if request has a specific target (OBS mode) or uses header (Dashboard mode)
-        const reqJson = await req.json().catch(() => ({}));
-        const { target_user_id } = reqJson;
+        const url = new URL(req.url);
+        const target_user_id = url.searchParams.get('target_user_id');
 
         if (target_user_id) {
             userId = target_user_id;
@@ -44,26 +43,29 @@ serve(async (req) => {
         }
 
         if (req.method === 'POST') {
+            const reqJson = await req.json().catch(() => ({}));
             const { goal, step, auto_update, bar_color, bg_color, border_color, text_color } = reqJson;
 
-            // Persist updates
-            const { error: upsertError } = await supabaseClient.from('like_goals').upsert({
-                user_id: userId,
-                current_goal: goal,
-                step: step,
-                auto_update: auto_update,
-                bar_color: bar_color,
-                bg_color: bg_color,
-                border_color: border_color,
-                text_color: text_color
-            });
+            // Only save if actual setting data is provided in the body
+            if (goal !== undefined || bar_color !== undefined) {
+                const { error: upsertError } = await supabaseClient.from('like_goals').upsert({
+                    user_id: userId,
+                    current_goal: goal,
+                    step: step,
+                    auto_update: auto_update,
+                    bar_color: bar_color,
+                    bg_color: bg_color,
+                    border_color: border_color,
+                    text_color: text_color
+                });
 
-            if (upsertError) throw upsertError;
+                if (upsertError) throw upsertError;
 
-            return new Response(JSON.stringify({ success: true }), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200,
-            });
+                return new Response(JSON.stringify({ success: true }), {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    status: 200,
+                });
+            }
         }
 
         // 1. Get YouTube Token from DB
