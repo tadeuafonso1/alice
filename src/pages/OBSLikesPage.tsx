@@ -30,21 +30,18 @@ export const OBSLikesPage: React.FC = () => {
         }
 
         try {
-            // Include ID in path AND query for maximum server-side detection compatibility
-            const functionUrl = `https://nvtlirmfavhahwtsdchk.supabase.co/functions/v1/youtube-stats-fetch/${cleanUserId}?target_user_id=${cleanUserId}`;
+            // Using query parameters for BOTH ID and API Key to avoid 'CORS preflight' (OPTIONS request) 
+            // which often fails in OBS Browser Sources. This makes it a 'simple request'.
+            const functionUrl = `https://nvtlirmfavhahwtsdchk.supabase.co/functions/v1/youtube-stats-fetch?apikey=${SUPABASE_ANON_KEY}&target_user_id=${cleanUserId}`;
 
             const response = await fetch(functionUrl, {
-                method: 'GET',
-                headers: {
-                    'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                    'x-target-user-id': cleanUserId
-                }
+                method: 'GET'
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
                 setErrorMsg(`Erro ${response.status}: Servidor indisponível`);
+                console.error('Server error:', errorText);
                 return;
             }
 
