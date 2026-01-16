@@ -11,7 +11,7 @@ export const OBSAlertsPage: React.FC = () => {
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     const triggerExplosion = () => {
-        const count = 250;
+        const count = 300;
         const defaults = { origin: { y: 0.4 } };
 
         function fire(particleRatio: number, opts: any) {
@@ -22,11 +22,10 @@ export const OBSAlertsPage: React.FC = () => {
             });
         }
 
-        fire(0.25, { spread: 30, startVelocity: 60 });
+        fire(0.25, { spread: 40, startVelocity: 60 });
         fire(0.2, { spread: 60 });
-        fire(0.35, { spread: 100, decay: 0.91, scalar: 1.0 });
-        fire(0.1, { spread: 130, startVelocity: 30, decay: 0.92, scalar: 1.5 });
-        fire(0.1, { spread: 130, startVelocity: 50 });
+        fire(0.35, { spread: 100, decay: 0.91, scalar: 1.1 });
+        fire(0.1, { spread: 140, startVelocity: 35, decay: 0.92, scalar: 1.6 });
     };
 
     const runAlertSequence = useCallback((message: string, id: number) => {
@@ -35,9 +34,10 @@ export const OBSAlertsPage: React.FC = () => {
 
         // Sound: Liftoff
         if (audioRef.current) {
+            audioRef.current.volume = 1.0;
             audioRef.current.currentTime = 0;
             audioRef.current.play().catch(e => {
-                console.warn("Autoplay blocked or audio error. User interaction required.", e);
+                console.warn("Autoplay still blocked. Interaction needed.", e);
             });
         }
 
@@ -50,9 +50,9 @@ export const OBSAlertsPage: React.FC = () => {
                 setTimeout(() => {
                     setPhase('idle');
                     setAlert(null);
-                }, 9000);
-            }, 800);
-        }, 1800); // Slightly longer takeoff shake
+                }, 10000);
+            }, 900);
+        }, 2000);
     }, []);
 
     useEffect(() => {
@@ -92,66 +92,86 @@ export const OBSAlertsPage: React.FC = () => {
                 audioRef.current!.currentTime = 0;
                 setAudioPrimed(true);
             }).catch(() => {
-                setAudioPrimed(false);
+                setAudioPrimed(true); // Still set as primed to hide button
             });
         }
     };
 
+    // Use absolute URL for the image to avoid OBS path resolution issues
+    // window.location.origin will give the base URL (e.g., http://localhost:3000 or the production URL)
+    const rocketImageUrl = `${window.location.origin}/rocket_alert.png`;
+
     return (
         <div className="min-h-screen bg-transparent flex flex-col items-center justify-start pt-32 overflow-hidden font-sans relative">
-            {/* Audio Priming Overlay (Only visible in browser/testing, normally clicked once by user) */}
+            {/* Audio Priming - More obvious for the user to setup */}
             {!audioPrimed && phase === 'idle' && (
-                <button
-                    onClick={handlePrimeAudio}
-                    className="fixed bottom-4 right-4 bg-cyan-600/80 hover:bg-cyan-500 text-white px-6 py-3 rounded-full text-sm font-bold animate-pulse backdrop-blur-md border border-white/20 z-[100] shadow-2xl"
-                >
-                    🔊 ATIVAR ÁUDIO (Clique aqui uma vez)
-                </button>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                    <button
+                        onClick={handlePrimeAudio}
+                        className="bg-cyan-600 hover:bg-cyan-500 text-white px-8 py-4 rounded-3xl text-xl font-black shadow-[0_0_30px_rgba(6,182,212,0.5)] animate-bounce border-2 border-white/20"
+                    >
+                        🔊 CLIQUE PARA ATIVAR O SOM
+                    </button>
+                </div>
             )}
 
-            {/* Audio Element: Liftoff Sound - Using a more stable URL */}
             <audio
                 ref={audioRef}
                 src="https://assets.mixkit.co/sfx/preview/mixkit-rocket-shuttle-launch-2144.mp3"
                 preload="auto"
             />
 
-            <div className="relative w-[1000px] h-[1000px] flex items-center justify-center">
+            <div className="relative w-[1000px] h-1000px flex items-center justify-center">
                 {/* Rocket Animation */}
-                {phase !== 'idle' && phase !== 'explosion' && (
+                {(phase === 'takeoff' || phase === 'flight') && (
                     <div className={`
                         absolute bottom-0 w-80 h-auto transition-all duration-[1200ms] ease-in
                         ${phase === 'takeoff' ? 'animate-shake' : ''}
                         ${phase === 'flight' ? '-translate-y-[1500px] opacity-100 scale-125' : ''}
                     `}>
-                        <img src="/rocket_alert.png" className="w-full h-auto drop-shadow-[0_0_50px_rgba(255,100,0,0.8)]" alt="rocket" />
-
-                        {/* Enlarged Exhaust flame effect */}
+                        <img src={rocketImageUrl} className="w-full h-auto drop-shadow-[0_0_50px_rgba(255,100,0,0.8)]" alt="rocket" />
                         <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-12 h-60 bg-gradient-to-t from-orange-600 via-orange-400 to-yellow-200 blur-2xl animate-pulse rounded-full opacity-90"></div>
-                        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-8 h-30 bg-white blur-xl animate-pulse rounded-full opacity-100"></div>
                     </div>
                 )}
 
-                {/* Explosion Message Card */}
-                <div className={`
-                    bg-gradient-to-br from-[#1E293B]/98 to-[#020617]/98
-                    border-[6px] border-cyan-500 rounded-[3rem] p-12 shadow-[0_0_120px_rgba(6,182,212,0.7)]
-                    flex flex-col items-center text-center gap-8 transition-all duration-700 transform
-                    ${phase === 'explosion' ? 'scale-100 opacity-100 translate-y-0 text-glow' : 'scale-50 opacity-0 -translate-y-60'}
-                    relative z-50
-                `}>
-                    <div className="p-10 bg-cyan-500/20 rounded-full border-4 border-cyan-500/30 animate-pulse shadow-[0_0_60px_rgba(6,182,212,0.4)]">
-                        <img src="/rocket_alert.png" className="w-48 h-48 object-contain" alt="icon" />
+                {/* Explosion Message Card - Using Inline Styles for Maximum Reliability in OBS */}
+                <div style={{
+                    backgroundColor: '#0f172a', /* Fallback solid color */
+                    backgroundImage: 'linear-gradient(135deg, #1e293b 0%, #020617 100%)',
+                    border: '6px solid #06b6d4',
+                    borderRadius: '3rem',
+                    padding: '3rem',
+                    boxShadow: '0 0 120px rgba(6, 182, 212, 0.7)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    textAlign: 'center',
+                    gap: '2rem',
+                    transition: 'all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                    transform: phase === 'explosion' ? 'scale(1) translateY(0)' : 'scale(0.5) translateY(-60px)',
+                    opacity: phase === 'explosion' ? 1 : 0,
+                    maxWidth: '900px',
+                    position: 'relative',
+                    zIndex: 50
+                }}>
+                    <div style={{
+                        padding: '2.5rem',
+                        backgroundColor: 'rgba(6, 182, 212, 0.2)',
+                        borderRadius: '9999px',
+                        border: '4px solid rgba(6, 182, 212, 0.3)',
+                        boxShadow: '0 0 60px rgba(6, 182, 212, 0.4)'
+                    }}>
+                        <img src={rocketImageUrl} style={{ width: '12rem', height: '12rem', objectFit: 'contain' }} alt="icon" />
                     </div>
 
                     <div className="space-y-4">
-                        <h1 className="text-cyan-400 font-black text-5xl uppercase tracking-[0.4em] animate-bounce filter drop-shadow-[0_0_20px_rgba(34,211,238,0.7)]">
+                        <h1 style={{ color: '#22d3ee', fontWeight: 900, fontSize: '3rem', textTransform: 'uppercase', letterSpacing: '0.4em', textShadow: '0 0 20px rgba(34, 211, 238, 0.7)' }}>
                             🚀 COMPROU FILA! 🚀
                         </h1>
-                        <div className="h-2 w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-60"></div>
+                        <div style={{ height: '0.5rem', width: '100%', background: 'linear-gradient(to right, transparent, #06b6d4, transparent)', opacity: 0.6 }}></div>
                     </div>
 
-                    <p className="text-white text-6xl font-black leading-tight drop-shadow-[0_4px_25px_rgba(0,0,0,1)] max-w-4xl bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-400">
+                    <p style={{ color: 'white', fontWeight: 900, fontSize: '3.75rem', lineHeight: 1.1, textShadow: '0 4px 25px rgba(0,0,0,1)' }}>
                         {alert?.message}
                     </p>
                 </div>
@@ -174,9 +194,6 @@ export const OBSAlertsPage: React.FC = () => {
                 }
                 .animate-shake {
                     animation: shake 0.08s infinite;
-                }
-                .text-glow {
-                    text-shadow: 0 0 40px rgba(6, 182, 212, 1), 0 0 80px rgba(6, 182, 212, 0.6);
                 }
             `}} />
         </div>
