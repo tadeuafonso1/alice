@@ -1154,13 +1154,13 @@ export const HomePage: React.FC = () => {
             }
         }, 5000);
 
-        // Verificações periódicas a cada 2 minutos
+        // Verificações periódicas a cada 5 minutos
         const autoSyncInterval = setInterval(() => {
-            if (!isPolling && !isFindingChat) {
+            if (!isPolling && !isFindingChat && !liveChatId) {
                 console.log('[Auto-Sync] Verificando se há live ativa...');
                 handleFindLiveChat(undefined, true); // Silent
             }
-        }, 120000); // 2 minutos
+        }, 300000); // 5 minutos
 
         return () => {
             clearTimeout(initialTimeout);
@@ -1182,7 +1182,7 @@ export const HomePage: React.FC = () => {
             if (isPolling) {
                 await fetchAndProcessMessages();
                 // Agenda a próxima busca apenas após terminar a atual
-                timeoutId = setTimeout(poll, 12000);
+                timeoutId = setTimeout(poll, 25000);
             }
         };
 

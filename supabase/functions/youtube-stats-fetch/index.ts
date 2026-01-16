@@ -202,7 +202,8 @@ serve(async (req) => {
                 item.status?.lifeCycleStatus === 'liveStarting'
             );
 
-            // Fallback: If no broadcast found via mine=true, try search with channelId
+            // Fallback: ONLY if no broadcast found via mine=true, try search with channelId
+            // search.list is expensive (100 units), so we use it as last resort
             if (!activeBroadcast && tokenData.channel_id) {
                 console.log("[Stats-Fetch] No active broadcast found via mine=true, trying search fallback for channel:", tokenData.channel_id);
                 const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=id&channelId=${tokenData.channel_id}&type=video&eventType=live&maxResults=1`;
