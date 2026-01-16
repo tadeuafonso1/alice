@@ -53,13 +53,23 @@ serve(async (req) => {
     const potentialId = (idFromQuery || idFromHeader || idFromPath || '').trim();
 
     let userId: string | null = null;
+    let likeCount = 0;
+    let subscriberCount = 0;
+    let currentGoal = 100;
+    let stepCount = 50;
+    let autoUpdate = true;
+    let streamFound = false;
+    let barColor = '#2563eb';
+    let bgColor = '#ffffff1a';
+    let borderColor = '#ffffffcc';
+    let textColor = '#ffffff';
+    let debugInfo: any = {};
+    let goalUpdated = false;
 
     try {
-        const supabaseClient = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-            { auth: { persistSession: false } }
-        );
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+        const supabaseClient = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
 
         if (potentialId && potentialId.length > 20 && potentialId !== 'youtube-stats-fetch') {
             userId = potentialId;
@@ -84,12 +94,13 @@ serve(async (req) => {
             });
         }
 
+        // --- MANAGE GOALS (POST) ---
         if (req.method === 'POST') {
             const reqJson = await req.json().catch(() => ({}));
-            const { goal, step, auto_update, bar_color, bg_color, border_color, text_color } = reqJson;
 
-            if (goal !== undefined || bar_color !== undefined) {
-                const { error: upsertError } = await supabaseClient.from('like_goals').upsert({
+            if (url.pathname.endsWith('/subscribers')) {
+                const { goal, step, auto_update, bar_color, bg_color, border_color, text_color, initial_subs } = reqJson;
+                const { error: upsertError } = await supabaseClient.from('subscriber_goals').upsert({
                     user_id: userId,
                     current_goal: goal,
                     step: step,
@@ -97,122 +108,97 @@ serve(async (req) => {
                     bar_color: bar_color,
                     bg_color: bg_color,
                     border_color: border_color,
-                    text_color: text_color
+                    text_color: text_color,
+                    initial_subs: initial_subs,
+                    updated_at: new Date().toISOString()
                 });
-
                 if (upsertError) throw upsertError;
-
-                return new Response(JSON.stringify({ success: true }), {
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    status: 200,
-                });
+                return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+            } else {
+                const { goal, step, auto_update, bar_color, bg_color, border_color, text_color } = reqJson;
+                if (goal !== undefined || bar_color !== undefined) {
+                    const { error: upsertError } = await supabaseClient.from('like_goals').upsert({
+                        user_id: userId,
+                        current_goal: goal,
+                        step: step,
+                        auto_update: auto_update,
+                        bar_color: bar_color,
+                        bg_color: bg_color,
+                        border_color: border_color,
+                        text_color: text_color,
+                        updated_at: new Date().toISOString()
+                    });
+                    if (upsertError) throw upsertError;
+                    return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+                }
             }
         }
 
+        // --- FETCH STATS (GET) ---
         const { data: tokenData, error: tokenError } = await supabaseClient
             .from('youtube_tokens')
-            .select('access_token, channel_id')
+            .select('access_token, refresh_token, channel_id')
             .eq('user_id', userId)
             .single();
 
         if (tokenError || !tokenData) {
-            return new Response(JSON.stringify({
-                error: "Token do YouTube não encontrado.",
-                code: "NO_TOKEN",
-                likes: 0,
-                debug: { hasUserId: !!userId, noToken: true }
-            }), {
+            return new Response(JSON.stringify({ error: "Token do YouTube não encontrado.", code: "NO_TOKEN", likes: 0, debug: { hasUserId: !!userId } }), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 status: 200,
             });
         }
 
-        const { data: goalData, error: goalError } = await supabaseClient
-            .from('like_goals')
-            .select('*')
-            .eq('user_id', userId)
-            .maybeSingle();
-
-        let currentGoal = goalData?.current_goal ?? 100;
-        let stepCount = goalData?.step ?? 50;
-        let autoUpdate = goalData?.auto_update ?? true;
-        let barColor = goalData?.bar_color ?? '#2563eb';
-        let bgColor = goalData?.bg_color ?? '#ffffff1a';
-        let borderColor = goalData?.border_color ?? '#ffffffcc';
-        let textColor = goalData?.text_color ?? '#ffffff';
-
-        const fetchYouTube = async (url: string) => {
-            const res = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${tokenData.access_token}`,
-                    'Accept': 'application/json',
-                },
-            });
-            const json = await res.json();
-            if (!res.ok) {
-                if (res.status === 401) throw new Error("YOUTUBE_TOKEN_EXPIRED");
-                throw new Error(`YouTube API Error: ${json.error?.message || res.statusText}`);
-            }
-            return json;
+        // Load Like Goal Settings
+        const { data: goalData } = await supabaseClient.from('like_goals').select('*').eq('user_id', userId).maybeSingle();
+        if (goalData) {
+            currentGoal = goalData.current_goal;
+            stepCount = goalData.step;
+            autoUpdate = goalData.auto_update;
+            barColor = goalData.bar_color || barColor;
+            bgColor = goalData.bg_color || bgColor;
+            borderColor = goalData.border_color || borderColor;
+            textColor = goalData.text_color || textColor;
         }
 
-        let likeCount = 0;
-        let streamFound = false;
-        let broadcastData: any = null;
-        let activeBroadcast: any = null;
+        const fetchYouTube = async (youtubeUrl: string) => {
+            let res = await fetch(youtubeUrl, {
+                headers: { 'Authorization': `Bearer ${tokenData.access_token}`, 'Accept': 'application/json' },
+            });
 
-        try {
-            // Broaden search: list mine but filter manually
-            const broadcastUrl = `https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,status&mine=true&maxResults=10`;
+            if (res.status === 401) {
+                console.log("[Stats-Fetch] Token expired, refreshing...");
+                if (tokenData.refresh_token) {
+                    const refreshedToken = await getNewToken(tokenData.refresh_token);
+                    tokenData.access_token = refreshedToken.access_token;
+                    await supabaseClient.from('youtube_tokens').update({
+                        access_token: refreshedToken.access_token,
+                        expires_at: new Date(Date.now() + refreshedToken.expires_in * 1000).toISOString()
+                    }).eq('user_id', userId);
 
-            try {
-                broadcastData = await fetchYouTube(broadcastUrl);
-            } catch (err: any) {
-                if (err.message === "YOUTUBE_TOKEN_EXPIRED") {
-                    console.log("[Stats-Fetch] Token expired, attempting refresh...");
-                    const { data: fullTokenData } = await supabaseClient
-                        .from('youtube_tokens')
-                        .select('refresh_token')
-                        .eq('user_id', userId)
-                        .single();
-
-                    if (fullTokenData?.refresh_token) {
-                        const newToken = await getNewToken(fullTokenData.refresh_token);
-                        tokenData.access_token = newToken.access_token;
-
-                        await supabaseClient
-                            .from('youtube_tokens')
-                            .update({
-                                access_token: newToken.access_token,
-                                expires_at: new Date(Date.now() + newToken.expires_in * 1000).toISOString()
-                            })
-                            .eq('user_id', userId);
-
-                        broadcastData = await fetchYouTube(broadcastUrl);
-                    } else {
-                        throw err;
-                    }
-                } else {
-                    throw err;
+                    res = await fetch(youtubeUrl, {
+                        headers: { 'Authorization': `Bearer ${tokenData.access_token}`, 'Accept': 'application/json' },
+                    });
                 }
             }
 
-            activeBroadcast = broadcastData.items?.find((item: any) =>
-                item.status?.lifeCycleStatus === 'live' ||
-                item.status?.lifeCycleStatus === 'liveStarting'
+            const json = await res.json();
+            if (!res.ok) throw new Error(`YouTube API Error: ${json.error?.message || res.statusText}`);
+            return json;
+        };
+
+        // 1. Fetch Likes from active broadcast
+        try {
+            const broadcastUrl = `https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,status&mine=true&maxResults=5`;
+            const broadcastData = await fetchYouTube(broadcastUrl);
+            let activeBroadcast = broadcastData.items?.find((item: any) =>
+                item.status?.lifeCycleStatus === 'live' || item.status?.lifeCycleStatus === 'liveStarting'
             );
 
-            // Fallback: ONLY if no broadcast found via mine=true, try search with channelId
-            // search.list is expensive (100 units), so we use it as last resort
             if (!activeBroadcast && tokenData.channel_id) {
-                console.log("[Stats-Fetch] No active broadcast found via mine=true, trying search fallback for channel:", tokenData.channel_id);
                 const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=id&channelId=${tokenData.channel_id}&type=video&eventType=live&maxResults=1`;
                 const searchData = await fetchYouTube(searchUrl);
-
-                if (searchData.items && searchData.items.length > 0) {
-                    const foundVideoId = searchData.items[0].id.videoId;
-                    console.log("[Stats-Fetch] Found live video via search fallback:", foundVideoId);
-                    activeBroadcast = { id: foundVideoId }; // Mock an activeBroadcast object
+                if (searchData.items?.length > 0) {
+                    activeBroadcast = { id: searchData.items[0].id.videoId };
                 }
             }
 
@@ -221,69 +207,75 @@ serve(async (req) => {
                 const videoId = activeBroadcast.id;
                 const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoId}`;
                 const videoData = await fetchYouTube(videoUrl);
-
-                if (videoData.items && videoData.items.length > 0) {
+                if (videoData.items?.length > 0) {
                     likeCount = parseInt(videoData.items[0].statistics.likeCount || "0", 10);
                 }
             }
-        } catch (fetchError: any) {
-            console.error("[Stats-Fetch] Error fetching from YouTube:", fetchError.message);
-            if (fetchError.message === "YOUTUBE_TOKEN_EXPIRED") throw fetchError;
+        } catch (err: any) {
+            console.error("[Stats-Fetch] Like fetch failed:", err.message);
         }
 
-        const debugInfo = {
-            hasChannelId: !!tokenData.channel_id,
-            channelId: tokenData.channel_id || null,
-            broadcastCount: broadcastData?.items?.length || 0,
-            foundViaSearch: (broadcastData && !broadcastData.items?.find((item: any) => item.status?.lifeCycleStatus === 'live' || item.status?.lifeCycleStatus === 'liveStarting')) && !!activeBroadcast,
-            videoId: activeBroadcast?.id || (activeBroadcast?.snippet ? 'has_snippet' : null),
-            broadcastStatus: broadcastData?.items?.[0]?.status?.lifeCycleStatus || 'none'
-        };
+        // 2. Fetch Subscriber Count
+        if (tokenData.channel_id) {
+            try {
+                const channelUrl = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${tokenData.channel_id}`;
+                const channelData = await fetchYouTube(channelUrl);
+                if (channelData.items?.length > 0) {
+                    subscriberCount = parseInt(channelData.items[0].statistics.subscriberCount || "0", 10);
+                }
+            } catch (err: any) {
+                console.error("[Stats-Fetch] Sub fetch failed:", err.message);
+            }
+        }
 
-        let goalUpdated = false;
+        // 3. Process Like Goal Progress
         if (autoUpdate && likeCount >= currentGoal) {
             const diff = likeCount - currentGoal;
             const stepsToAdd = Math.floor(diff / stepCount) + 1;
             currentGoal = currentGoal + (stepCount * stepsToAdd);
             goalUpdated = true;
-
-            await supabaseClient.from('like_goals').upsert({
-                user_id: userId,
-                current_goal: currentGoal,
-                step: stepCount,
-                auto_update: autoUpdate,
-                bar_color: barColor,
-                bg_color: bgColor,
-                border_color: borderColor,
-                text_color: textColor
-            });
         }
 
-        try {
-            await supabaseClient
-                .from('like_goals')
-                .update({
-                    current_likes: likeCount,
-                    current_goal: currentGoal,
-                    stream_found: streamFound,
-                    updated_at: new Date().toISOString(),
-                    debug_log: JSON.stringify(debugInfo)
-                })
-                .eq('user_id', userId);
-        } catch (dbErr) {
-            console.error('[Stats-Fetch] DB Failure:', dbErr);
+        // 4. Process Subscriber Goal Progress
+        const { data: subGoalData } = await supabaseClient.from('subscriber_goals').select('*').eq('user_id', userId).maybeSingle();
+        if (subGoalData) {
+            let curSubGoal = subGoalData.current_goal;
+            const subStep = subGoalData.step;
+            const subAuto = subGoalData.auto_update;
+            const relativeSubs = subscriberCount - subGoalData.initial_subs;
+
+            if (subAuto && relativeSubs >= curSubGoal) {
+                const diff = relativeSubs - curSubGoal;
+                const stepsToAdd = Math.floor(diff / subStep) + 1;
+                curSubGoal = curSubGoal + (subStep * stepsToAdd);
+            }
+
+            await supabaseClient.from('subscriber_goals').update({
+                current_subs: subscriberCount,
+                current_goal: curSubGoal,
+                updated_at: new Date().toISOString()
+            }).eq('user_id', userId);
         }
+
+        // 5. Update Like Goal in DB
+        await supabaseClient.from('like_goals').update({
+            current_likes: likeCount,
+            current_goal: currentGoal,
+            stream_found: streamFound,
+            updated_at: new Date().toISOString(),
+            debug_log: JSON.stringify({ likes: likeCount, subs: subscriberCount, streamFound })
+        }).eq('user_id', userId);
 
         return new Response(JSON.stringify({
             likes: likeCount,
+            subscribers: subscriberCount,
             goal: currentGoal,
             step: stepCount,
             auto_update: autoUpdate,
             streamFound,
             goalUpdated,
             colors: { bar: barColor, bg: bgColor, border: borderColor, text: textColor },
-            debug: debugInfo,
-            version: '2.1-FIXED-SAVE'
+            version: '2.3-SUBS-FIXED'
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
@@ -293,9 +285,8 @@ serve(async (req) => {
         console.error("Erro na Edge Function:", error.message);
         return new Response(JSON.stringify({
             error: error.message,
-            code: error.message === "YOUTUBE_TOKEN_EXPIRED" ? "TOKEN_EXPIRED" : "INTERNAL_ERROR",
-            userId,
-            debug: { hasUserId: !!userId, error: error.message, stack: error.stack?.substring(0, 100) }
+            code: "INTERNAL_ERROR",
+            debug: { error: error.message }
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,

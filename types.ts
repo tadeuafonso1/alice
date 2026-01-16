@@ -50,6 +50,7 @@ export interface MessageSettings {
   reset: MessageSetting;
   timerOn: MessageSetting;
   timerOff: MessageSetting;
+  thisIsAWarning: MessageSetting;
   removedForInactivityQueue: MessageSetting;
   thirtySecondWarning: MessageSetting;
   queueList: MessageSetting;
@@ -81,4 +82,32 @@ export interface AppSettings {
   customCommands: CustomCommand[];
   loyalty: LoyaltySettings;
   youtubeChannelId?: string;
+}
+
+export interface LivePixSettings {
+  user_id: string;
+  enabled: boolean;
+  client_id: string;
+  client_secret: string;
+  skip_queue_enabled: boolean;
+  skip_queue_price: number;
+  skip_queue_message: string;
+  points_per_real: number;
+  webhook_secret: string;
+  updated_at?: string;
+}
+
+export interface SubscriberGoal {
+  user_id: string;
+  current_subs: number;
+  initial_subs: number;
+  current_goal: number;
+  step: number;
+  auto_update: boolean;
+  bar_color: string;
+  bg_color: string;
+  border_color: string;
+  text_color: string;
+  stream_found: boolean;
+  updated_at?: string;
 }

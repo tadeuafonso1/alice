@@ -11,7 +11,8 @@ import { GiveawayRoulette } from '@/components/GiveawayRoulette';
 import { LoyaltySettings } from '@/components/LoyaltySettings';
 import { LikesTab } from '@/components/LikesTab';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings, CommandSetting } from '@/types';
-import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, UsersIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon } from '@/components/Icons';
+import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, UsersIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon, RocketIcon } from '@/components/Icons';
+import { LivePixSettings } from '@/components/LivePixSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/src/contexts/SessionContext';
 import { useTheme } from '@/src/contexts/ThemeContext';
@@ -1378,7 +1379,9 @@ export const HomePage: React.FC = () => {
                                         activeTab === 'commands' ? 'Comandos do Bot' :
                                             activeTab === 'youtube' ? 'Conexão YouTube' :
                                                 activeTab === 'timer' ? 'Timer' :
-                                                    activeTab === 'loyalty' ? 'Sistema de Lealdade' : 'Alice Bot'}
+                                                    activeTab === 'loyalty' ? 'Sistema de Lealdade' :
+                                                        activeTab === 'livepix' ? 'Integração LivePix' :
+                                                            activeTab === 'subgoals' ? 'Meta de Inscritos' : 'Alice Bot'}
                             </h2>
                             <p className="text-[10px] text-gray-500 font-medium">
                                 {activeTab === 'dashboard' ? 'Gerencie sua fila e interação com o bot.' :
@@ -1655,6 +1658,21 @@ export const HomePage: React.FC = () => {
                                     });
                                 }}
                             />
+                        )}
+
+                        {activeTab === 'livepix' && (
+                            <LivePixSettings />
+                        )}
+
+                        {activeTab === 'subscriber_goals' && (
+                            <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-800 text-center">
+                                <RocketIcon className="w-16 h-16 text-cyan-500 mx-auto mb-4 animate-bounce" />
+                                <h3 className="text-2xl font-bold mb-2">Meta de Inscritos</h3>
+                                <p className="text-gray-500 dark:text-gray-400 mb-6">Esta funcionalidade está em desenvolvimento e estará disponível em breve!</p>
+                                <div className="max-w-md mx-auto bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-dashed border-gray-300 dark:border-gray-700">
+                                    <p className="text-sm text-gray-500 italic">"Estamos preparando algo incrível para ajudar você a crescer sua comunidade no YouTube."</p>
+                                </div>
+                            </div>
                         )}
 
                     </div>

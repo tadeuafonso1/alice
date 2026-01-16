@@ -15,7 +15,10 @@ import {
     CopyIcon,
     CrownIcon,
     GiftIcon,
-    ThumbsUpIcon
+    ThumbsUpIcon,
+    RocketIcon,
+    UsersIcon,
+    AnchorIcon
 } from './Icons';
 import { LikeGoalWidget } from './LikeGoalWidget';
 
@@ -53,6 +56,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'timer', label: 'Timer Inatividade', icon: TimerIcon },
         { id: 'loyalty', label: 'Lealdade', icon: CrownIcon },
         { id: 'likes', label: 'Contador de Likes', icon: ThumbsUpIcon },
+        { id: 'livepix', label: 'Integração LivePix', icon: RocketIcon },
+        { id: 'subgoals', label: 'Meta de Inscritos', icon: UsersIcon },
         { id: 'giveaway', label: 'Sorteio', icon: GiftIcon },
     ];
 
