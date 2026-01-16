@@ -22,19 +22,24 @@ export const OBSLikesPage: React.FC = () => {
             return;
         }
         try {
-            // Using direct fetch to avoid potential invoke stripping params in some environments
-            const { data, error } = await supabase.functions.invoke(`youtube-stats-fetch?target_user_id=${userId}`, {
+            // Direct fetch to avoid client-side invoke issues in OBS Browser Source
+            const functionUrl = `https://nvtlirmfavhahwtsdchk.supabase.co/functions/v1/youtube-stats-fetch?target_user_id=${userId}`;
+
+            const response = await fetch(functionUrl, {
                 method: 'GET',
                 headers: {
+                    'Content-Type': 'application/json',
                     'x-target-user-id': userId
                 }
             });
 
-            if (error) {
-                setErrorMsg(`Erro na função: ${error.message}`);
-                console.error(error);
+            if (!response.ok) {
+                const errorText = await response.text();
+                setErrorMsg(`Erro HTTP ${response.status}: ${errorText.substring(0, 20)}`);
                 return;
             }
+
+            const data = await response.json();
 
             if (data) {
                 if (data.error) {
