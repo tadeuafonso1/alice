@@ -169,9 +169,9 @@ export const LikesTab: React.FC = () => {
 
                 {/* Preview Card */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
-                    <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-red-500 mb-6 flex items-center gap-2">
                         <SettingsIcon className="w-5 h-5 opacity-70" />
-                        Preview da Meta
+                        Preview da Meta (v1.5)
                     </h3>
 
                     <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 p-8 text-center border border-slate-700 shadow-xl">
@@ -192,11 +192,9 @@ export const LikesTab: React.FC = () => {
                         </div>
                     </div>
 
-                    {debugInfo && (
-                        <div className="mt-4 p-3 bg-slate-100 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-[10px] font-mono rounded-lg overflow-x-auto">
-                            <p className="whitespace-nowrap">DEBUG: {JSON.stringify(debugInfo)}</p>
-                        </div>
-                    )}
+                    <div className="mt-4 p-3 bg-slate-100 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-[10px] font-mono rounded-lg overflow-x-auto">
+                        <p className="whitespace-nowrap">DEBUG: {debugInfo ? JSON.stringify(debugInfo) : 'WAITING_FOR_DATA'}</p>
+                    </div>
 
                     {!streamFound && !error && (
                         <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 text-sm rounded-lg flex items-center gap-2">

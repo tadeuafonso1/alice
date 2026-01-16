@@ -232,9 +232,11 @@ serve(async (req) => {
 
         const debugInfo = {
             hasChannelId: !!tokenData.channel_id,
+            channelId: tokenData.channel_id || null,
             broadcastCount: broadcastData?.items?.length || 0,
-            foundViaSearch: !broadcastData.items?.find((item: any) => item.status?.lifeCycleStatus === 'live' || item.status?.lifeCycleStatus === 'liveStarting') && !!activeBroadcast,
-            videoId: activeBroadcast?.id || null,
+            foundViaSearch: (broadcastData && !broadcastData.items?.find((item: any) => item.status?.lifeCycleStatus === 'live' || item.status?.lifeCycleStatus === 'liveStarting')) && !!activeBroadcast,
+            videoId: activeBroadcast?.id || (activeBroadcast?.snippet ? 'has_snippet' : null),
+            broadcastStatus: broadcastData?.items?.[0]?.status?.lifeCycleStatus || 'none'
         };
 
         let goalUpdated = false;
