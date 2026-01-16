@@ -188,7 +188,7 @@ serve(async (req) => {
             });
         }
 
-        return new Response(JSON.stringify({
+        const responseData = {
             likes: likeCount,
             goal: currentGoal,
             step: step,
@@ -196,8 +196,10 @@ serve(async (req) => {
             goalUpdated: goalUpdated,
             debug: {
                 userId,
-                method: req.method,
-                hasToken: !!tokenData
+                received_path_id: idFromPath,
+                received_query_id: idFromQuery,
+                received_header_id: idFromHeader,
+                method: req.method
             },
             colors: {
                 bar: barColor,
@@ -205,7 +207,11 @@ serve(async (req) => {
                 border: borderColor,
                 text: textColor
             }
-        }), {
+        };
+
+        console.log(`[youtube-stats-fetch] Success for user ${userId}. Data:`, responseData);
+
+        return new Response(JSON.stringify(responseData), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
         });

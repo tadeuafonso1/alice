@@ -22,27 +22,35 @@ export const OBSLikesPage: React.FC = () => {
         const cleanUserId = (idFromPath || userId)?.trim();
 
         if (!cleanUserId || cleanUserId === 'undefined' || cleanUserId.length < 20) {
-            setErrorMsg("ID de usuário inválido ou ausente no link");
+            setErrorMsg("ID de Usuário Inválido");
             return;
         }
 
         try {
-            // Restore use of supabase.functions.invoke which already has the correct keys
-            // No custom headers to minimize the complexity of the preflight request
-            const { data, error } = await supabase.functions.invoke(`youtube-stats-fetch?target_user_id=${cleanUserId}`, {
+            // Using RAW fetch with apikey in URL to bypass CORS preflight and library issues
+            const baseUrl = "https://nvtlirmfavhahwtsdchk.supabase.co/functions/v1/youtube-stats-fetch";
+            const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52dGxpcm1mYXZoYWh3dHNkY2hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5MDgwNDQsImV4cCI6MjA3OTQ4NDA0NH0.KCq4Mre83Iwqppt70XXXOkVTvnwDJE9Ss341jyRAOCI";
+            const functionUrl = `${baseUrl}?apikey=${anonKey}&target_user_id=${cleanUserId}`;
+
+            console.log(`[OBS] Connecting to: ${baseUrl}...`);
+
+            const response = await fetch(functionUrl, {
                 method: 'GET'
             });
 
-            if (error) {
-                setErrorMsg(`Erro de Conexão: ${error.message}`);
-                console.error('Invoke error:', error);
+            if (!response.ok) {
+                const errorText = await response.text();
+                setErrorMsg(`Erro ${response.status}: ${errorText.substring(0, 30)}`);
+                console.error('Fetch error:', response.status, errorText);
                 return;
             }
 
+            const data = await response.json();
+
             if (data) {
                 if (data.error) {
-                    setErrorMsg(data.error);
-                    setDebugInfo(`UID: ${data.debug?.userId?.substring(0, 8) || '?'}`);
+                    setErrorMsg(`Erro: ${data.error}`);
+                    setDebugInfo(`UID: ${data.debug?.userId?.substring(0, 5) || '?'}`);
                 } else {
                     setErrorMsg(null);
                     setLikes(data.likes || 0);
@@ -58,8 +66,8 @@ export const OBSLikesPage: React.FC = () => {
                 }
             }
         } catch (err: any) {
-            setErrorMsg(`Erro de conexão: ${err.message}`);
-            console.error(err);
+            setErrorMsg(`CORS ou Rede: Verifique o Firewall`);
+            console.error('Connection failure:', err);
         } finally {
             setLoading(false);
         }
