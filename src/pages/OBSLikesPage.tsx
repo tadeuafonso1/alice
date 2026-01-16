@@ -46,8 +46,6 @@ export const OBSLikesPage: React.FC = () => {
 
                 setErrorMsg(`Erro: ${msg}`);
                 setDebugInfo(`Status: ${error.status || '?'}`);
-                setFullErrorObject(error); // Capture full error object
-                setFullDataObject(null); // Clear previous data
                 return;
             }
 
@@ -55,15 +53,11 @@ export const OBSLikesPage: React.FC = () => {
                 if (data.error) {
                     setErrorMsg(`Servidor: ${data.error}`);
                     setDebugInfo(`UID: ${data.debug?.userId?.substring(0, 5) || '?'}`);
-                    setFullErrorObject(data.error); // Capture server-side error
-                    setFullDataObject(data); // Capture full data object
                 } else {
                     setErrorMsg(null);
                     setLikes(data.likes || 0);
                     setGoal(data.goal || 100);
                     setDebugInfo('');
-                    setFullErrorObject(null); // Clear error
-                    setFullDataObject(data); // Capture full data object
 
                     if (data.colors) {
                         setBarColor(data.colors.bar || '#2563eb');
@@ -79,8 +73,6 @@ export const OBSLikesPage: React.FC = () => {
                 return;
             }
             setErrorMsg(`Falha Crítica: ${err.message || 'Sem conexão'}`);
-            setFullErrorObject(err); // Capture full error object
-            setFullDataObject(null); // Clear previous data
             console.error(err);
         } finally {
             if (retryCount === 0) setLoading(false);
