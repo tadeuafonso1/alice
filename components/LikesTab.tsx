@@ -28,9 +28,12 @@ export const LikesTab: React.FC = () => {
     const obsUrl = session ? `${window.location.origin}/obs/likes/${session.user.id}` : '';
 
     const fetchLikes = async () => {
+        console.log("[LikesTab] fetchLikes triggered");
+        console.log("[LikesTab] Session user ID:", session?.user?.id);
         if (!isInitialized) setLoading(true);
         setError(null);
         try {
+            console.log("[LikesTab] Invoking Edge Function...");
             const { data, error } = await supabase.functions.invoke('youtube-stats-fetch', {
                 method: 'GET',
                 headers: {
@@ -38,6 +41,7 @@ export const LikesTab: React.FC = () => {
                 }
             });
 
+            console.log("[LikesTab] Function result:", { data, error });
             if (error) throw error;
 
             if (data && data.debug) {
@@ -93,7 +97,8 @@ export const LikesTab: React.FC = () => {
             }
 
         } catch (err: any) {
-            console.error('Error fetching likes:', err);
+            console.error('[LikesTab] Fetch error:', err);
+            setDebugInfo(prev => ({ ...prev, catchError: err.message }));
             if (err.message === 'YOUTUBE_TOKEN_EXPIRED') {
                 setError('Token expirado. Reconecte o YouTube na aba "YouTube Chat".');
             } else {
@@ -144,8 +149,12 @@ export const LikesTab: React.FC = () => {
     // Settings now only save when the button is clicked.
 
     useEffect(() => {
+        console.log("[LikesTab] Component mounted, calling fetchLikes");
         fetchLikes();
-        const interval = setInterval(fetchLikes, 60000);
+        const interval = setInterval(() => {
+            console.log("[LikesTab] Interval triggered, calling fetchLikes");
+            fetchLikes();
+        }, 60000);
         return () => clearInterval(interval);
     }, []);
 
