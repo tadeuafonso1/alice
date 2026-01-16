@@ -74,26 +74,6 @@ export const OBSAlertsPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-transparent flex flex-col items-center justify-start pt-20 overflow-hidden font-sans relative">
-            {/* Visual Debug - Invisible as requested by user later, but useful now */}
-            {!alert && (
-                <div className="fixed bottom-4 left-4 p-4 bg-black/80 backdrop-blur-md rounded-2xl border border-white/10 text-[10px] text-white font-mono shadow-2xl z-50">
-                    <div className="flex items-center gap-2 mb-3">
-                        <div className={`w-3 h-3 rounded-full ${status === 'connected' ? 'bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse' : 'bg-red-500 shadow-[0_0_10px_#ef4444]'}`}></div>
-                        <span className="font-black uppercase tracking-widest text-white/90">Sistema de Alertas</span>
-                    </div>
-                    <div className="space-y-1">
-                        {logs.map((log, i) => (
-                            <div key={i} className={`p-1 rounded ${log.includes('📥') ? 'bg-blue-500/20 text-blue-300' : 'text-white/40'}`}>
-                                {log}
-                            </div>
-                        ))}
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-white/5 text-white/30 italic text-[9px]">
-                        ID: {userId?.substring(0, 8)}...
-                    </div>
-                </div>
-            )}
-
             <div className={`
                 transition-all duration-1000 transform
                 ${isVisible ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-90'}
