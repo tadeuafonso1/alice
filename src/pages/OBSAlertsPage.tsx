@@ -7,8 +7,12 @@ export const OBSAlertsPage: React.FC = () => {
     const { userId } = useParams<{ userId: string }>();
     const [alert, setAlert] = useState<{ message: string; id: number } | null>(null);
     const [phase, setPhase] = useState<'idle' | 'takeoff' | 'flight' | 'explosion'>('idle');
+    const [audioTestStatus, setAudioTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
     const [audioPrimed, setAudioPrimed] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    // Audio source - switching to a more reliable rocket sound
+    const audioUrl = "https://www.soundboard.com/handler/DownLoadTrack.ashx?cliptoken=6697a8e2-c081-4389-8b01-38dc1a007304";
 
     const triggerExplosion = () => {
         const count = 300;
@@ -34,11 +38,16 @@ export const OBSAlertsPage: React.FC = () => {
 
         // Sound: Liftoff
         if (audioRef.current) {
+            audioRef.current.dispatchEvent(new Event('play')); // Some environments respond better to events
             audioRef.current.volume = 1.0;
             audioRef.current.currentTime = 0;
-            audioRef.current.play().catch(e => {
-                console.warn("Autoplay still blocked. Interaction needed.", e);
-            });
+            const playPromise = audioRef.current.play();
+
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.error("Audio playback failed:", error);
+                });
+            }
         }
 
         setTimeout(() => {
@@ -92,37 +101,64 @@ export const OBSAlertsPage: React.FC = () => {
                 audioRef.current!.currentTime = 0;
                 setAudioPrimed(true);
             }).catch(() => {
-                setAudioPrimed(true); // Still set as primed to hide button
+                setAudioPrimed(true);
             });
         }
     };
 
-    // Use absolute URL for the image to avoid OBS path resolution issues
-    // window.location.origin will give the base URL (e.g., http://localhost:3000 or the production URL)
+    const testAudio = () => {
+        setAudioTestStatus('testing');
+        if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play()
+                .then(() => setAudioTestStatus('success'))
+                .catch(() => setAudioTestStatus('error'));
+        } else {
+            setAudioTestStatus('error');
+        }
+    };
+
     const rocketImageUrl = `${window.location.origin}/rocket_alert.png`;
 
     return (
         <div className="min-h-screen bg-transparent flex flex-col items-center justify-start pt-32 overflow-hidden font-sans relative">
-            {/* Audio Priming - More obvious for the user to setup */}
+            {/* Audio Interaction Overlay */}
             {!audioPrimed && phase === 'idle' && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                    <button
-                        onClick={handlePrimeAudio}
-                        className="bg-cyan-600 hover:bg-cyan-500 text-white px-8 py-4 rounded-3xl text-xl font-black shadow-[0_0_30px_rgba(6,182,212,0.5)] animate-bounce border-2 border-white/20"
-                    >
-                        🔊 CLIQUE PARA ATIVAR O SOM
-                    </button>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md">
+                    <div className="flex flex-col items-center gap-6 p-10 bg-gray-900 border-4 border-cyan-500 rounded-[3rem] shadow-[0_0_50px_rgba(6,182,212,0.4)]">
+                        <button
+                            onClick={handlePrimeAudio}
+                            className="bg-cyan-600 hover:bg-cyan-500 text-white px-10 py-5 rounded-3xl text-2xl font-black shadow-[0_0_30px_rgba(6,182,212,0.5)] animate-pulse border-2 border-white/20 uppercase tracking-widest"
+                        >
+                            🔊 CLIQUE PARA ATIVAR O ALERTA
+                        </button>
+
+                        <div className="flex flex-col items-center gap-2">
+                            <button
+                                onClick={testAudio}
+                                className="text-cyan-400 text-sm font-bold hover:text-white transition-colors"
+                            >
+                                {audioTestStatus === 'idle' && "🔧 Testar Som agora (Diagnóstico)"}
+                                {audioTestStatus === 'testing' && "⌛ Testando..."}
+                                {audioTestStatus === 'success' && "✅ Som Funcionando!"}
+                                {audioTestStatus === 'error' && "❌ Erro no Som! (Verifique Saída de Áudio do OBS)"}
+                            </button>
+                            <span className="text-gray-500 text-[10px] max-w-xs text-center">
+                                * No OBS, use "Interagir" para clicar. Certifique-se que "Controlar áudio via OBS" está marcado.
+                            </span>
+                        </div>
+                    </div>
                 </div>
             )}
 
             <audio
                 ref={audioRef}
-                src="https://assets.mixkit.co/sfx/preview/mixkit-rocket-shuttle-launch-2144.mp3"
+                src={audioUrl}
                 preload="auto"
             />
 
-            <div className="relative w-[1000px] h-1000px flex items-center justify-center">
-                {/* Rocket Animation */}
+            <div className="relative w-[1000px] h-[1000px] flex items-center justify-center">
+                {/* 1st Transition: Rocket Takeoff (ALWAYS kept as user loved it) */}
                 {(phase === 'takeoff' || phase === 'flight') && (
                     <div className={`
                         absolute bottom-0 w-80 h-auto transition-all duration-[1200ms] ease-in
@@ -134,19 +170,19 @@ export const OBSAlertsPage: React.FC = () => {
                     </div>
                 )}
 
-                {/* Explosion Message Card - Using Inline Styles for Maximum Reliability in OBS */}
+                {/* 2nd Part: Message Card (Refined: No extra icon as requested) */}
                 <div style={{
-                    backgroundColor: '#0f172a', /* Fallback solid color */
+                    backgroundColor: '#0f172a',
                     backgroundImage: 'linear-gradient(135deg, #1e293b 0%, #020617 100%)',
                     border: '6px solid #06b6d4',
                     borderRadius: '3rem',
-                    padding: '3rem',
+                    padding: '4rem 6rem',
                     boxShadow: '0 0 120px rgba(6, 182, 212, 0.7)',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     textAlign: 'center',
-                    gap: '2rem',
+                    gap: '2.5rem',
                     transition: 'all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                     transform: phase === 'explosion' ? 'scale(1) translateY(0)' : 'scale(0.5) translateY(-60px)',
                     opacity: phase === 'explosion' ? 1 : 0,
@@ -154,24 +190,16 @@ export const OBSAlertsPage: React.FC = () => {
                     position: 'relative',
                     zIndex: 50
                 }}>
-                    <div style={{
-                        padding: '2.5rem',
-                        backgroundColor: 'rgba(6, 182, 212, 0.2)',
-                        borderRadius: '9999px',
-                        border: '4px solid rgba(6, 182, 212, 0.3)',
-                        boxShadow: '0 0 60px rgba(6, 182, 212, 0.4)'
-                    }}>
-                        <img src={rocketImageUrl} style={{ width: '12rem', height: '12rem', objectFit: 'contain' }} alt="icon" />
-                    </div>
+                    {/* User requested to remove the icon from here */}
 
-                    <div className="space-y-4">
-                        <h1 style={{ color: '#22d3ee', fontWeight: 900, fontSize: '3rem', textTransform: 'uppercase', letterSpacing: '0.4em', textShadow: '0 0 20px rgba(34, 211, 238, 0.7)' }}>
+                    <div className="space-y-6">
+                        <h1 style={{ color: '#22d3ee', fontWeight: 900, fontSize: '3.5rem', textTransform: 'uppercase', letterSpacing: '0.4em', textShadow: '0 0 20px rgba(34, 211, 238, 0.7)' }}>
                             🚀 COMPROU FILA! 🚀
                         </h1>
-                        <div style={{ height: '0.5rem', width: '100%', background: 'linear-gradient(to right, transparent, #06b6d4, transparent)', opacity: 0.6 }}></div>
+                        <div style={{ height: '0.6rem', width: '100%', background: 'linear-gradient(to right, transparent, #06b6d4, transparent)', opacity: 0.6 }}></div>
                     </div>
 
-                    <p style={{ color: 'white', fontWeight: 900, fontSize: '3.75rem', lineHeight: 1.1, textShadow: '0 4px 25px rgba(0,0,0,1)' }}>
+                    <p style={{ color: 'white', fontWeight: 900, fontSize: '4.5rem', lineHeight: 1.1, textShadow: '0 4px 25px rgba(0,0,0,1)' }}>
                         {alert?.message}
                     </p>
                 </div>
