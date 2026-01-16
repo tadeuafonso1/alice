@@ -7,13 +7,12 @@ export const OBSAlertsPage: React.FC = () => {
     const { userId } = useParams<{ userId: string }>();
     const [alert, setAlert] = useState<{ message: string; id: number } | null>(null);
     const [phase, setPhase] = useState<'idle' | 'takeoff' | 'flight' | 'explosion'>('idle');
+    const [audioPrimed, setAudioPrimed] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     const triggerExplosion = () => {
-        const count = 200;
-        const defaults = {
-            origin: { y: 0.3 }
-        };
+        const count = 250;
+        const defaults = { origin: { y: 0.4 } };
 
         function fire(particleRatio: number, opts: any) {
             confetti({
@@ -23,11 +22,11 @@ export const OBSAlertsPage: React.FC = () => {
             });
         }
 
-        fire(0.25, { spread: 26, startVelocity: 55 });
+        fire(0.25, { spread: 30, startVelocity: 60 });
         fire(0.2, { spread: 60 });
-        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-        fire(0.1, { spread: 120, startVelocity: 45 });
+        fire(0.35, { spread: 100, decay: 0.91, scalar: 1.0 });
+        fire(0.1, { spread: 130, startVelocity: 30, decay: 0.92, scalar: 1.5 });
+        fire(0.1, { spread: 130, startVelocity: 50 });
     };
 
     const runAlertSequence = useCallback((message: string, id: number) => {
@@ -37,13 +36,10 @@ export const OBSAlertsPage: React.FC = () => {
         // Sound: Liftoff
         if (audioRef.current) {
             audioRef.current.currentTime = 0;
-            audioRef.current.play().catch(e => console.log("Audio play error:", e));
+            audioRef.current.play().catch(e => {
+                console.warn("Autoplay blocked or audio error. User interaction required.", e);
+            });
         }
-
-        // Timeline:
-        // 1. Shake it (takeoff) - 1.5s
-        // 2. Flight up - 1s
-        // 3. Explosion
 
         setTimeout(() => {
             setPhase('flight');
@@ -51,13 +47,12 @@ export const OBSAlertsPage: React.FC = () => {
                 setPhase('explosion');
                 triggerExplosion();
 
-                // Reset after total 10s
                 setTimeout(() => {
                     setPhase('idle');
                     setAlert(null);
-                }, 8000);
+                }, 9000);
             }, 800);
-        }, 1500);
+        }, 1800); // Slightly longer takeoff shake
     }, []);
 
     useEffect(() => {
@@ -90,42 +85,73 @@ export const OBSAlertsPage: React.FC = () => {
         };
     }, [userId, runAlertSequence]);
 
+    const handlePrimeAudio = () => {
+        if (audioRef.current) {
+            audioRef.current.play().then(() => {
+                audioRef.current!.pause();
+                audioRef.current!.currentTime = 0;
+                setAudioPrimed(true);
+            }).catch(() => {
+                setAudioPrimed(false);
+            });
+        }
+    };
+
     return (
         <div className="min-h-screen bg-transparent flex flex-col items-center justify-start pt-32 overflow-hidden font-sans relative">
-            {/* Audio Element: Liftoff Sound */}
-            <audio ref={audioRef} src="https://cdn.pixabay.com/audio/2022/03/10/audio_c8deec9833.mp3" preload="auto" />
+            {/* Audio Priming Overlay (Only visible in browser/testing, normally clicked once by user) */}
+            {!audioPrimed && phase === 'idle' && (
+                <button
+                    onClick={handlePrimeAudio}
+                    className="fixed bottom-4 right-4 bg-cyan-600/80 hover:bg-cyan-500 text-white px-6 py-3 rounded-full text-sm font-bold animate-pulse backdrop-blur-md border border-white/20 z-[100] shadow-2xl"
+                >
+                    🔊 ATIVAR ÁUDIO (Clique aqui uma vez)
+                </button>
+            )}
 
-            <div className="relative w-[600px] h-[600px] flex items-center justify-center">
+            {/* Audio Element: Liftoff Sound - Using a more stable URL */}
+            <audio
+                ref={audioRef}
+                src="https://assets.mixkit.co/sfx/preview/mixkit-rocket-shuttle-launch-2144.mp3"
+                preload="auto"
+            />
+
+            <div className="relative w-[1000px] h-[1000px] flex items-center justify-center">
                 {/* Rocket Animation */}
                 {phase !== 'idle' && phase !== 'explosion' && (
                     <div className={`
-                        absolute bottom-0 w-32 h-auto transition-all duration-[1000ms] ease-in
+                        absolute bottom-0 w-80 h-auto transition-all duration-[1200ms] ease-in
                         ${phase === 'takeoff' ? 'animate-shake' : ''}
-                        ${phase === 'flight' ? '-translate-y-[800px] opacity-100' : ''}
+                        ${phase === 'flight' ? '-translate-y-[1500px] opacity-100 scale-125' : ''}
                     `}>
-                        <img src="/rocket_alert.png" className="w-full h-auto drop-shadow-[0_0_15px_rgba(255,100,0,0.5)]" alt="rocket" />
+                        <img src="/rocket_alert.png" className="w-full h-auto drop-shadow-[0_0_50px_rgba(255,100,0,0.8)]" alt="rocket" />
 
-                        {/* Exhaust flame effect */}
-                        <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-4 h-20 bg-gradient-to-t from-orange-500 to-yellow-300 blur-md animate-pulse rounded-full opacity-80"></div>
+                        {/* Enlarged Exhaust flame effect */}
+                        <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-12 h-60 bg-gradient-to-t from-orange-600 via-orange-400 to-yellow-200 blur-2xl animate-pulse rounded-full opacity-90"></div>
+                        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-8 h-30 bg-white blur-xl animate-pulse rounded-full opacity-100"></div>
                     </div>
                 )}
 
                 {/* Explosion Message Card */}
                 <div className={`
-                    bg-gradient-to-br from-[#1E293B]/95 to-[#0F172A]/95
-                    border-4 border-cyan-500 rounded-[2rem] p-10 shadow-[0_0_80px_rgba(6,182,212,0.5)]
-                    flex flex-col items-center text-center gap-4 transition-all duration-700 transform
-                    ${phase === 'explosion' ? 'scale-100 opacity-100 translate-y-0 text-glow' : 'scale-50 opacity-0 -translate-y-20'}
+                    bg-gradient-to-br from-[#1E293B]/98 to-[#020617]/98
+                    border-[6px] border-cyan-500 rounded-[3rem] p-12 shadow-[0_0_120px_rgba(6,182,212,0.7)]
+                    flex flex-col items-center text-center gap-8 transition-all duration-700 transform
+                    ${phase === 'explosion' ? 'scale-100 opacity-100 translate-y-0 text-glow' : 'scale-50 opacity-0 -translate-y-60'}
+                    relative z-50
                 `}>
-                    <div className="p-5 bg-cyan-500/20 rounded-full border-2 border-cyan-500/30 animate-pulse">
-                        <img src="/rocket_alert.png" className="w-16 h-16" alt="icon" />
+                    <div className="p-10 bg-cyan-500/20 rounded-full border-4 border-cyan-500/30 animate-pulse shadow-[0_0_60px_rgba(6,182,212,0.4)]">
+                        <img src="/rocket_alert.png" className="w-48 h-48 object-contain" alt="icon" />
                     </div>
 
-                    <h1 className="text-cyan-400 font-black text-3xl uppercase tracking-[0.2em] animate-bounce">
-                        💨 COMPROU FILA! 💨
-                    </h1>
+                    <div className="space-y-4">
+                        <h1 className="text-cyan-400 font-black text-5xl uppercase tracking-[0.4em] animate-bounce filter drop-shadow-[0_0_20px_rgba(34,211,238,0.7)]">
+                            🚀 COMPROU FILA! 🚀
+                        </h1>
+                        <div className="h-2 w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-60"></div>
+                    </div>
 
-                    <p className="text-white text-4xl font-extrabold leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] max-w-lg">
+                    <p className="text-white text-6xl font-black leading-tight drop-shadow-[0_4px_25px_rgba(0,0,0,1)] max-w-4xl bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-400">
                         {alert?.message}
                     </p>
                 </div>
@@ -134,23 +160,23 @@ export const OBSAlertsPage: React.FC = () => {
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @keyframes shake {
-                    0% { transform: translate(1px, 1px) rotate(0deg); }
-                    10% { transform: translate(-1px, -2px) rotate(-1deg); }
-                    20% { transform: translate(-3px, 0px) rotate(1deg); }
-                    30% { transform: translate(3px, 2px) rotate(0deg); }
-                    40% { transform: translate(1px, -1px) rotate(1deg); }
-                    50% { transform: translate(-1px, 2px) rotate(-1deg); }
-                    60% { transform: translate(-3px, 1px) rotate(0deg); }
-                    70% { transform: translate(3px, 1px) rotate(-1deg); }
-                    80% { transform: translate(-1px, -1px) rotate(1deg); }
-                    90% { transform: translate(1px, 2px) rotate(0deg); }
-                    100% { transform: translate(1px, -2px) rotate(-1deg); }
+                    0% { transform: translate(3px, 3px) rotate(0deg); }
+                    10% { transform: translate(-3px, -4px) rotate(-2deg); }
+                    20% { transform: translate(-5px, 0px) rotate(2deg); }
+                    30% { transform: translate(5px, 4px) rotate(0deg); }
+                    40% { transform: translate(3px, -3px) rotate(2deg); }
+                    50% { transform: translate(-3px, 4px) rotate(-2deg); }
+                    60% { transform: translate(-5px, 3px) rotate(0deg); }
+                    70% { transform: translate(5px, 3px) rotate(-2deg); }
+                    80% { transform: translate(-3px, -3px) rotate(2deg); }
+                    90% { transform: translate(3px, 4px) rotate(0deg); }
+                    100% { transform: translate(3px, -4px) rotate(-2deg); }
                 }
                 .animate-shake {
-                    animation: shake 0.1s infinite;
+                    animation: shake 0.08s infinite;
                 }
                 .text-glow {
-                    text-shadow: 0 0 20px rgba(6, 182, 212, 0.8), 0 0 40px rgba(6, 182, 212, 0.4);
+                    text-shadow: 0 0 40px rgba(6, 182, 212, 1), 0 0 80px rgba(6, 182, 212, 0.6);
                 }
             `}} />
         </div>
