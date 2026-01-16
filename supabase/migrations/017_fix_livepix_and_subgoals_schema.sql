@@ -107,9 +107,28 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'bot_notifications' AND policyname = 'Users can manage their own notifications') THEN
         CREATE POLICY "Users can manage their own notifications" ON public.bot_notifications FOR ALL USING (auth.uid() = user_id);
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'bot_notifications' AND policyname = 'Public can view notifications for OBS') THEN
+        CREATE POLICY "Public can view notifications for OBS" ON public.bot_notifications FOR SELECT USING (true);
+    END IF;
 END $$;
 
--- 5. Add Loyalty Points RPC (Required for LivePix)
+-- 5. Enable Realtime for notifications
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'bot_notifications') THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE bot_notifications;
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- If publication doesn't exist, create it
+        IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+            CREATE PUBLICATION supabase_realtime FOR TABLE bot_notifications;
+        ELSE
+            RAISE NOTICE 'Could not add table to publication';
+        END IF;
+END $$;
+
+-- 6. Add Loyalty Points RPC (Required for LivePix)
 CREATE OR REPLACE FUNCTION public.add_loyalty_points(
     p_user_id UUID,
     p_username TEXT,
