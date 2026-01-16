@@ -13,6 +13,7 @@ export const OBSLikesPage: React.FC = () => {
     const [bgColor, setBgColor] = useState<string>('#ffffff1a');
     const [borderColor, setBorderColor] = useState<string>('#ffffffcc');
     const [textColor, setTextColor] = useState<string>('#ffffff');
+    const [streamFound, setStreamFound] = useState<boolean>(true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [debugInfo, setDebugInfo] = useState<string>('');
 
@@ -48,12 +49,13 @@ export const OBSLikesPage: React.FC = () => {
                 setErrorMsg(null);
                 setLikes(data.current_likes ?? 0);
                 setGoal(data.current_goal ?? 100);
+                setStreamFound(data.stream_found ?? false);
                 setDebugInfo('');
 
                 setBarColor(data.bar_color || '#2563eb');
-                setBgColor(data.bg_color || '#ffffff1a');
-                setBorderColor(data.border_color || '#ffffffcc');
-                setTextColor(data.text_color || '#ffffff');
+                setBgColor(data.colors?.bg || data.bg_color || '#ffffff1a');
+                setBorderColor(data.colors?.border || data.border_color || '#ffffffcc');
+                setTextColor(data.colors?.text || data.text_color || '#ffffff');
             } else {
                 setErrorMsg(`Meta não encontrada para o ID: ${cleanUserId.substring(0, 8)}...`);
             }
@@ -136,7 +138,15 @@ export const OBSLikesPage: React.FC = () => {
                     </div>
                 )}
 
-                {!loading && !errorMsg && likes === 0 && goal === 100 && (
+                {!loading && !errorMsg && !streamFound && (
+                    <div className="absolute -bottom-8 left-0 right-0 text-center">
+                        <span className="bg-amber-500/80 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest">
+                            Live Offline ou Não Detectada
+                        </span>
+                    </div>
+                )}
+
+                {!loading && !errorMsg && streamFound && likes === 0 && goal === 100 && (
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-white/10 uppercase font-bold tracking-widest whitespace-nowrap">
                         Aguardando dados da live...
                     </div>
