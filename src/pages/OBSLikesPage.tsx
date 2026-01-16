@@ -29,37 +29,53 @@ export const OBSLikesPage: React.FC = () => {
         }
 
         try {
-            // DIRECT DB POLL: Most stable way for OBS Browser Source
-            const { data, error } = await supabase
-                .from('like_goals')
-                .select('*')
-                .eq('user_id', cleanUserId)
-                .maybeSingle();
-
-            if (error) {
-                if (retryCount < 2) {
-                    setTimeout(() => fetchStats(retryCount + 1), 2000);
-                    return;
+            // CALL EDGE FUNCTION: The proper way to get live data
+            const { data, error: invokeError } = await supabase.functions.invoke('youtube-stats-fetch', {
+                method: 'GET',
+                headers: {
+                    'x-target-user-id': cleanUserId
                 }
-                setErrorMsg(`Erro de Banco: ${error.message}`);
-                return;
+            });
+
+            if (invokeError) {
+                console.error("[OBS-Likes] Function Error:", invokeError);
             }
 
             if (data) {
                 setErrorMsg(null);
-                setLikes(data.current_likes ?? 0);
-                setGoal(data.current_goal ?? 100);
-                setStreamFound(data.stream_found ?? false);
-                setDebugInfo('');
+                setLikes(data.likes ?? 0);
+                setGoal(data.goal ?? 100);
+                setStreamFound(data.streamFound ?? false);
+                setDebugInfo(data.version || '');
 
-                setBarColor(data.bar_color || '#2563eb');
-                setBgColor(data.colors?.bg || data.bg_color || '#ffffff1a');
-                setBorderColor(data.colors?.border || data.border_color || '#ffffffcc');
-                setTextColor(data.colors?.text || data.text_color || '#ffffff');
+                if (data.colors) {
+                    setBarColor(data.colors.bar || '#2563eb');
+                    setBgColor(data.colors.bg || '#ffffff1a');
+                    setBorderColor(data.colors.border || '#ffffffcc');
+                    setTextColor(data.colors.text || '#ffffff');
+                }
             } else {
-                setErrorMsg(`Meta não encontrada para o ID: ${cleanUserId.substring(0, 8)}...`);
+                // Fallback to direct DB poll if function fails or returns nothing
+                const { data: dbData } = await supabase
+                    .from('like_goals')
+                    .select('*')
+                    .eq('user_id', cleanUserId)
+                    .maybeSingle();
+
+                if (dbData) {
+                    setLikes(dbData.current_likes ?? 0);
+                    setGoal(dbData.current_goal ?? 100);
+                    setStreamFound(dbData.stream_found ?? false);
+                    setBarColor(dbData.bar_color || '#2563eb');
+                    setBgColor(dbData.bg_color || '#ffffff1a');
+                    setBorderColor(dbData.border_color || '#ffffffcc');
+                    setTextColor(dbData.text_color || '#ffffff');
+                } else if (invokeError) {
+                    setErrorMsg(`Erro: ${invokeError.message}`);
+                }
             }
         } catch (err: any) {
+            console.error("[OBS-Likes] Catch error:", err);
             if (retryCount < 2) {
                 setTimeout(() => fetchStats(retryCount + 1), 2000);
                 return;
