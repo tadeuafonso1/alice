@@ -1385,8 +1385,7 @@ export const HomePage: React.FC = () => {
                                             activeTab === 'youtube' ? 'Conexão YouTube' :
                                                 activeTab === 'timer' ? 'Timer' :
                                                     activeTab === 'loyalty' ? 'Sistema de Lealdade' :
-                                                        activeTab === 'livepix' ? 'Integração LivePix' :
-                                                            activeTab === 'subgoals' ? 'Meta de Inscritos' : 'Alice Bot'}
+                                                        activeTab === 'livepix' ? 'Integração LivePix' : 'Alice Bot'}
                             </h2>
                             <p className="text-[10px] text-gray-500 font-medium">
                                 {activeTab === 'dashboard' ? 'Gerencie sua fila e interação com o bot.' :
@@ -1667,17 +1666,6 @@ export const HomePage: React.FC = () => {
 
                         {activeTab === 'livepix' && (
                             <LivePixSettings userId={session?.user?.id} />
-                        )}
-
-                        {activeTab === 'subscriber_goals' && (
-                            <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-800 text-center">
-                                <RocketIcon className="w-16 h-16 text-cyan-500 mx-auto mb-4 animate-bounce" />
-                                <h3 className="text-2xl font-bold mb-2">Meta de Inscritos</h3>
-                                <p className="text-gray-500 dark:text-gray-400 mb-6">Esta funcionalidade está em desenvolvimento e estará disponível em breve!</p>
-                                <div className="max-w-md mx-auto bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-dashed border-gray-300 dark:border-gray-700">
-                                    <p className="text-sm text-gray-500 italic">"Estamos preparando algo incrível para ajudar você a crescer sua comunidade no YouTube."</p>
-                                </div>
-                            </div>
                         )}
 
                     </div>
