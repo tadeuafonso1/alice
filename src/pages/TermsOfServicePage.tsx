@@ -20,7 +20,7 @@ export const TermsOfServicePage: React.FC = () => {
                 </header>
 
                 <main className="pt-6 space-y-4 text-sm text-gray-600 dark:text-gray-300">
-                    <p className="font-semibold">Última atualização: 03/01/2026</p>
+                    <p className="font-semibold">Última atualização: 20/01/2026</p>
 
                     <p>Bem-vindo ao Gerenciador de Fila ("Aplicativo"). Ao usar nosso aplicativo, você concorda com estes Termos de Serviço.</p>
 
