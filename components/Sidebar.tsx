@@ -159,7 +159,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </button>
                 )}
 
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1 text-center">
                     <button
                         onClick={onSignOut}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-red-500 hover:bg-red-500/10 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-300
@@ -170,6 +170,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <LogOutIcon className="w-5 h-5 flex-shrink-0" />
                         {isOpen && <span className="font-bold whitespace-nowrap">Sair do Sistema</span>}
                     </button>
+
+                    {isOpen && (
+                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800 flex flex-col gap-1">
+                            <a
+                                href="/privacy"
+                                className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-cyan-500 transition-colors"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Política de Privacidade
+                            </a>
+                            <a
+                                href="/terms"
+                                className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-cyan-500 transition-colors"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Termos de Uso
+                            </a>
+                        </div>
+                    )}
                 </div>
             </div>
         </aside>

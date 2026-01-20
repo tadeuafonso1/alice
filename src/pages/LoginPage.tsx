@@ -101,6 +101,25 @@ export const LoginPage: React.FC = () => {
                     </div>
                 </div>
 
+                <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-wrap justify-center gap-x-6 gap-y-2">
+                    <a
+                        href="/privacy"
+                        className="text-xs font-medium text-gray-500 hover:text-cyan-500 transition-colors"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Política de Privacidade
+                    </a>
+                    <a
+                        href="/terms"
+                        className="text-xs font-medium text-gray-500 hover:text-cyan-500 transition-colors"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Termos de Uso
+                    </a>
+                </div>
+
                 <div className="mt-6 text-center">
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                         Feito com ❤️ para streamers
