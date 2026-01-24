@@ -1,5 +1,5 @@
-import React from 'react';
-import { Gamepad2Icon, TrashIcon, UserIcon } from './Icons';
+import React, { useState } from 'react';
+import { Gamepad2Icon, TrashIcon, UserIcon, CopyIcon, CheckIcon } from './Icons';
 import type { QueueUser } from '../types';
 
 interface PlayingDisplayProps {
@@ -11,6 +11,14 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
     playingUsers,
     onRemoveUser,
 }) => {
+    const [copiedUser, setCopiedUser] = useState<string | null>(null);
+
+    const handleCopy = (text: string, userId: string) => {
+        navigator.clipboard.writeText(text);
+        setCopiedUser(userId);
+        setTimeout(() => setCopiedUser(null), 2000);
+    };
+
     return (
         <div className="bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl flex flex-col h-full overflow-hidden">
             <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#162036] flex items-center justify-between gap-2 overflow-hidden">
@@ -36,13 +44,29 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
                                     {playingUser.nickname && <p className="text-xs text-gray-500 truncate">{playingUser.nickname}</p>}
                                 </div>
                             </div>
-                            <button
-                                onClick={() => onRemoveUser(playingUser.user)}
-                                className="opacity-0 group-hover:opacity-100 bg-gray-800 hover:bg-red-600 text-gray-400 hover:text-white p-2 rounded-lg transition-all"
-                                title={`Remover ${playingUser.user}`}
-                            >
-                                <TrashIcon className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => handleCopy(playingUser.nickname || playingUser.user, playingUser.user)}
+                                    className={`opacity-0 group-hover:opacity-100 p-2 rounded-lg transition-all ${copiedUser === playingUser.user
+                                            ? 'bg-emerald-500/20 text-emerald-500'
+                                            : 'bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white'
+                                        }`}
+                                    title="Copiar Apelido"
+                                >
+                                    {copiedUser === playingUser.user ? (
+                                        <CheckIcon className="w-4 h-4" />
+                                    ) : (
+                                        <CopyIcon className="w-4 h-4" />
+                                    )}
+                                </button>
+                                <button
+                                    onClick={() => onRemoveUser(playingUser.user)}
+                                    className="opacity-0 group-hover:opacity-100 bg-gray-800 hover:bg-red-600 text-gray-400 hover:text-white p-2 rounded-lg transition-all"
+                                    title={`Remover ${playingUser.user}`}
+                                >
+                                    <TrashIcon className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
                     ))
                 ) : (
