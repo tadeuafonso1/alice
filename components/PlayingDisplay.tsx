@@ -37,47 +37,45 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
                 {playingUsers.length > 0 ? (
                     playingUsers.map((playingUser) => {
                         return (
-                            <div key={playingUser.user} className="group flex flex-col bg-gray-200/60 dark:bg-[#1e2947]/40 hover:bg-gray-300/60 dark:hover:bg-[#1e2947]/60 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 p-4 rounded-xl transition-all gap-3">
-                                <div className="flex items-center justify-between gap-4">
-                                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                                        <div className="p-2 bg-gray-800 rounded-lg group-hover:bg-cyan-500/20 transition-colors">
-                                            <UserIcon className="w-4 h-4 text-gray-400 group-hover:text-cyan-400 transition-colors" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-bold text-gray-900 dark:text-white truncate">{playingUser.user}</p>
-                                            {playingUser.nickname && <p className="text-xs text-gray-500 truncate">{playingUser.nickname}</p>}
-                                        </div>
+                            <div key={playingUser.user} className="group flex items-center bg-gray-200/60 dark:bg-[#1e2947]/40 hover:bg-gray-300/60 dark:hover:bg-[#1e2947]/60 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 p-3 rounded-xl transition-all gap-3">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div className="p-2 bg-gray-800 rounded-lg group-hover:bg-cyan-500/20 transition-colors flex-shrink-0">
+                                        <UserIcon className="w-4 h-4 text-gray-400 group-hover:text-cyan-400 transition-colors" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-gray-900 dark:text-white truncate text-sm">{playingUser.user}</p>
+                                        {playingUser.nickname && <p className="text-xs text-gray-500 truncate">{playingUser.nickname}</p>}
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-end gap-2 border-t border-gray-200/50 dark:border-gray-800/50 pt-3">
+                                <div className="flex items-center gap-1.5 flex-shrink-0">
                                     <button
                                         onClick={() => handleCopy(playingUser.nickname || playingUser.user, playingUser.user)}
-                                        className={`p-2 rounded-lg transition-all ${copiedUser === playingUser.user
+                                        className={`p-1.5 rounded-lg transition-all ${copiedUser === playingUser.user
                                             ? 'bg-emerald-500/20 text-emerald-500'
                                             : 'bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white'
                                             }`}
                                         title="Copiar Apelido"
                                     >
                                         {copiedUser === playingUser.user ? (
-                                            <CheckIcon className="w-4 h-4" />
+                                            <CheckIcon className="w-3.5 h-3.5" />
                                         ) : (
-                                            <CopyIcon className="w-4 h-4" />
+                                            <CopyIcon className="w-3.5 h-3.5" />
                                         )}
                                     </button>
                                     <button
                                         onClick={() => onMoveBackToQueue(playingUser.user)}
-                                        className="bg-gray-800 hover:bg-cyan-600 text-gray-400 hover:text-white p-2 rounded-lg transition-all"
+                                        className="bg-gray-800 hover:bg-cyan-600 text-gray-400 hover:text-white p-1.5 rounded-lg transition-all"
                                         title={`Mover ${playingUser.user} de volta para a fila`}
                                     >
-                                        <ArrowUpCircleIcon className="w-4 h-4" />
+                                        <ArrowUpCircleIcon className="w-3.5 h-3.5" />
                                     </button>
                                     <button
                                         onClick={() => onRemoveUser(playingUser.user)}
-                                        className="bg-gray-800 hover:bg-red-600 text-gray-400 hover:text-white p-2 rounded-lg transition-all"
+                                        className="bg-gray-800 hover:bg-red-600 text-gray-400 hover:text-white p-1.5 rounded-lg transition-all"
                                         title={`Remover ${playingUser.user}`}
                                     >
-                                        <TrashIcon className="w-4 h-4" />
+                                        <TrashIcon className="w-3.5 h-3.5" />
                                     </button>
                                 </div>
                             </div>
