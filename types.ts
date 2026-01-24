@@ -84,9 +84,6 @@ export interface AppSettings {
   loyalty: LoyaltySettings;
   youtubeChannelId?: string;
   autoSyncYoutube?: boolean;
-  playingTimeoutMinutes?: number;
-  playingTimeoutSeconds?: number;
-  playingTimeoutEnabled?: boolean;
 }
 
 export interface LivePixSettings {

@@ -70,9 +70,6 @@ const defaultSettings: AppSettings = {
     },
     youtubeChannelId: '',
     autoSyncYoutube: true,
-    playingTimeoutMinutes: 5,
-    playingTimeoutSeconds: 0,
-    playingTimeoutEnabled: true,
 };
 
 export const HomePage: React.FC = () => {
@@ -367,14 +364,10 @@ export const HomePage: React.FC = () => {
 
                 const { data: playingData, error: playingError } = await supabase
                     .from('playing_users')
-                    .select('username, nickname, started_at');
+                    .select('username, nickname');
 
                 if (playingError) throw playingError;
-                setPlayingUsers(playingData.map(p => ({
-                    user: p.username,
-                    nickname: p.nickname,
-                    started_at: p.started_at
-                })));
+                setPlayingUsers(playingData.map(p => ({ user: p.username, nickname: p.nickname })));
 
                 // Restaurar timers dos usuários usando timer_start_time do banco
                 const initialTimers = queueData.reduce((acc, q) => {
@@ -474,13 +467,10 @@ export const HomePage: React.FC = () => {
             sendBotMessage('nextInQueue', { user: queue[1].user });
         }
 
-        const nowIso = new Date().toISOString();
-        const userObjectWithTime = { ...userObject, started_at: nowIso };
-
         setQueue(prev => prev.filter(u => u.user !== userToMove));
         setPlayingUsers(prev => {
             if (prev.some(u => u.user === userToMove)) return prev;
-            return [...prev, userObjectWithTime];
+            return [...prev, userObject];
         });
 
         setUserTimers(prev => {
@@ -498,8 +488,7 @@ export const HomePage: React.FC = () => {
             await supabase.from('queue').delete().eq('username', userToMove);
             await supabase.from('playing_users').insert({
                 username: userObject.user,
-                nickname: userObject.nickname,
-                started_at: nowIso
+                nickname: userObject.nickname
             });
         } catch (error) {
             console.error("Error moving user to playing:", error);
@@ -1555,9 +1544,6 @@ export const HomePage: React.FC = () => {
                                         playingUsers={playingUsers}
                                         onRemoveUser={handleRemovePlayingUser}
                                         onMoveBackToQueue={handleMoveBackToQueue}
-                                        timeoutMinutes={appSettings.playingTimeoutMinutes ?? 5}
-                                        timeoutSeconds={appSettings.playingTimeoutSeconds ?? 0}
-                                        timeoutEnabled={appSettings.playingTimeoutEnabled ?? true}
                                     />
                                 </div>
 
@@ -1687,18 +1673,6 @@ export const HomePage: React.FC = () => {
                                 onToggleTimer={handleToggleTimer}
                                 timeoutMinutes={timeoutMinutes}
                                 setTimeoutMinutes={setTimeoutMinutes}
-                                playingTimeoutMinutes={appSettings.playingTimeoutMinutes ?? 5}
-                                playingTimeoutSeconds={appSettings.playingTimeoutSeconds ?? 0}
-                                playingTimeoutEnabled={appSettings.playingTimeoutEnabled ?? true}
-                                onSetPlayingTimeout={(mins, secs, enabled) => {
-                                    handleSettingsSave({
-                                        ...appSettings,
-                                        playingTimeoutMinutes: mins,
-                                        playingTimeoutSeconds: secs,
-                                        playingTimeoutEnabled: enabled ?? appSettings.playingTimeoutEnabled
-                                    });
-                                }}
-                                userId={session?.user?.id}
                             />
                         )}
 

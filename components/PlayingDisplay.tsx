@@ -6,49 +6,19 @@ interface PlayingDisplayProps {
     playingUsers: QueueUser[];
     onRemoveUser: (user: string) => void;
     onMoveBackToQueue: (user: string) => void;
-    timeoutMinutes: number;
-    timeoutSeconds: number;
-    timeoutEnabled: boolean;
 }
 
 export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
     playingUsers,
     onRemoveUser,
     onMoveBackToQueue,
-    timeoutMinutes,
-    timeoutSeconds,
-    timeoutEnabled,
 }) => {
     const [copiedUser, setCopiedUser] = useState<string | null>(null);
-    const [currentTime, setCurrentTime] = useState(Date.now());
-
-    useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
-        return () => clearInterval(timer);
-    }, []);
 
     const handleCopy = (text: string, userId: string) => {
         navigator.clipboard.writeText(text);
         setCopiedUser(userId);
         setTimeout(() => setCopiedUser(null), 2000);
-    };
-
-    const getRemainingTime = (startedAt?: string) => {
-        if (!startedAt) return null;
-        const start = new Date(startedAt).getTime();
-        const limit = (timeoutMinutes * 60 + timeoutSeconds) * 1000;
-        const elapsed = currentTime - start;
-        const remaining = Math.max(0, limit - elapsed);
-
-        const totalRemainingSecs = Math.floor(remaining / 1000);
-        const mins = Math.floor(totalRemainingSecs / 60);
-        const secs = totalRemainingSecs % 60;
-
-        return {
-            text: `${mins}:${secs.toString().padStart(2, '0')}`,
-            isExpired: remaining === 0,
-            percent: (remaining / limit) * 100
-        };
     };
 
     return (
@@ -66,7 +36,6 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
             <div className="p-6 space-y-3 overflow-y-auto custom-scrollbar flex-grow bg-gray-100 dark:bg-[#0f111a]">
                 {playingUsers.length > 0 ? (
                     playingUsers.map((playingUser) => {
-                        const timer = getRemainingTime(playingUser.started_at);
                         return (
                             <div key={playingUser.user} className="group flex flex-col bg-gray-200/60 dark:bg-[#1e2947]/40 hover:bg-gray-300/60 dark:hover:bg-[#1e2947]/60 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 p-4 rounded-xl transition-all gap-3">
                                 <div className="flex items-center justify-between gap-4">
@@ -79,16 +48,6 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
                                             {playingUser.nickname && <p className="text-xs text-gray-500 truncate">{playingUser.nickname}</p>}
                                         </div>
                                     </div>
-
-                                    {timeoutEnabled && timer && (
-                                        <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border font-mono font-bold text-xs ${timer.isExpired
-                                            ? 'bg-red-500/10 text-red-500 border-red-500/20 animate-pulse'
-                                            : 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20'
-                                            }`}>
-                                            <TimerIcon className="w-3 h-3" />
-                                            {timer.text}
-                                        </div>
-                                    )}
                                 </div>
 
                                 <div className="flex items-center justify-end gap-2 border-t border-gray-200/50 dark:border-gray-800/50 pt-3">

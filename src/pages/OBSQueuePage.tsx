@@ -13,34 +13,11 @@ export const OBSQueuePage: React.FC = () => {
     const { userId } = useParams<{ userId: string }>();
     const [queue, setQueue] = useState<QueueUser[]>([]);
     const [playing, setPlaying] = useState<QueueUser[]>([]);
-    const [timeoutMinutes, setTimeoutMinutes] = useState(5);
-    const [timeoutSeconds, setTimeoutSeconds] = useState(0);
-    const [timeoutEnabled, setTimeoutEnabled] = useState(true);
-    const [currentTime, setCurrentTime] = useState(Date.now());
-
-    // Sync Timer
-    useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
-        return () => clearInterval(timer);
-    }, []);
 
     const fetchAllData = async () => {
         if (!userId) return;
 
-        // 1. Fetch Settings (for timeout)
-        const { data: settingsData } = await supabase
-            .from('app_settings')
-            .select('settings')
-            .eq('user_id', userId)
-            .maybeSingle();
-
-        if (settingsData?.settings) {
-            setTimeoutMinutes(settingsData.settings.playingTimeoutMinutes ?? 5);
-            setTimeoutSeconds(settingsData.settings.playingTimeoutSeconds ?? 0);
-            setTimeoutEnabled(settingsData.settings.playingTimeoutEnabled ?? true);
-        }
-
-        // 2. Fetch Queue
+        // 1. Fetch Queue
         const { data: queueData } = await supabase
             .from('queue')
             .select('username, nickname')
@@ -49,17 +26,15 @@ export const OBSQueuePage: React.FC = () => {
 
         if (queueData) setQueue(queueData.map(u => ({ username: u.username, nickname: u.nickname })));
 
-        // 3. Fetch Playing
+        // 2. Fetch Playing
         const { data: playingData } = await supabase
             .from('playing_users')
-            .select('username, nickname, started_at')
-            .eq('user_id', userId)
-            .order('started_at', { ascending: true });
+            .select('username, nickname')
+            .eq('user_id', userId);
 
         if (playingData) setPlaying(playingData.map(u => ({
             username: u.username,
-            nickname: u.nickname,
-            started_at: u.started_at
+            nickname: u.nickname
         })));
     };
 
@@ -67,47 +42,21 @@ export const OBSQueuePage: React.FC = () => {
         if (!userId) return;
         fetchAllData();
 
-        // Subscribe to changes
-        const queueChannel = supabase.channel('obs-queue-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'queue', filter: `user_id=eq.${userId}` }, () => fetchAllData())
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'playing_users', filter: `user_id=eq.${userId}` }, () => fetchAllData())
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'app_settings', filter: `user_id=eq.${userId}` }, () => fetchAllData())
+        const channel = supabase.channel('obs-sync')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'queue', filter: `user_id=eq.${userId}` }, fetchAllData)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'playing_users', filter: `user_id=eq.${userId}` }, fetchAllData)
             .subscribe();
 
-        return () => {
-            supabase.removeChannel(queueChannel);
-        };
+        return () => { supabase.removeChannel(channel); };
     }, [userId]);
 
-    const getRemainingTime = (startedAt?: string) => {
-        if (!startedAt) return null;
-        const start = new Date(startedAt).getTime();
-        const limit = (timeoutMinutes * 60 + timeoutSeconds) * 1000;
-        const elapsed = currentTime - start;
-        const remaining = Math.max(0, limit - elapsed);
-
-        const totalRemainingSecs = Math.floor(remaining / 1000);
-        const mins = Math.floor(totalRemainingSecs / 60);
-        const secs = totalRemainingSecs % 60;
-
-        return {
-            text: `${mins}:${secs.toString().padStart(2, '0')}`,
-            isExpired: remaining === 0,
-            remainingMs: remaining
-        };
-    };
-
-    // Force transparent background
     useEffect(() => {
-        const root = document.getElementById('root');
         document.body.classList.add('bg-transparent-important');
         document.documentElement.classList.add('bg-transparent-important');
-        if (root) root.classList.add('bg-transparent-important');
     }, []);
 
     return (
         <div className="w-full h-screen bg-transparent p-10 font-sans flex flex-col gap-10 overflow-hidden">
-            {/* 1. SECTION: JOGANDO AGORA (Visible only if someone is playing & not expired) */}
             <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-lime-500 rounded-lg shadow-[0_0_20px_rgba(132,204,22,0.5)]">
@@ -117,37 +66,25 @@ export const OBSQueuePage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-4">
-                    {playing.map(p => {
-                        const timer = getRemainingTime(p.started_at);
-
-                        return (
-                            <div key={p.username} className="flex flex-col bg-slate-900/80 backdrop-blur-md border-2 border-lime-500/50 rounded-2xl p-4 min-w-[240px] shadow-2xl animate-fadeIn">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-white/10">
-                                        <UserIcon className="w-5 h-5 text-lime-400" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-white font-bold truncate leading-tight">{p.username}</p>
-                                        <p className="text-lime-400/80 text-[10px] font-black uppercase tracking-tighter truncate">{p.nickname || 'Player'}</p>
-                                    </div>
+                    {playing.map(p => (
+                        <div key={p.username} className="flex flex-col bg-slate-900/80 backdrop-blur-md border-2 border-lime-500/50 rounded-2xl p-4 min-w-[240px] shadow-2xl animate-fadeIn">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-white/10">
+                                    <UserIcon className="w-5 h-5 text-lime-400" />
                                 </div>
-
-                                {timeoutEnabled && (
-                                    <div className={`flex items-center justify-center gap-2 py-1.5 rounded-xl border ${timer?.isExpired ? 'bg-red-500/20 border-red-500/30' : 'bg-lime-500/20 border-lime-500/30'}`}>
-                                        <TimerIcon className={`w-4 h-4 ${timer?.isExpired ? 'text-red-400' : 'text-lime-400 animate-pulse'}`} />
-                                        <span className={`font-mono font-black text-xl tracking-tighter ${timer?.isExpired ? 'text-red-400' : 'text-lime-400'}`}>{timer?.text}</span>
-                                    </div>
-                                )}
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-white font-bold truncate leading-tight">{p.username}</p>
+                                    <p className="text-lime-400/80 text-[10px] font-black uppercase tracking-tighter truncate">{p.nickname || 'Player'}</p>
+                                </div>
                             </div>
-                        );
-                    })}
+                        </div>
+                    ))}
                     {playing.length === 0 && (
                         <p className="text-white/20 font-black uppercase tracking-widest text-sm italic">Aguardando jogadores...</p>
                     )}
                 </div>
             </div>
 
-            {/* 2. SECTION: FILA DE ESPERA */}
             <div className="flex flex-col gap-4 max-w-[400px]">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-cyan-500 rounded-lg shadow-[0_0_20px_rgba(6,182,212,0.5)]">
