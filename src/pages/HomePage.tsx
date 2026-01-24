@@ -345,6 +345,7 @@ export const HomePage: React.FC = () => {
                     }
                     mergedSettings.customCommands = dbSettings.customCommands || [];
                     if (dbSettings.youtubeChannelId) mergedSettings.youtubeChannelId = dbSettings.youtubeChannelId;
+                    if (typeof dbSettings.autoSyncYoutube === 'boolean') mergedSettings.autoSyncYoutube = dbSettings.autoSyncYoutube;
 
                     setAppSettings(mergedSettings);
                 }
