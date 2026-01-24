@@ -1679,6 +1679,8 @@ export const HomePage: React.FC = () => {
                                 onToggleTimer={handleToggleTimer}
                                 timeoutMinutes={timeoutMinutes}
                                 setTimeoutMinutes={setTimeoutMinutes}
+                                playingTimeoutMinutes={appSettings.playingTimeoutMinutes ?? 5}
+                                onSetPlayingTimeout={(mins) => handleSettingsSave({ ...appSettings, playingTimeoutMinutes: mins })}
                             />
                         )}
 
