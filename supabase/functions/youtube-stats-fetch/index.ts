@@ -98,9 +98,11 @@ serve(async (req) => {
         if (req.method === 'POST') {
             const reqJson = await req.json().catch(() => ({}));
 
-            if (url.pathname.endsWith('/subscribers')) {
-                const { goal, step, auto_update, bar_color, bg_color, border_color, text_color, initial_subs } = reqJson;
-                const { error: upsertError } = await supabaseClient.from('subscriber_goals').upsert({
+            // Subscriber Goal Settings handling removed per user request.
+
+            const { goal, step, auto_update, bar_color, bg_color, border_color, text_color } = reqJson;
+            if (goal !== undefined || bar_color !== undefined) {
+                const { error: upsertError } = await supabaseClient.from('like_goals').upsert({
                     user_id: userId,
                     current_goal: goal,
                     step: step,
@@ -109,28 +111,10 @@ serve(async (req) => {
                     bg_color: bg_color,
                     border_color: border_color,
                     text_color: text_color,
-                    initial_subs: initial_subs,
                     updated_at: new Date().toISOString()
                 });
                 if (upsertError) throw upsertError;
                 return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
-            } else {
-                const { goal, step, auto_update, bar_color, bg_color, border_color, text_color } = reqJson;
-                if (goal !== undefined || bar_color !== undefined) {
-                    const { error: upsertError } = await supabaseClient.from('like_goals').upsert({
-                        user_id: userId,
-                        current_goal: goal,
-                        step: step,
-                        auto_update: auto_update,
-                        bar_color: bar_color,
-                        bg_color: bg_color,
-                        border_color: border_color,
-                        text_color: text_color,
-                        updated_at: new Date().toISOString()
-                    });
-                    if (upsertError) throw upsertError;
-                    return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
-                }
             }
         }
 
@@ -215,18 +199,8 @@ serve(async (req) => {
             console.error("[Stats-Fetch] Like fetch failed:", err.message);
         }
 
-        // 2. Fetch Subscriber Count
-        if (tokenData.channel_id) {
-            try {
-                const channelUrl = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${tokenData.channel_id}`;
-                const channelData = await fetchYouTube(channelUrl);
-                if (channelData.items?.length > 0) {
-                    subscriberCount = parseInt(channelData.items[0].statistics.subscriberCount || "0", 10);
-                }
-            } catch (err: any) {
-                console.error("[Stats-Fetch] Sub fetch failed:", err.message);
-            }
-        }
+        // 2. Fetch Subscriber Count - REMOVED PER USER REQUEST
+        // (Logic removed to save quota and disable feature)
 
         // 3. Process Like Goal Progress
         if (autoUpdate && likeCount >= currentGoal) {
@@ -236,26 +210,7 @@ serve(async (req) => {
             goalUpdated = true;
         }
 
-        // 4. Process Subscriber Goal Progress
-        const { data: subGoalData } = await supabaseClient.from('subscriber_goals').select('*').eq('user_id', userId).maybeSingle();
-        if (subGoalData) {
-            let curSubGoal = subGoalData.current_goal;
-            const subStep = subGoalData.step;
-            const subAuto = subGoalData.auto_update;
-            const relativeSubs = subscriberCount - subGoalData.initial_subs;
-
-            if (subAuto && relativeSubs >= curSubGoal) {
-                const diff = relativeSubs - curSubGoal;
-                const stepsToAdd = Math.floor(diff / subStep) + 1;
-                curSubGoal = curSubGoal + (subStep * stepsToAdd);
-            }
-
-            await supabaseClient.from('subscriber_goals').update({
-                current_subs: subscriberCount,
-                current_goal: curSubGoal,
-                updated_at: new Date().toISOString()
-            }).eq('user_id', userId);
-        }
+        // 4. Process Subscriber Goal Progress - REMOVED PER USER REQUEST
 
         // 5. Update Like Goal in DB
         await supabaseClient.from('like_goals').update({
@@ -268,14 +223,14 @@ serve(async (req) => {
 
         return new Response(JSON.stringify({
             likes: likeCount,
-            subscribers: subscriberCount,
+            // subscribers: subscriberCount, // Removed
             goal: currentGoal,
             step: stepCount,
             auto_update: autoUpdate,
             streamFound,
             goalUpdated,
             colors: { bar: barColor, bg: bgColor, border: borderColor, text: textColor },
-            version: '2.3-SUBS-FIXED'
+            version: '2.4-NO-SUBS'
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
