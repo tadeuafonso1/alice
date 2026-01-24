@@ -513,6 +513,28 @@ export const HomePage: React.FC = () => {
         }
     }, [addBotMessage]);
 
+    const handleMoveBackToQueue = useCallback(async (userToMove: string) => {
+        const userObject = playingUsers.find(u => u.user === userToMove);
+        if (!userObject) return;
+
+        setPlayingUsers(prev => prev.filter(u => u.user !== userToMove));
+        setQueue(prev => [...prev, userObject]);
+        setUserTimers(prev => ({ ...prev, [userToMove]: Date.now() }));
+
+        try {
+            const { error: delError } = await supabase.from('playing_users').delete().eq('username', userToMove);
+            if (delError) throw delError;
+
+            const { error: insError } = await supabase.from('queue').insert({ username: userObject.user, nickname: userObject.nickname });
+            if (insError) throw insError;
+
+            addBotMessage(`@${userToMove} voltou para a fila.`);
+        } catch (error) {
+            console.error("Error moving user back to queue:", error);
+            addBotMessage(`Erro ao mover ${userToMove} de volta para a fila.`);
+        }
+    }, [playingUsers, addBotMessage]);
+
     const handleRemoveUsersFromQueue = useCallback(async (usersToRemove: string[], reason: 'admin' | 'inactivity' = 'admin') => {
         if (usersToRemove.length === 0) return;
 
@@ -1518,6 +1540,7 @@ export const HomePage: React.FC = () => {
                                     <PlayingDisplay
                                         playingUsers={playingUsers}
                                         onRemoveUser={handleRemovePlayingUser}
+                                        onMoveBackToQueue={handleMoveBackToQueue}
                                     />
                                 </div>
 

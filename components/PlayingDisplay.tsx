@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Gamepad2Icon, TrashIcon, UserIcon, CopyIcon, CheckIcon } from './Icons';
+import { Gamepad2Icon, TrashIcon, UserIcon, CopyIcon, CheckIcon, ArrowUpCircleIcon } from './Icons';
 import type { QueueUser } from '../types';
 
 interface PlayingDisplayProps {
     playingUsers: QueueUser[];
     onRemoveUser: (user: string) => void;
+    onMoveBackToQueue: (user: string) => void;
 }
 
 export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
     playingUsers,
     onRemoveUser,
+    onMoveBackToQueue,
 }) => {
     const [copiedUser, setCopiedUser] = useState<string | null>(null);
 
@@ -58,6 +60,13 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
                                     ) : (
                                         <CopyIcon className="w-4 h-4" />
                                     )}
+                                </button>
+                                <button
+                                    onClick={() => onMoveBackToQueue(playingUser.user)}
+                                    className="opacity-0 group-hover:opacity-100 bg-gray-800 hover:bg-cyan-600 text-gray-400 hover:text-white p-2 rounded-lg transition-all"
+                                    title={`Mover ${playingUser.user} de volta para a fila`}
+                                >
+                                    <ArrowUpCircleIcon className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={() => onRemoveUser(playingUser.user)}
