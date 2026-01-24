@@ -90,6 +90,7 @@ export const HomePage: React.FC = () => {
     const [warningSentUsers, setWarningSentUsers] = useState<Set<string>>(new Set());
     const [activeChatters, setActiveChatters] = useState<Record<string, number>>({});
     const [giveawayParticipants, setGiveawayParticipants] = useState<Set<string>>(new Set());
+    const isInitialLoad = useRef(true);
 
     // Persistence: Load giveaway participants
     useEffect(() => {
@@ -403,6 +404,12 @@ export const HomePage: React.FC = () => {
                     console.log('[HomePage] Nenhum estado de timer salvo, usando padrões');
                 }
 
+                // Marca fim do carregamento inicial para permitir salvamentos automáticos
+                setTimeout(() => {
+                    isInitialLoad.current = false;
+                    console.log('[HomePage] Carregamento inicial concluído.');
+                }, 500);
+
             } catch (error: any) {
                 console.error("Error fetching initial data:", error);
                 // Não alertar erro se for apenas falta de dados iniciais
@@ -416,6 +423,19 @@ export const HomePage: React.FC = () => {
 
         fetchData();
     }, [adminName, loadQueueState]);
+
+    // Persistência automática do estado do timer (Debounced)
+    useEffect(() => {
+        if (isInitialLoad.current) return;
+
+        console.log('[HomePage] Timer state mudou, agendando salvamento...', { isTimerActive, timeoutMinutes });
+        const timer = setTimeout(() => {
+            console.log('[HomePage] Salvando estado do timer no Supabase:', { isTimerActive, timeoutMinutes });
+            saveQueueState({ isTimerActive, timeoutMinutes });
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [isTimerActive, timeoutMinutes, saveQueueState]);
 
     const handleSettingsSave = async (newSettings: AppSettings) => {
         console.log("Tentando salvar configurações:", newSettings, "ID atual:", settingsId);
@@ -585,19 +605,13 @@ export const HomePage: React.FC = () => {
         setUserTimers(newTimers);
         setWarningSentUsers(new Set());
         sendBotMessage('timerOn', { minutes: timeoutMinutes });
-
-        // Persistir estado do timer no banco
-        saveQueueState({ isTimerActive: true, timeoutMinutes });
-    }, [isTimerActive, queue, sendBotMessage, timeoutMinutes, saveQueueState]);
+    }, [isTimerActive, queue, sendBotMessage, timeoutMinutes]);
 
     const deactivateTimer = useCallback(() => {
         if (!isTimerActive) return;
         setIsTimerActive(false);
         sendBotMessage('timerOff');
-
-        // Persistir estado do timer no banco
-        saveQueueState({ isTimerActive: false, timeoutMinutes });
-    }, [isTimerActive, sendBotMessage, timeoutMinutes, saveQueueState]);
+    }, [isTimerActive, sendBotMessage]);
 
     const handleToggleTimer = useCallback(() => {
         if (isTimerActive) {
