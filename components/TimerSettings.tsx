@@ -7,7 +7,8 @@ interface TimerSettingsProps {
     timeoutMinutes: number;
     setTimeoutMinutes: (minutes: number) => void;
     playingTimeoutMinutes: number;
-    onSetPlayingTimeout: (minutes: number) => void;
+    playingTimeoutSeconds: number;
+    onSetPlayingTimeout: (minutes: number, seconds: number) => void;
 }
 
 export const TimerSettings: React.FC<TimerSettingsProps> = ({
@@ -16,6 +17,7 @@ export const TimerSettings: React.FC<TimerSettingsProps> = ({
     timeoutMinutes,
     setTimeoutMinutes,
     playingTimeoutMinutes,
+    playingTimeoutSeconds,
     onSetPlayingTimeout,
 }) => {
     return (
@@ -79,36 +81,60 @@ export const TimerSettings: React.FC<TimerSettingsProps> = ({
                 </div>
 
                 {/* Timer Jogando Agora (Expiração) */}
-                <div className="bg-gray-50 dark:bg-[#0f111a] p-6 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-8">
+                <div className="bg-gray-50 dark:bg-[#0f111a] p-6 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-6">
                     <div>
                         <p className="font-bold text-gray-900 dark:text-white text-lg">Timer de Jogo</p>
                         <p className="text-sm text-gray-500 dark:text-[#8bcbd5]">Tempo para o jogador entrar na partida.</p>
                     </div>
 
-                    <div className="transition-all duration-300">
-                        <div className="flex justify-between items-end mb-4">
-                            <span className="font-bold text-gray-500 dark:text-[#8bcbd5] uppercase tracking-widest text-xs">Tempo de Expiração</span>
-                            <div className="text-right">
-                                <span className="text-4xl font-black text-gray-900 dark:text-white">{playingTimeoutMinutes}</span>
-                                <span className="text-base font-bold text-lime-500 ml-1">minutos</span>
+                    <div className="transition-all duration-300 space-y-6">
+                        <div>
+                            <div className="flex justify-between items-end mb-2">
+                                <span className="font-bold text-gray-500 dark:text-[#8bcbd5] uppercase tracking-widest text-[10px]">Minutos</span>
+                                <div className="text-right">
+                                    <span className="text-2xl font-black text-gray-900 dark:text-white">{playingTimeoutMinutes}</span>
+                                    <span className="text-xs font-bold text-lime-500 ml-1">min</span>
+                                </div>
+                            </div>
+                            <div className="relative h-6 flex items-center">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="20"
+                                    step="1"
+                                    value={playingTimeoutMinutes}
+                                    onChange={(e) => onSetPlayingTimeout(Number(e.target.value), playingTimeoutSeconds)}
+                                    className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full appearance-none cursor-pointer accent-lime-500 hover:accent-lime-400"
+                                />
                             </div>
                         </div>
 
-                        <div className="relative h-8 flex items-center">
-                            <input
-                                type="range"
-                                min="1"
-                                max="20"
-                                step="1"
-                                value={playingTimeoutMinutes}
-                                onChange={(e) => onSetPlayingTimeout(Number(e.target.value))}
-                                className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full appearance-none cursor-pointer accent-lime-500 hover:accent-lime-400"
-                            />
+                        <div>
+                            <div className="flex justify-between items-end mb-2">
+                                <span className="font-bold text-gray-500 dark:text-[#8bcbd5] uppercase tracking-widest text-[10px]">Segundos</span>
+                                <div className="text-right">
+                                    <span className="text-2xl font-black text-gray-900 dark:text-white">{playingTimeoutSeconds}</span>
+                                    <span className="text-xs font-bold text-lime-500 ml-1">seg</span>
+                                </div>
+                            </div>
+                            <div className="relative h-6 flex items-center">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="59"
+                                    step="1"
+                                    value={playingTimeoutSeconds}
+                                    onChange={(e) => onSetPlayingTimeout(playingTimeoutMinutes, Number(e.target.value))}
+                                    className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full appearance-none cursor-pointer accent-lime-500 hover:accent-lime-400"
+                                />
+                            </div>
                         </div>
-                        <div className="flex justify-between mt-2">
-                            <span className="text-xs font-bold text-gray-400 dark:text-[#8bcbd5]">1 min</span>
-                            <span className="text-xs font-bold text-gray-400 dark:text-[#8bcbd5]">10 min</span>
-                            <span className="text-xs font-bold text-gray-400 dark:text-[#8bcbd5]">20 min</span>
+
+                        <div className="bg-lime-500/10 border border-lime-500/20 rounded-xl p-3 flex items-center justify-center gap-3">
+                            <TimerIcon className="w-5 h-5 text-lime-500" />
+                            <span className="text-xl font-bold font-mono text-lime-500">
+                                {playingTimeoutMinutes}:{playingTimeoutSeconds.toString().padStart(2, '0')}
+                            </span>
                         </div>
                     </div>
                 </div>

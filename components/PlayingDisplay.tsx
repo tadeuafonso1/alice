@@ -7,6 +7,7 @@ interface PlayingDisplayProps {
     onRemoveUser: (user: string) => void;
     onMoveBackToQueue: (user: string) => void;
     timeoutMinutes: number;
+    timeoutSeconds: number;
 }
 
 export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
@@ -14,6 +15,7 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
     onRemoveUser,
     onMoveBackToQueue,
     timeoutMinutes,
+    timeoutSeconds,
 }) => {
     const [copiedUser, setCopiedUser] = useState<string | null>(null);
     const [currentTime, setCurrentTime] = useState(Date.now());
@@ -32,12 +34,13 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
     const getRemainingTime = (startedAt?: string) => {
         if (!startedAt) return null;
         const start = new Date(startedAt).getTime();
-        const limit = timeoutMinutes * 60 * 1000;
+        const limit = (timeoutMinutes * 60 + timeoutSeconds) * 1000;
         const elapsed = currentTime - start;
         const remaining = Math.max(0, limit - elapsed);
 
-        const mins = Math.floor(remaining / 60000);
-        const secs = Math.floor((remaining % 60000) / 1000);
+        const totalRemainingSecs = Math.floor(remaining / 1000);
+        const mins = Math.floor(totalRemainingSecs / 60);
+        const secs = totalRemainingSecs % 60;
 
         return {
             text: `${mins}:${secs.toString().padStart(2, '0')}`,
@@ -77,8 +80,8 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
 
                                     {timer && (
                                         <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border font-mono font-bold text-xs ${timer.isExpired
-                                                ? 'bg-red-500/10 text-red-500 border-red-500/20 animate-pulse'
-                                                : 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20'
+                                            ? 'bg-red-500/10 text-red-500 border-red-500/20 animate-pulse'
+                                            : 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20'
                                             }`}>
                                             <TimerIcon className="w-3 h-3" />
                                             {timer.text}
@@ -90,8 +93,8 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
                                     <button
                                         onClick={() => handleCopy(playingUser.nickname || playingUser.user, playingUser.user)}
                                         className={`p-2 rounded-lg transition-all ${copiedUser === playingUser.user
-                                                ? 'bg-emerald-500/20 text-emerald-500'
-                                                : 'bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white'
+                                            ? 'bg-emerald-500/20 text-emerald-500'
+                                            : 'bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white'
                                             }`}
                                         title="Copiar Apelido"
                                     >

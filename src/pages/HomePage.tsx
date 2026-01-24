@@ -71,6 +71,7 @@ const defaultSettings: AppSettings = {
     youtubeChannelId: '',
     autoSyncYoutube: true,
     playingTimeoutMinutes: 5,
+    playingTimeoutSeconds: 0,
 };
 
 export const HomePage: React.FC = () => {
@@ -1550,6 +1551,7 @@ export const HomePage: React.FC = () => {
                                         onRemoveUser={handleRemovePlayingUser}
                                         onMoveBackToQueue={handleMoveBackToQueue}
                                         timeoutMinutes={appSettings.playingTimeoutMinutes ?? 5}
+                                        timeoutSeconds={appSettings.playingTimeoutSeconds ?? 0}
                                     />
                                 </div>
 
@@ -1680,7 +1682,12 @@ export const HomePage: React.FC = () => {
                                 timeoutMinutes={timeoutMinutes}
                                 setTimeoutMinutes={setTimeoutMinutes}
                                 playingTimeoutMinutes={appSettings.playingTimeoutMinutes ?? 5}
-                                onSetPlayingTimeout={(mins) => handleSettingsSave({ ...appSettings, playingTimeoutMinutes: mins })}
+                                playingTimeoutSeconds={appSettings.playingTimeoutSeconds ?? 0}
+                                onSetPlayingTimeout={(mins, secs) => handleSettingsSave({
+                                    ...appSettings,
+                                    playingTimeoutMinutes: mins,
+                                    playingTimeoutSeconds: secs
+                                })}
                             />
                         )}
 

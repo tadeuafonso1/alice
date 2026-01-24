@@ -14,6 +14,7 @@ export const OBSQueuePage: React.FC = () => {
     const [queue, setQueue] = useState<QueueUser[]>([]);
     const [playing, setPlaying] = useState<QueueUser[]>([]);
     const [timeoutMinutes, setTimeoutMinutes] = useState(5);
+    const [timeoutSeconds, setTimeoutSeconds] = useState(0);
     const [currentTime, setCurrentTime] = useState(Date.now());
 
     // Sync Timer
@@ -34,6 +35,7 @@ export const OBSQueuePage: React.FC = () => {
 
         if (settingsData?.settings) {
             setTimeoutMinutes(settingsData.settings.playingTimeoutMinutes ?? 5);
+            setTimeoutSeconds(settingsData.settings.playingTimeoutSeconds ?? 0);
         }
 
         // 2. Fetch Queue
@@ -78,12 +80,13 @@ export const OBSQueuePage: React.FC = () => {
     const getRemainingTime = (startedAt?: string) => {
         if (!startedAt) return null;
         const start = new Date(startedAt).getTime();
-        const limit = timeoutMinutes * 60 * 1000;
+        const limit = (timeoutMinutes * 60 + timeoutSeconds) * 1000;
         const elapsed = currentTime - start;
         const remaining = Math.max(0, limit - elapsed);
 
-        const mins = Math.floor(remaining / 60000);
-        const secs = Math.floor((remaining % 60000) / 1000);
+        const totalRemainingSecs = Math.floor(remaining / 1000);
+        const mins = Math.floor(totalRemainingSecs / 60);
+        const secs = totalRemainingSecs % 60;
 
         return {
             text: `${mins}:${secs.toString().padStart(2, '0')}`,

@@ -85,6 +85,7 @@ export interface AppSettings {
   youtubeChannelId?: string;
   autoSyncYoutube?: boolean;
   playingTimeoutMinutes?: number;
+  playingTimeoutSeconds?: number;
 }
 
 export interface LivePixSettings {
