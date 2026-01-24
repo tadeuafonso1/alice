@@ -8,7 +8,9 @@ interface TimerSettingsProps {
     setTimeoutMinutes: (minutes: number) => void;
     playingTimeoutMinutes: number;
     playingTimeoutSeconds: number;
-    onSetPlayingTimeout: (minutes: number, seconds: number) => void;
+    playingTimeoutEnabled: boolean;
+    onSetPlayingTimeout: (minutes: number, seconds: number, enabled?: boolean) => void;
+    userId?: string;
 }
 
 export const TimerSettings: React.FC<TimerSettingsProps> = ({
@@ -18,7 +20,9 @@ export const TimerSettings: React.FC<TimerSettingsProps> = ({
     setTimeoutMinutes,
     playingTimeoutMinutes,
     playingTimeoutSeconds,
+    playingTimeoutEnabled,
     onSetPlayingTimeout,
+    userId,
 }) => {
     return (
         <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-800">
@@ -27,8 +31,8 @@ export const TimerSettings: React.FC<TimerSettingsProps> = ({
                     <TimerIcon className="w-8 h-8 text-cyan-500" />
                 </div>
                 <div>
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Timer de Inatividade</h3>
-                    <p className="text-gray-500 dark:text-[#8bcbd5]">Gerencie o tempo dos usuários na fila e no jogo.</p>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Timers e Configurações de Fila</h3>
+                    <p className="text-gray-500 dark:text-[#8bcbd5]">Gerencie o tempo dos usuários na fila, no jogo e as sobreposições.</p>
                 </div>
             </div>
 
@@ -81,13 +85,25 @@ export const TimerSettings: React.FC<TimerSettingsProps> = ({
                 </div>
 
                 {/* Timer Jogando Agora (Expiração) */}
-                <div className="bg-gray-50 dark:bg-[#0f111a] p-6 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-6">
-                    <div>
-                        <p className="font-bold text-gray-900 dark:text-white text-lg">Timer de Jogo</p>
-                        <p className="text-sm text-gray-500 dark:text-[#8bcbd5]">Tempo para o jogador entrar na partida.</p>
+                <div className="bg-gray-50 dark:bg-[#0f111a] p-6 rounded-2xl border border-gray-200 dark:border-gray-800 space-y-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="font-bold text-gray-900 dark:text-white text-lg">Timer de Jogo</p>
+                            <p className="text-sm text-gray-500 dark:text-[#8bcbd5]">Tempo para entrar na partida.</p>
+                        </div>
+                        <button
+                            onClick={() => onSetPlayingTimeout(playingTimeoutMinutes, playingTimeoutSeconds, !playingTimeoutEnabled)}
+                            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${playingTimeoutEnabled ? 'bg-lime-500' : 'bg-gray-300 dark:bg-gray-700'
+                                }`}
+                        >
+                            <span
+                                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${playingTimeoutEnabled ? 'translate-x-7' : 'translate-x-1'
+                                    }`}
+                            />
+                        </button>
                     </div>
 
-                    <div className="transition-all duration-300 space-y-6">
+                    <div className={`transition-all duration-300 ${playingTimeoutEnabled ? 'opacity-100' : 'opacity-40 grayscale pointer-events-none'}`}>
                         <div>
                             <div className="flex justify-between items-end mb-2">
                                 <span className="font-bold text-gray-500 dark:text-[#8bcbd5] uppercase tracking-widest text-[10px]">Minutos</span>
@@ -141,30 +157,49 @@ export const TimerSettings: React.FC<TimerSettingsProps> = ({
             </div>
 
             {/* Link do OBS (Fila + Timer) */}
-            <div className="mt-12 p-6 rounded-2xl bg-cyan-500/5 border border-cyan-500/10 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div>
-                    <h4 className="text-lg font-bold text-gray-900 dark:text-white">Sobreposição para o OBS</h4>
-                    <p className="text-sm text-gray-500 dark:text-[#8bcbd5]">Link para mostrar a Fila e os Timers de Jogo na sua live.</p>
+            <div className="mt-12 p-8 rounded-3xl bg-gradient-to-br from-cyan-500/10 to-blue-600/10 border border-cyan-500/20 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <TimerIcon className="w-32 h-32 rotate-12" />
                 </div>
-                <div className="flex gap-3 w-full md:w-auto">
-                    <button
-                        onClick={() => {
-                            const url = `${window.location.origin}/obs/queue/${localStorage.getItem('supabase.auth.token') ? JSON.parse(localStorage.getItem('sb-fzxunttshjmjqjyqwvsn-auth-token') || '{}')?.user?.id : ''}`;
-                            // This might be tricky via localStorage, better pass userId via props
-                        }}
-                        className="hidden" // Hiding until I fix the userId pass
-                    />
-                    <div className="flex gap-2 w-full">
-                        <button
-                            onClick={() => {
-                                // I'll just explain to the user in the message or pass userId prop
-                            }}
-                            className="hidden"
-                        />
-                    </div>
+
+                <div className="relative z-10 text-center md:text-left">
+                    <h4 className="text-2xl font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tight">Sobreposição para o OBS</h4>
+                    <p className="text-gray-500 dark:text-[#8bcbd5] max-w-md">Copie este link e adicione como uma fonte de <strong>Navegador</strong> no seu OBS para mostrar a fila e os timers na live.</p>
                 </div>
-                <div className="text-xs font-mono bg-gray-100 dark:bg-[#0f111a] p-3 rounded-lg border border-gray-200 dark:border-gray-700 break-all text-cyan-500 font-bold">
-                    Painel {'>'} Timer Inatividade (Você está aqui)
+
+                <div className="relative z-10 flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                    {userId ? (
+                        <>
+                            <button
+                                onClick={() => {
+                                    const url = `${window.location.origin}/obs/queue/${userId}`;
+                                    navigator.clipboard.writeText(url);
+                                    alert('Link do OBS copiado com sucesso!');
+                                }}
+                                className="flex items-center justify-center gap-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white px-6 py-4 rounded-2xl font-bold transition-all border border-gray-200 dark:border-gray-700 shadow-lg active:scale-95"
+                            >
+                                <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                </svg>
+                                Copiar Link
+                            </button>
+                            <a
+                                href={`/obs/queue/${userId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center gap-3 bg-cyan-600 hover:bg-cyan-500 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-cyan-500/20 active:scale-95"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                                Testar Overlay
+                            </a>
+                        </>
+                    ) : (
+                        <div className="bg-red-500/10 text-red-500 p-4 rounded-xl border border-red-500/20 font-bold text-sm">
+                            Faça login para gerar o link.
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

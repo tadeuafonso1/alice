@@ -15,6 +15,7 @@ export const OBSQueuePage: React.FC = () => {
     const [playing, setPlaying] = useState<QueueUser[]>([]);
     const [timeoutMinutes, setTimeoutMinutes] = useState(5);
     const [timeoutSeconds, setTimeoutSeconds] = useState(0);
+    const [timeoutEnabled, setTimeoutEnabled] = useState(true);
     const [currentTime, setCurrentTime] = useState(Date.now());
 
     // Sync Timer
@@ -36,6 +37,7 @@ export const OBSQueuePage: React.FC = () => {
         if (settingsData?.settings) {
             setTimeoutMinutes(settingsData.settings.playingTimeoutMinutes ?? 5);
             setTimeoutSeconds(settingsData.settings.playingTimeoutSeconds ?? 0);
+            setTimeoutEnabled(settingsData.settings.playingTimeoutEnabled ?? true);
         }
 
         // 2. Fetch Queue
@@ -117,7 +119,6 @@ export const OBSQueuePage: React.FC = () => {
                 <div className="flex flex-wrap gap-4">
                     {playing.map(p => {
                         const timer = getRemainingTime(p.started_at);
-                        if (timer?.isExpired) return null; // Hide if expired per user request
 
                         return (
                             <div key={p.username} className="flex flex-col bg-slate-900/80 backdrop-blur-md border-2 border-lime-500/50 rounded-2xl p-4 min-w-[240px] shadow-2xl animate-fadeIn">
@@ -130,14 +131,17 @@ export const OBSQueuePage: React.FC = () => {
                                         <p className="text-lime-400/80 text-[10px] font-black uppercase tracking-tighter truncate">{p.nickname || 'Player'}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-center gap-2 bg-lime-500/20 py-1.5 rounded-xl border border-lime-500/30">
-                                    <TimerIcon className="w-4 h-4 text-lime-400 animate-pulse" />
-                                    <span className="text-lime-400 font-mono font-black text-xl tracking-tighter">{timer?.text}</span>
-                                </div>
+
+                                {timeoutEnabled && (
+                                    <div className={`flex items-center justify-center gap-2 py-1.5 rounded-xl border ${timer?.isExpired ? 'bg-red-500/20 border-red-500/30' : 'bg-lime-500/20 border-lime-500/30'}`}>
+                                        <TimerIcon className={`w-4 h-4 ${timer?.isExpired ? 'text-red-400' : 'text-lime-400 animate-pulse'}`} />
+                                        <span className={`font-mono font-black text-xl tracking-tighter ${timer?.isExpired ? 'text-red-400' : 'text-lime-400'}`}>{timer?.text}</span>
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
-                    {playing.filter(p => !getRemainingTime(p.started_at)?.isExpired).length === 0 && (
+                    {playing.length === 0 && (
                         <p className="text-white/20 font-black uppercase tracking-widest text-sm italic">Aguardando jogadores...</p>
                     )}
                 </div>

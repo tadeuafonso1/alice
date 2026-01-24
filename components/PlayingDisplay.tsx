@@ -8,6 +8,7 @@ interface PlayingDisplayProps {
     onMoveBackToQueue: (user: string) => void;
     timeoutMinutes: number;
     timeoutSeconds: number;
+    timeoutEnabled: boolean;
 }
 
 export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
@@ -16,6 +17,7 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
     onMoveBackToQueue,
     timeoutMinutes,
     timeoutSeconds,
+    timeoutEnabled,
 }) => {
     const [copiedUser, setCopiedUser] = useState<string | null>(null);
     const [currentTime, setCurrentTime] = useState(Date.now());
@@ -78,7 +80,7 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
                                         </div>
                                     </div>
 
-                                    {timer && (
+                                    {timeoutEnabled && timer && (
                                         <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border font-mono font-bold text-xs ${timer.isExpired
                                             ? 'bg-red-500/10 text-red-500 border-red-500/20 animate-pulse'
                                             : 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20'

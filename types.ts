@@ -86,6 +86,7 @@ export interface AppSettings {
   autoSyncYoutube?: boolean;
   playingTimeoutMinutes?: number;
   playingTimeoutSeconds?: number;
+  playingTimeoutEnabled?: boolean;
 }
 
 export interface LivePixSettings {

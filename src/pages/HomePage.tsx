@@ -72,6 +72,7 @@ const defaultSettings: AppSettings = {
     autoSyncYoutube: true,
     playingTimeoutMinutes: 5,
     playingTimeoutSeconds: 0,
+    playingTimeoutEnabled: true,
 };
 
 export const HomePage: React.FC = () => {
@@ -366,10 +367,14 @@ export const HomePage: React.FC = () => {
 
                 const { data: playingData, error: playingError } = await supabase
                     .from('playing_users')
-                    .select('username, nickname');
+                    .select('username, nickname, started_at');
 
                 if (playingError) throw playingError;
-                setPlayingUsers(playingData.map(p => ({ user: p.username, nickname: p.nickname })));
+                setPlayingUsers(playingData.map(p => ({
+                    user: p.username,
+                    nickname: p.nickname,
+                    started_at: p.started_at
+                })));
 
                 // Restaurar timers dos usuários usando timer_start_time do banco
                 const initialTimers = queueData.reduce((acc, q) => {
@@ -1552,6 +1557,7 @@ export const HomePage: React.FC = () => {
                                         onMoveBackToQueue={handleMoveBackToQueue}
                                         timeoutMinutes={appSettings.playingTimeoutMinutes ?? 5}
                                         timeoutSeconds={appSettings.playingTimeoutSeconds ?? 0}
+                                        timeoutEnabled={appSettings.playingTimeoutEnabled ?? true}
                                     />
                                 </div>
 
@@ -1683,11 +1689,16 @@ export const HomePage: React.FC = () => {
                                 setTimeoutMinutes={setTimeoutMinutes}
                                 playingTimeoutMinutes={appSettings.playingTimeoutMinutes ?? 5}
                                 playingTimeoutSeconds={appSettings.playingTimeoutSeconds ?? 0}
-                                onSetPlayingTimeout={(mins, secs) => handleSettingsSave({
-                                    ...appSettings,
-                                    playingTimeoutMinutes: mins,
-                                    playingTimeoutSeconds: secs
-                                })}
+                                playingTimeoutEnabled={appSettings.playingTimeoutEnabled ?? true}
+                                onSetPlayingTimeout={(mins, secs, enabled) => {
+                                    handleSettingsSave({
+                                        ...appSettings,
+                                        playingTimeoutMinutes: mins,
+                                        playingTimeoutSeconds: secs,
+                                        playingTimeoutEnabled: enabled ?? appSettings.playingTimeoutEnabled
+                                    });
+                                }}
+                                userId={session?.user?.id}
                             />
                         )}
 
