@@ -82,6 +82,7 @@ export interface AppSettings {
   customCommands: CustomCommand[];
   loyalty: LoyaltySettings;
   youtubeChannelId?: string;
+  autoSyncYoutube?: boolean;
 }
 
 export interface LivePixSettings {

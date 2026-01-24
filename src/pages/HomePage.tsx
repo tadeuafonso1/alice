@@ -69,6 +69,7 @@ const defaultSettings: AppSettings = {
         requireOnline: true,
     },
     youtubeChannelId: '',
+    autoSyncYoutube: true,
 };
 
 export const HomePage: React.FC = () => {
@@ -1150,8 +1151,9 @@ export const HomePage: React.FC = () => {
         // 2. Não está já conectado (polling)
         // 3. Não está buscando chat no momento
         // 4. Está conectado com o Google (para evitar a busca cara de 100 unidades via ID do canal)
-        if (isLoadingSettings || isPolling || isFindingChat || !googleConnected) {
-            if (!googleConnected && !isLoadingSettings) {
+        // 5. A busca automática está ativada nas configurações
+        if (isLoadingSettings || isPolling || isFindingChat || !googleConnected || !appSettings.autoSyncYoutube) {
+            if (!googleConnected && !isLoadingSettings && appSettings.autoSyncYoutube) {
                 console.log('[Auto-Sync] Pulado: Usuário não autenticado com Google (economizando cota).');
             }
             return;
@@ -1179,7 +1181,7 @@ export const HomePage: React.FC = () => {
             clearTimeout(initialTimeout);
             clearInterval(autoSyncInterval);
         };
-    }, [isLoadingSettings, isPolling, isFindingChat, handleFindLiveChat, googleConnected, liveChatId]);
+    }, [isLoadingSettings, isPolling, isFindingChat, handleFindLiveChat, googleConnected, liveChatId, appSettings.autoSyncYoutube]);
 
     // Auto-conectar quando encontrar o liveChatId
     useEffect(() => {
@@ -1622,7 +1624,6 @@ export const HomePage: React.FC = () => {
                                     onSave={handleSettingsSave}
                                     onReset={() => handleSettingsSave(defaultSettings)}
                                     isInline={true}
-                                    initialTab="commands"
                                 />
                             </div>
                         )}
@@ -1635,6 +1636,8 @@ export const HomePage: React.FC = () => {
                                 isFindingChat={isFindingChat}
                                 isPolling={isPolling}
                                 stopPolling={stopPolling}
+                                autoSyncEnabled={appSettings.autoSyncYoutube ?? true}
+                                onToggleAutoSync={(enabled) => handleSettingsSave({ ...appSettings, autoSyncYoutube: enabled })}
                             />
                         )}
 
