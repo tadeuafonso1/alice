@@ -70,6 +70,7 @@ const defaultSettings: AppSettings = {
     },
     youtubeChannelId: '',
     autoSyncYoutube: true,
+    playingTimeoutMinutes: 5,
 };
 
 export const HomePage: React.FC = () => {
@@ -467,10 +468,13 @@ export const HomePage: React.FC = () => {
             sendBotMessage('nextInQueue', { user: queue[1].user });
         }
 
+        const nowIso = new Date().toISOString();
+        const userObjectWithTime = { ...userObject, started_at: nowIso };
+
         setQueue(prev => prev.filter(u => u.user !== userToMove));
         setPlayingUsers(prev => {
             if (prev.some(u => u.user === userToMove)) return prev;
-            return [...prev, userObject];
+            return [...prev, userObjectWithTime];
         });
 
         setUserTimers(prev => {
@@ -486,7 +490,11 @@ export const HomePage: React.FC = () => {
 
         try {
             await supabase.from('queue').delete().eq('username', userToMove);
-            await supabase.from('playing_users').insert({ username: userObject.user, nickname: userObject.nickname });
+            await supabase.from('playing_users').insert({
+                username: userObject.user,
+                nickname: userObject.nickname,
+                started_at: nowIso
+            });
         } catch (error) {
             console.error("Error moving user to playing:", error);
             addBotMessage(`Erro ao mover ${userToMove} para 'Jogando Agora'.`);
@@ -1541,6 +1549,7 @@ export const HomePage: React.FC = () => {
                                         playingUsers={playingUsers}
                                         onRemoveUser={handleRemovePlayingUser}
                                         onMoveBackToQueue={handleMoveBackToQueue}
+                                        timeoutMinutes={appSettings.playingTimeoutMinutes ?? 5}
                                     />
                                 </div>
 

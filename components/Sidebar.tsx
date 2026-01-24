@@ -18,9 +18,11 @@ import {
     ThumbsUpIcon,
     RocketIcon,
     UsersIcon,
-    AnchorIcon
+    AnchorIcon,
+    ExternalLinkIcon
 } from './Icons';
 import { LikeGoalWidget } from './LikeGoalWidget';
+import { useSession } from '../src/contexts/SessionContext';
 
 interface SidebarProps {
     activeTab: string;
@@ -41,6 +43,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     toggleTheme,
     onSignOut,
 }) => {
+    const { session } = useSession();
+    const userId = session?.user?.id;
+
     // Menu items configuration
     const menuItems = [
         { id: 'dashboard', label: 'Painel de controle', icon: LayoutIcon },
@@ -118,6 +123,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Bottom Section */}
             <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#0f111a] space-y-2">
+                {isOpen && userId && (
+                    <div className="mb-4 p-4 rounded-xl bg-lime-500/5 border border-lime-500/10">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-lime-500 mb-2">Overlay do OBS (Fila + Timer)</p>
+                        <div className="flex gap-2">
+                            <a
+                                href={`/obs/queue/${userId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 flex items-center justify-center gap-2 bg-lime-600 hover:bg-lime-500 text-white p-2 rounded-lg text-xs font-bold transition-all shadow-lg shadow-lime-900/20 active:scale-95"
+                            >
+                                <ExternalLinkIcon className="w-3.5 h-3.5" />
+                                Abrir
+                            </a>
+                            <button
+                                onClick={() => {
+                                    const url = `${window.location.origin}/obs/queue/${userId}`;
+                                    navigator.clipboard.writeText(url);
+                                    alert('Link do OBS copiado!');
+                                }}
+                                className="p-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-all active:scale-95"
+                                title="Copiar Link do OBS"
+                            >
+                                <CopyIcon className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {isOpen && (
                     <div className="mb-4 p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
                         <p className="text-[10px] font-black uppercase tracking-widest text-cyan-500 mb-2">Página de Comandos</p>

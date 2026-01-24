@@ -8,6 +8,7 @@ export interface QueueUser {
   user: string;
   nickname?: string;
   priority_amount?: number;
+  started_at?: string;
 }
 
 export interface CommandSetting {
@@ -83,6 +84,7 @@ export interface AppSettings {
   loyalty: LoyaltySettings;
   youtubeChannelId?: string;
   autoSyncYoutube?: boolean;
+  playingTimeoutMinutes?: number;
 }
 
 export interface LivePixSettings {
