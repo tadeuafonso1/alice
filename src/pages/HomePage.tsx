@@ -1142,37 +1142,44 @@ export const HomePage: React.FC = () => {
         initSession();
     }, [liveChatId, isFindingChat, appSettings.youtubeChannelId, isLoadingSettings]);
 
-    // Auto-sync: Verifica a cada 2 minutos se há live ativa e conecta automaticamente
+    // Auto-sync: Verifica a cada 15 minutos se há live ativa e conecta automaticamente
+    // Otimização: Só executa se estiver logado com o Google para economizar cota (API barata de 1 unidade)
     useEffect(() => {
         // Só ativa auto-sync se:
         // 1. Não está carregando configurações
         // 2. Não está já conectado (polling)
         // 3. Não está buscando chat no momento
-        if (isLoadingSettings || isPolling || isFindingChat) return;
+        // 4. Está conectado com o Google (para evitar a busca cara de 100 unidades via ID do canal)
+        if (isLoadingSettings || isPolling || isFindingChat || !googleConnected) {
+            if (!googleConnected && !isLoadingSettings) {
+                console.log('[Auto-Sync] Pulado: Usuário não autenticado com Google (economizando cota).');
+            }
+            return;
+        }
 
-        console.log('[Auto-Sync] Iniciando verificação automática de live...');
+        console.log('[Auto-Sync] Iniciando verificação automática de live (Modo Otimizado)...');
 
-        // Primeira verificação imediata (após 5 segundos do login)
+        // Primeira verificação imediata (após 10 segundos do login)
         const initialTimeout = setTimeout(() => {
-            if (!isPolling && !isFindingChat) {
-                console.log('[Auto-Sync] Primeira verificação de live...');
+            if (!isPolling && !isFindingChat && googleConnected) {
+                console.log('[Auto-Sync] Verificação inicial de live...');
                 handleFindLiveChat(undefined, true); // Silent
             }
-        }, 5000);
+        }, 10000);
 
-        // Verificações periódicas a cada 5 minutos
+        // Verificações periódicas a cada 15 minutos (900.000 ms)
         const autoSyncInterval = setInterval(() => {
-            if (!isPolling && !isFindingChat && !liveChatId) {
+            if (!isPolling && !isFindingChat && !liveChatId && googleConnected) {
                 console.log('[Auto-Sync] Verificando se há live ativa...');
                 handleFindLiveChat(undefined, true); // Silent
             }
-        }, 300000); // 5 minutos
+        }, 900000); // 15 minutos
 
         return () => {
             clearTimeout(initialTimeout);
             clearInterval(autoSyncInterval);
         };
-    }, [isLoadingSettings, isPolling, isFindingChat, handleFindLiveChat]);
+    }, [isLoadingSettings, isPolling, isFindingChat, handleFindLiveChat, googleConnected, liveChatId]);
 
     // Auto-conectar quando encontrar o liveChatId
     useEffect(() => {
