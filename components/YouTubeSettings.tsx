@@ -9,6 +9,7 @@ interface YouTubeSettingsProps {
     stopPolling: () => void;
     autoSyncEnabled: boolean;
     onToggleAutoSync: (enabled: boolean) => void;
+    onReconnect: () => void;
 }
 
 export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
@@ -20,6 +21,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
     stopPolling,
     autoSyncEnabled,
     onToggleAutoSync,
+    onReconnect,
 }) => {
     return (
         <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-800">
@@ -86,6 +88,15 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                                 )}
                             </p>
                         </div>
+                        <button
+                            onClick={onReconnect}
+                            className="p-2 text-gray-400 hover:text-cyan-500 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                            title="Reconectar conta Google (corrigir erro 401)"
+                        >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
                     </div>
 
                     {isPolling ? (

@@ -1408,6 +1408,27 @@ export const HomePage: React.FC = () => {
         return () => clearInterval(intervalId);
     }, [appSettings.loyalty, activeChatters, session?.user?.id, isPolling]);
 
+    const handleReconnectGoogle = async () => {
+        try {
+            console.log("Iniciando fluxo de reconexão Google...");
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    scopes: 'https://www.googleapis.com/auth/youtube.force-ssl',
+                    redirectTo: window.location.origin,
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'consent'
+                    }
+                }
+            });
+            if (error) throw error;
+        } catch (error: any) {
+            console.error("Erro ao reconectar Google:", error);
+            addBotMessage(`Erro ao iniciar reconexão: ${error.message}`);
+        }
+    };
+
 
 
     return (
@@ -1679,6 +1700,7 @@ export const HomePage: React.FC = () => {
                                 stopPolling={stopPolling}
                                 autoSyncEnabled={appSettings.autoSyncYoutube ?? true}
                                 onToggleAutoSync={(enabled) => handleSettingsSave({ ...appSettings, autoSyncYoutube: enabled })}
+                                onReconnect={handleReconnectGoogle}
                             />
                         )}
 
