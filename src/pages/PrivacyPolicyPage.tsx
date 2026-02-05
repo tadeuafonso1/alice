@@ -20,9 +20,9 @@ export const PrivacyPolicyPage: React.FC = () => {
                 </header>
 
                 <main className="pt-6 space-y-4 text-sm text-gray-600 dark:text-gray-300">
-                    <p className="font-semibold">Última atualização: 20/01/2026</p>
+                    <p className="font-semibold">Última atualização: 05/02/2026</p>
 
-                    <p>Agradecemos por usar o Gerenciador de Fila ("Aplicativo"). Esta Política de Privacidade explica como coletamos, usamos e protegemos suas informações.</p>
+                    <p>Agradecemos por usar o Gerenciador de Fila ("Aplicativo"). Esta Política de Privacidade explica como coletamos, usamos e protegemos suas informações quando você utiliza nossos serviços, em conformidade com as diretrizes do Google e YouTube.</p>
 
                     <h3 className="text-lg font-semibold pt-2">1. Informações que Coletamos</h3>
                     <p>Para fornecer nossos serviços, coletamos as seguintes informações:</p>
@@ -44,11 +44,19 @@ export const PrivacyPolicyPage: React.FC = () => {
                     <h3 className="text-lg font-semibold pt-2">3. Armazenamento e Segurança de Dados</h3>
                     <p>Os dados da fila e as configurações do aplicativo são armazenados de forma segura no banco de dados do Supabase associado a esta aplicação. Tomamos medidas razoáveis para proteger suas informações, mas nenhum sistema é 100% seguro.</p>
 
-                    <h3 className="text-lg font-semibold pt-2">4. Compartilhamento de Informações</h3>
+                    <h3 className="text-lg font-semibold pt-2">4. Compartilhamento e Serviços de Terceiros</h3>
+                    <p>O Aplicativo utiliza os Serviços de API do YouTube para fornecer seus recursos principais. Ao utilizar este aplicativo, você também concorda em estar vinculado aos Termos de Serviço do YouTube e à <strong><a href="http://www.google.com/policies/privacy" target="_blank" rel="noopener noreferrer" className="text-cyan-500 hover:underline">Política de Privacidade do Google</a></strong>.</p>
+
                     <p>Não compartilhamos suas informações pessoais com terceiros, exceto conforme necessário para fornecer o serviço (por exemplo, interações com as APIs do Google/YouTube e armazenamento no Supabase).</p>
 
-                    <h3 className="text-lg font-semibold pt-2">5. Seus Direitos</h3>
-                    <p>Você pode, a qualquer momento, resetar a fila e os dados dos jogadores através do painel de administrador, o que removerá as informações do nosso banco de dados.</p>
+                    <h3 className="text-lg font-semibold pt-2">5. Uso de Cookies e Tecnologias de Rastreamento</h3>
+                    <p>Nosso aplicativo e os serviços de terceiros que utilizamos (como Google Auth e YouTube API) podem colocar, acessar ou reconhecer cookies, web beacons ou tecnologias semelhantes em seu dispositivo ou navegador para coletar e armazenar informações sobre sua sessão e preferências.</p>
+
+                    <h3 className="text-lg font-semibold pt-2">6. Seus Direitos e Exclusão de Dados</h3>
+                    <p>Você pode, a qualquer momento, resetar a fila e os dados dos jogadores através do painel de administrador, o que removerá as informações do nosso banco de dados. Além disso, você pode revogar o acesso do Aplicativo aos seus dados através da página de configurações de segurança da sua conta Google.</p>
+
+                    <h3 className="text-lg font-semibold pt-2">7. Informações de Contato</h3>
+                    <p>Se você tiver dúvidas sobre esta Política de Privacidade ou sobre o tratamento de seus dados, entre em contato conosco através do e-mail: <span className="text-cyan-500 font-bold">canalobot@gmail.com</span></p>
 
                     <p className="italic mt-6 text-xs text-gray-500 dark:text-gray-400">
                         <strong>Aviso:</strong> Este é um modelo de política de privacidade. Recomenda-se que você revise este texto e, se necessário, consulte um profissional jurídico para garantir que ele atenda a todos os requisitos legais aplicáveis à sua situação.
