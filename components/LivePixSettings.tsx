@@ -88,21 +88,18 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
         if (!userId) return;
         setSimulating(true);
         try {
-            const response = await fetch(webhookUrl, {
+            const { data, error } = await supabase.functions.invoke(`livepix-webhook?user_id=${userId}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
+                body: {
                     data: {
                         author: { name: simData.donor },
                         amount: simData.amount,
                         message: simData.message
                     }
-                })
+                }
             });
 
-            if (!response.ok) throw new Error('Falha ao enviar simulação');
+            if (error) throw error;
 
             setMessage({ text: 'Simulação enviada com sucesso! Verifique o painel/OBS.', type: 'success' });
         } catch (err: any) {

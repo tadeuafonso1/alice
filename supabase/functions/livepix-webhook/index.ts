@@ -17,10 +17,14 @@ serve(async (req: Request) => {
 
     try {
         const url = new URL(req.url);
-        const userId = url.searchParams.get('user_id');
+        let userId = url.searchParams.get('user_id');
+
+        // Fallbacks for better robustness
+        const body = await req.json().catch(() => ({}));
+        if (!userId) userId = req.headers.get('x-user-id') || body.user_id;
 
         if (!userId) {
-            throw new Error("User ID is required in query params.");
+            throw new Error("User ID is required (searchParams, headers or body).");
         }
 
         const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -45,7 +49,6 @@ serve(async (req: Request) => {
             });
         }
 
-        const body = await req.json();
         console.log("[LivePix] Webhook received:", JSON.stringify(body));
 
         // Basic validation: LivePix sends a 'type' field
