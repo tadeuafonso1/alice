@@ -211,47 +211,65 @@ export const OBSAlertsPage: React.FC = () => {
 
                 <div
                     className={`
-                        flex flex-col items-center text-center gap-10 p-16 rounded-[4rem] relative z-50 transition-all duration-700
+                        flex flex-col items-center text-center gap-10 p-16 rounded-[4rem] relative z-50 transition-all duration-700 overflow-hidden
                         ${phase === 'explosion' ? 'scale-100 opacity-100 translate-y-0 animate-float' : 'scale-75 opacity-0 -translate-y-20'}
                     `}
                     style={{
-                        background: 'rgba(15, 23, 42, 0.75)',
-                        backdropFilter: 'blur(20px)',
-                        WebkitBackdropFilter: 'blur(20px)',
+                        background: 'rgba(15, 23, 42, 0.85)',
+                        backdropFilter: 'blur(30px)',
+                        WebkitBackdropFilter: 'blur(30px)',
                         border: '8px solid #06b6d4',
-                        boxShadow: '0 0 100px rgba(6, 182, 212, 0.5), inset 0 0 40px rgba(6, 182, 212, 0.2)',
+                        boxShadow: '0 0 120px rgba(6, 182, 212, 0.6), inset 0 0 60px rgba(6, 182, 212, 0.3)',
                     }}
                 >
-                    {/* NEON BORDER GLOW */}
-                    <div className="absolute inset-0 rounded-[4rem] border-[3px] border-cyan-400 opacity-30 animate-pulse pointer-events-none" />
+                    {/* TECH GRID BACKGROUND */}
+                    <div
+                        className="absolute inset-0 opacity-20 pointer-events-none"
+                        style={{
+                            backgroundImage: `linear-gradient(#06b6d4 1px, transparent 1px), linear-gradient(90deg, #06b6d4 1px, transparent 1px)`,
+                            backgroundSize: '40px 40px',
+                            animation: 'grid-move 4s linear infinite'
+                        }}
+                    />
+
+                    {/* FLOATING PARTICLES */}
+                    {[...Array(6)].map((_, i) => (
+                        <div
+                            key={i}
+                            className="absolute w-24 h-24 bg-cyan-500/10 blur-3xl rounded-full pointer-events-none"
+                            style={{
+                                top: `${Math.random() * 100}%`,
+                                left: `${Math.random() * 100}%`,
+                                animation: `particle-float ${4 + i}s infinite ease-in-out`
+                            }}
+                        />
+                    ))}
 
                     <div className="space-y-4 relative">
-                        <h1
-                            className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-white to-cyan-400 font-black text-6xl uppercase tracking-[0.2em] animate-shimmer"
-                            style={{
-                                filter: 'drop-shadow(0 0 15px rgba(34, 211, 238, 0.8))',
-                                lineHeight: 1.2
-                            }}
-                        >
-                            🚀 COMPROU FILA! 🚀
-                        </h1>
-                        <div className="h-1.5 w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-80" />
+                        <div className="flex items-center justify-center gap-4">
+                            <span className="text-6xl animate-bounce" style={{ animationDelay: '0s' }}>🚀</span>
+                            <h1
+                                className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-white to-cyan-400 font-black text-6xl uppercase tracking-[0.2em] animate-shimmer"
+                                style={{
+                                    filter: 'drop-shadow(0 0 20px rgba(34, 211, 238, 0.9))',
+                                    lineHeight: 1.2
+                                }}
+                            >
+                                COMPROU FILA!
+                            </h1>
+                            <span className="text-6xl animate-bounce" style={{ animationDelay: '0.2s' }}>🚀</span>
+                        </div>
+                        <div className="h-2 w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent shadow-[0_0_20px_rgba(6,182,212,0.8)]" />
                     </div>
 
-                    <div className="relative">
-                        <p className="text-white font-black text-7xl leading-tight drop-shadow-[0_10px_30px_rgba(0,0,0,1)] tracking-tight">
+                    <div className="relative py-4">
+                        <p className="text-white font-black text-7xl leading-tight drop-shadow-[0_10px_40px_rgba(0,0,0,1)] tracking-tight">
                             {alert?.message}
                         </p>
 
-                        {/* DECORATIVE ELEMENTS */}
-                        <div className="absolute -top-10 -left-10 w-20 h-20 border-t-4 border-l-4 border-cyan-500 rounded-tl-3xl opacity-50" />
-                        <div className="absolute -bottom-10 -right-10 w-20 h-20 border-b-4 border-r-4 border-cyan-500 rounded-br-3xl opacity-50" />
-                    </div>
-
-                    <div className="flex gap-4">
-                        {[...Array(3)].map((_, i) => (
-                            <div key={i} className="w-3 h-3 rounded-full bg-cyan-500 animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
-                        ))}
+                        {/* DECORATIVE TECH CORNERS */}
+                        <div className="absolute -top-12 -left-12 w-24 h-24 border-t-8 border-l-8 border-cyan-400 rounded-tl-3xl shadow-[0_0_20px_rgba(6,182,212,0.5)]" />
+                        <div className="absolute -bottom-12 -right-12 w-24 h-24 border-b-8 border-r-8 border-cyan-400 rounded-br-3xl shadow-[0_0_20px_rgba(6,182,212,0.5)]" />
                     </div>
                 </div>
             </div>
