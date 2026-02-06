@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { LivePixSettings as LivePixSettingsType } from '@/types';
-import { RefreshCwIcon, SaveIcon, ExternalLinkIcon, ShieldIcon, RocketIcon, CoinsIcon, BotIcon } from './Icons';
+import { RefreshCwIcon, SaveIcon, ExternalLinkIcon, ShieldIcon, RocketIcon, CoinsIcon, BotIcon, ChevronDownIcon, ChevronUpIcon } from './Icons';
 
 interface Props {
     userId?: string;
@@ -28,6 +28,27 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
         message: 'Acabei de furar a fila! @{user}'
     });
     const [simulating, setSimulating] = useState(false);
+    const [expandedSections, setExpandedSections] = useState({
+        api: true,
+        webhook: true,
+        obs: true,
+        automation: true,
+        simulation: true
+    });
+
+    const toggleSection = (section: keyof typeof expandedSections) => {
+        setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+    };
+
+    const toggleAll = (expand: boolean) => {
+        setExpandedSections({
+            api: expand,
+            webhook: expand,
+            obs: expand,
+            automation: expand,
+            simulation: expand
+        });
+    };
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -121,7 +142,7 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-8 animate-fadeIn">
             {/* Header Card */}
             <div className="bg-gradient-to-br from-[#1E293B] to-[#0F172A] rounded-2xl p-8 border border-gray-800 shadow-2xl relative overflow-hidden">
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -130,13 +151,28 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
                             <div className="w-8 h-8 rounded-lg bg-[#3b82f6] flex items-center justify-center p-1.5 shadow-lg shadow-blue-500/20">
                                 <RocketIcon className="w-full h-full text-white" />
                             </div>
-                            Integração LivePix
+                            Integração LivePix <span className="text-[8px] bg-red-500 px-1 rounded animate-pulse">V3</span>
                         </h3>
                         <p className="text-gray-400 mt-2 max-w-xl">
                             Automatize o seu bot com doações em tempo real. Ative o "Fura-Fila" e recompense seus apoiadores com pontos de lealdade.
                         </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col md:flex-row items-center gap-4">
+                        <div className="flex bg-gray-800 dark:bg-gray-700/50 rounded-xl p-1.5 border-2 border-gray-600 dark:border-gray-600 shadow-xl">
+                            <button
+                                onClick={() => toggleAll(true)}
+                                className="px-5 py-2.5 text-xs font-black text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-all shadow-lg active:scale-95"
+                            >
+                                EXPANDIR TUDO
+                            </button>
+                            <div className="w-[2px] bg-gray-600/50 my-1 mx-2"></div>
+                            <button
+                                onClick={() => toggleAll(false)}
+                                className="px-5 py-2.5 text-xs font-black text-white bg-gray-600 hover:bg-gray-500 rounded-lg transition-all shadow-lg active:scale-95"
+                            >
+                                RECOLHER TUDO
+                            </button>
+                        </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input
                                 type="checkbox"
@@ -157,275 +193,345 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Credentials Section */}
                 <div className="bg-white dark:bg-[#131b2e] rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-lg">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2 bg-blue-500/10 rounded-lg">
-                            <ShieldIcon className="w-5 h-5 text-blue-500" />
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-500/10 rounded-lg">
+                                <ShieldIcon className="w-5 h-5 text-blue-500" />
+                            </div>
+                            <h4 className="font-bold text-gray-900 dark:text-white uppercase text-sm tracking-widest">Configurações de API</h4>
                         </div>
-                        <h4 className="font-bold text-gray-900 dark:text-white uppercase text-sm tracking-widest">Configurações de API</h4>
+                        <button
+                            onClick={() => toggleSection('api')}
+                            className="p-1.5 bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-all border border-gray-200 dark:border-gray-700 shadow-sm"
+                        >
+                            {expandedSections.api ? (
+                                <ChevronUpIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                            ) : (
+                                <ChevronDownIcon className="w-5 h-5 text-blue-500" />
+                            )}
+                        </button>
                     </div>
 
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Client ID</label>
-                            <input
-                                type="text"
-                                value={settings.client_id}
-                                onChange={(e) => setSettings({ ...settings, client_id: e.target.value })}
-                                placeholder="Seu Client ID do LivePix"
-                                className="w-full bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
-                            />
+                    {expandedSections.api && (
+                        <div className="space-y-4 animate-fadeIn">
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Client ID</label>
+                                <input
+                                    type="text"
+                                    value={settings.client_id}
+                                    onChange={(e) => setSettings({ ...settings, client_id: e.target.value })}
+                                    placeholder="Seu Client ID do LivePix"
+                                    className="w-full bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Client Secret</label>
+                                <input
+                                    type="password"
+                                    value={settings.client_secret}
+                                    onChange={(e) => setSettings({ ...settings, client_secret: e.target.value })}
+                                    placeholder="Seu Client Secret do LivePix"
+                                    className="w-full bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
+                                />
+                            </div>
+                            <div className="pt-4 p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+                                <p className="text-xs text-amber-500 font-medium leading-relaxed">
+                                    💡 Você encontra essas credenciais nas configurações da sua conta LivePix em <strong>Aplicações</strong>.
+                                </p>
+                                <a href="https://dashboard.livepix.gg/settings/applications" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[10px] font-black text-amber-600 uppercase mt-2 hover:underline">
+                                    Abrir LivePix <ExternalLinkIcon className="w-3 h-3" />
+                                </a>
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Client Secret</label>
-                            <input
-                                type="password"
-                                value={settings.client_secret}
-                                onChange={(e) => setSettings({ ...settings, client_secret: e.target.value })}
-                                placeholder="Seu Client Secret do LivePix"
-                                className="w-full bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
-                            />
-                        </div>
-                        <div className="pt-4 p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-                            <p className="text-xs text-amber-500 font-medium leading-relaxed">
-                                💡 Você encontra essas credenciais nas configurações da sua conta LivePix em <strong>Aplicações</strong>.
-                            </p>
-                            <a href="https://dashboard.livepix.gg/settings/applications" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[10px] font-black text-amber-600 uppercase mt-2 hover:underline">
-                                Abrir LivePix <ExternalLinkIcon className="w-3 h-3" />
-                            </a>
-                        </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Webhook Section */}
                 <div className="bg-white dark:bg-[#131b2e] rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-lg">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2 bg-emerald-500/10 rounded-lg">
-                            <RefreshCwIcon className="w-5 h-5 text-emerald-500" />
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-emerald-500/10 rounded-lg">
+                                <RefreshCwIcon className="w-5 h-5 text-emerald-500" />
+                            </div>
+                            <h4 className="font-bold text-gray-900 dark:text-white uppercase text-sm tracking-widest">Webhook (Obrigatório)</h4>
                         </div>
-                        <h4 className="font-bold text-gray-900 dark:text-white uppercase text-sm tracking-widest">Webhook (Obrigatório)</h4>
+                        <button
+                            onClick={() => toggleSection('webhook')}
+                            className="p-1.5 bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-all border border-gray-200 dark:border-gray-700 shadow-sm"
+                        >
+                            {expandedSections.webhook ? (
+                                <ChevronUpIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                            ) : (
+                                <ChevronDownIcon className="w-5 h-5 text-emerald-500" />
+                            )}
+                        </button>
                     </div>
 
-                    <div className="space-y-4">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Copie esta URL e cole nas configurações de Webhook do LivePix para que o bot receba os avisos.
-                        </p>
-                        <div className="relative group">
-                            <input
-                                type="text"
-                                readOnly
-                                value={webhookUrl}
-                                className="w-full bg-gray-100 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-[10px] font-mono focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-emerald-400"
-                            />
-                            <button
-                                onClick={() => {
-                                    navigator.clipboard.writeText(webhookUrl);
-                                    alert('URL copiada!');
-                                }}
-                                className="absolute right-2 top-1.5 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-[10px] font-bold uppercase shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
-                            >
-                                Copiar
-                            </button>
-                        </div>
-                        <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-                            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                                Ative os eventos de <strong>Mensagem</strong> e <strong>Inscrição</strong> no seu Webhook.
+                    {expandedSections.webhook && (
+                        <div className="space-y-4 animate-fadeIn">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Copie esta URL e cole nas configurações de Webhook do LivePix para que o bot receba os avisos.
                             </p>
+                            <div className="relative group">
+                                <input
+                                    type="text"
+                                    readOnly
+                                    value={webhookUrl}
+                                    className="w-full bg-gray-100 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-[10px] font-mono focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-emerald-400"
+                                />
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(webhookUrl);
+                                        alert('URL copiada!');
+                                    }}
+                                    className="absolute right-2 top-1.5 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-[10px] font-bold uppercase shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+                                >
+                                    Copiar
+                                </button>
+                            </div>
+                            <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+                                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                                    Ative os eventos de <strong>Mensagem</strong> e <strong>Inscrição</strong> no seu Webhook.
+                                </p>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* OBS Alert Section */}
                 <div className="bg-white dark:bg-[#131b2e] rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-lg">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2 bg-blue-500/10 rounded-lg">
-                            <BotIcon className="w-5 h-5 text-blue-500" />
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-500/10 rounded-lg">
+                                <BotIcon className="w-5 h-5 text-blue-500" />
+                            </div>
+                            <h4 className="font-bold text-gray-900 dark:text-white uppercase text-sm tracking-widest">Link de Alerta (OBS)</h4>
                         </div>
-                        <h4 className="font-bold text-gray-900 dark:text-white uppercase text-sm tracking-widest">Link de Alerta (OBS)</h4>
+                        <button
+                            onClick={() => toggleSection('obs')}
+                            className="p-1.5 bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-all border border-gray-200 dark:border-gray-700 shadow-sm"
+                        >
+                            {expandedSections.obs ? (
+                                <ChevronUpIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                            ) : (
+                                <ChevronDownIcon className="w-5 h-5 text-blue-500" />
+                            )}
+                        </button>
                     </div>
 
-                    <div className="space-y-4">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Adicione este link como <strong>Fonte de Navegador</strong> no OBS para mostrar alertas na tela.
-                        </p>
-                        <div className="relative group">
-                            <input
-                                type="text"
-                                readOnly
-                                value={`${window.location.origin}/obs/alerts/${userId}`}
-                                className="w-full bg-gray-100 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-[10px] font-mono focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-blue-400"
-                            />
-                            <button
-                                onClick={() => {
-                                    navigator.clipboard.writeText(`${window.location.origin}/obs/alerts/${userId}`);
-                                    alert('Link de alerta copiado!');
-                                }}
-                                className="absolute right-2 top-1.5 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-[10px] font-bold uppercase shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
-                            >
-                                Copiar
-                            </button>
-                        </div>
-                        <div className="flex gap-2">
-                            <div className="flex-grow p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
-                                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium leading-tight">
-                                    Recomendado: 1920x1080 (Transparente). O alerta aparecerá no topo da tela.
-                                </p>
+                    {expandedSections.obs && (
+                        <div className="space-y-4 animate-fadeIn">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Adicione este link como <strong>Fonte de Navegador</strong> no OBS para mostrar alertas na tela.
+                            </p>
+                            <div className="relative group">
+                                <input
+                                    type="text"
+                                    readOnly
+                                    value={`${window.location.origin}/obs/alerts/${userId}`}
+                                    className="w-full bg-gray-100 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-[10px] font-mono focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-blue-400"
+                                />
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(`${window.location.origin}/obs/alerts/${userId}`);
+                                        alert('Link de alerta copiado!');
+                                    }}
+                                    className="absolute right-2 top-1.5 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-[10px] font-bold uppercase shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+                                >
+                                    Copiar
+                                </button>
                             </div>
-                            <button
-                                onClick={async () => {
-                                    if (!userId) return;
-                                    try {
-                                        const { error } = await supabase.from('bot_notifications').insert({
-                                            user_id: userId,
-                                            message: '🚀 TESTE: Alguém acabou de furar a fila! 🚀',
-                                            type: 'livepix_alert',
-                                            created_at: new Date().toISOString()
-                                        });
-                                        if (error) throw error;
-                                        alert('Alerta de teste enviado! Verifique seu OBS.');
-                                    } catch (err: any) {
-                                        alert('Erro ao testar: ' + err.message);
-                                    }
-                                }}
-                                className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-500/20 transition-all active:scale-95"
-                            >
-                                Testar Alerta
-                            </button>
+                            <div className="flex gap-2">
+                                <div className="flex-grow p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+                                    <p className="text-xs text-blue-600 dark:text-blue-400 font-medium leading-tight">
+                                        Recomendado: 1920x1080 (Transparente). O alerta aparecerá no topo da tela.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={async () => {
+                                        if (!userId) return;
+                                        try {
+                                            const { error } = await supabase.from('bot_notifications').insert({
+                                                user_id: userId,
+                                                message: '🚀 TESTE: Alguém acabou de furar a fila! 🚀',
+                                                type: 'livepix_alert',
+                                                created_at: new Date().toISOString()
+                                            });
+                                            if (error) throw error;
+                                            alert('Alerta de teste enviado! Verifique seu OBS.');
+                                        } catch (err: any) {
+                                            alert('Erro ao testar: ' + err.message);
+                                        }
+                                    }}
+                                    className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-500/20 transition-all active:scale-95 disabled:opacity-50"
+                                >
+                                    Testar Alerta
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
             {/* Automation Section */}
             <div className="bg-white dark:bg-[#131b2e] rounded-2xl p-8 border border-gray-200 dark:border-gray-800 shadow-lg">
-                <div className="flex items-center gap-3 mb-8">
-                    <div className="p-2 bg-cyan-500/10 rounded-lg">
-                        <RocketIcon className="w-6 h-6 text-cyan-500" />
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-cyan-500/10 rounded-lg">
+                            <RocketIcon className="w-6 h-6 text-cyan-500" />
+                        </div>
+                        <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-[0.2em]">Automações do Bot</h4>
                     </div>
-                    <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-[0.2em]">Automações do Bot</h4>
+                    <button
+                        onClick={() => toggleSection('automation')}
+                        className="p-1.5 bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-all border border-gray-200 dark:border-gray-700 shadow-sm"
+                    >
+                        {expandedSections.automation ? (
+                            <ChevronUpIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                        ) : (
+                            <ChevronDownIcon className="w-5 h-5 text-cyan-500" />
+                        )}
+                    </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                    {/* Fura Fila */}
-                    <div className="space-y-6">
-                        <div className="flex items-center justify-between">
+                {expandedSections.automation && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 animate-fadeIn">
+                        {/* Fura Fila */}
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <RocketIcon className="w-5 h-5 text-cyan-500" />
+                                    <span className="font-bold text-gray-900 dark:text-white uppercase text-sm">Fura-Fila Automático</span>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
+                                        checked={settings.skip_queue_enabled}
+                                        onChange={(e) => setSettings({ ...settings, skip_queue_enabled: e.target.checked })}
+                                    />
+                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+                                </label>
+                            </div>
+
+                            <div className={`space-y-4 transition-opacity duration-300 ${settings.skip_queue_enabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Valor Mínimo (R$)</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        step="0.5"
+                                        value={settings.skip_queue_price}
+                                        onChange={(e) => setSettings({ ...settings, skip_queue_price: Number(e.target.value) })}
+                                        className="w-full bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cyan-500 outline-none dark:text-white font-bold"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Mensagem de Alerta (Chamativo)</label>
+                                    <textarea
+                                        value={settings.skip_queue_message}
+                                        onChange={(e) => setSettings({ ...settings, skip_queue_message: e.target.value })}
+                                        rows={3}
+                                        className="w-full bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cyan-500 outline-none dark:text-white resize-none"
+                                    />
+                                    <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold tracking-wider">Use {'{user}'} para mencionar o doador.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Loyalty Points */}
+                        <div className="space-y-6">
                             <div className="flex items-center gap-2">
-                                <RocketIcon className="w-5 h-5 text-cyan-500" />
-                                <span className="font-bold text-gray-900 dark:text-white uppercase text-sm">Fura-Fila Automático</span>
+                                <CoinsIcon className="w-5 h-5 text-amber-500" />
+                                <span className="font-bold text-gray-900 dark:text-white uppercase text-sm">Lealdade por Pix</span>
                             </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    className="sr-only peer"
-                                    checked={settings.skip_queue_enabled}
-                                    onChange={(e) => setSettings({ ...settings, skip_queue_enabled: e.target.checked })}
-                                />
-                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
-                            </label>
-                        </div>
-
-                        <div className={`space-y-4 transition-opacity duration-300 ${settings.skip_queue_enabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
-                            <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Valor Mínimo (R$)</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    step="0.5"
-                                    value={settings.skip_queue_price}
-                                    onChange={(e) => setSettings({ ...settings, skip_queue_price: Number(e.target.value) })}
-                                    className="w-full bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cyan-500 outline-none dark:text-white font-bold"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Mensagem de Alerta (Chamativo)</label>
-                                <textarea
-                                    value={settings.skip_queue_message}
-                                    onChange={(e) => setSettings({ ...settings, skip_queue_message: e.target.value })}
-                                    rows={3}
-                                    className="w-full bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cyan-500 outline-none dark:text-white resize-none"
-                                />
-                                <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold tracking-wider">Use {'{user}'} para mencionar o doador.</p>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pontos por cada R$ 1,00</label>
+                                    <input
+                                        type="number"
+                                        value={settings.points_per_real}
+                                        onChange={(e) => setSettings({ ...settings, points_per_real: Number(e.target.value) })}
+                                        className="w-full bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 outline-none dark:text-white font-bold"
+                                    />
+                                </div>
+                                <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+                                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                                        💰 Exemplo: Se definido 100, um Pix de R$ 10,00 concederá 1.000 pontos automaticamente.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    {/* Loyalty Points */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-2">
-                            <CoinsIcon className="w-5 h-5 text-amber-500" />
-                            <span className="font-bold text-gray-900 dark:text-white uppercase text-sm">Lealdade por Pix</span>
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pontos por cada R$ 1,00</label>
-                                <input
-                                    type="number"
-                                    value={settings.points_per_real}
-                                    onChange={(e) => setSettings({ ...settings, points_per_real: Number(e.target.value) })}
-                                    className="w-full bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 outline-none dark:text-white font-bold"
-                                />
-                            </div>
-                            <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-                                <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                                    💰 Exemplo: Se definido 100, um Pix de R$ 10,00 concederá 1.000 pontos automaticamente.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                )}
             </div>
 
             {/* Simulation Card */}
             <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-2xl p-8 border border-indigo-500/20 shadow-xl">
-                <div className="flex items-center gap-3 mb-8">
-                    <div className="p-2 bg-indigo-500/20 rounded-lg">
-                        <RefreshCwIcon className={`w-6 h-6 text-indigo-500 ${simulating ? 'animate-spin' : ''}`} />
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-500/20 rounded-lg">
+                            <RefreshCwIcon className={`w-6 h-6 text-indigo-500 ${simulating ? 'animate-spin' : ''}`} />
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-[0.2em]">Modo de Simulação</h4>
+                            <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest mt-1">Teste pontos, alertas e fura-fila sem gastar nada</p>
+                        </div>
                     </div>
-                    <div>
-                        <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-[0.2em]">Modo de Simulação</h4>
-                        <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest mt-1">Teste pontos, alertas e fura-fila sem gastar nada</p>
-                    </div>
+                    <button
+                        onClick={() => toggleSection('simulation')}
+                        className="p-1.5 bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-all border border-gray-200 dark:border-gray-700 shadow-sm"
+                    >
+                        {expandedSections.simulation ? (
+                            <ChevronUpIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                        ) : (
+                            <ChevronDownIcon className="w-5 h-5 text-indigo-500" />
+                        )}
+                    </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Doador (Exemplo)</label>
-                        <input
-                            type="text"
-                            value={simData.donor}
-                            onChange={(e) => setSimData({ ...simData, donor: e.target.value })}
-                            className="w-full bg-white dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
-                        />
+                {expandedSections.simulation && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fadeIn">
+                        <div>
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Doador (Exemplo)</label>
+                            <input
+                                type="text"
+                                value={simData.donor}
+                                onChange={(e) => setSimData({ ...simData, donor: e.target.value })}
+                                className="w-full bg-white dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Valor (R$)</label>
+                            <input
+                                type="number"
+                                value={simData.amount}
+                                onChange={(e) => setSimData({ ...simData, amount: Number(e.target.value) })}
+                                className="w-full bg-white dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white font-bold"
+                            />
+                        </div>
+                        <div className="flex items-end">
+                            <button
+                                onClick={handleSimulate}
+                                disabled={simulating || !settings.enabled}
+                                className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl py-3 text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 active:scale-95 disabled:opacity-50"
+                            >
+                                {simulating ? <RefreshCwIcon className="w-4 h-4 animate-spin" /> : <RocketIcon className="w-4 h-4" />}
+                                Simular Pix
+                            </button>
+                        </div>
+                        <div className="md:col-span-3">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Mensagem do Pix</label>
+                            <input
+                                type="text"
+                                value={simData.message}
+                                onChange={(e) => setSimData({ ...simData, message: e.target.value })}
+                                placeholder="Dica: Use @username para testar pontos em outro usuário"
+                                className="w-full bg-white dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                            />
+                        </div>
                     </div>
-                    <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Valor (R$)</label>
-                        <input
-                            type="number"
-                            value={simData.amount}
-                            onChange={(e) => setSimData({ ...simData, amount: Number(e.target.value) })}
-                            className="w-full bg-white dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white font-bold"
-                        />
-                    </div>
-                    <div className="flex items-end">
-                        <button
-                            onClick={handleSimulate}
-                            disabled={simulating || !settings.enabled}
-                            className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl py-3 text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 active:scale-95 disabled:opacity-50"
-                        >
-                            {simulating ? <RefreshCwIcon className="w-4 h-4 animate-spin" /> : <RocketIcon className="w-4 h-4" />}
-                            Simular Pix
-                        </button>
-                    </div>
-                    <div className="md:col-span-3">
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Mensagem do Pix</label>
-                        <input
-                            type="text"
-                            value={simData.message}
-                            onChange={(e) => setSimData({ ...simData, message: e.target.value })}
-                            placeholder="Dica: Use @username para testar pontos em outro usuário"
-                            className="w-full bg-white dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
-                        />
-                    </div>
-                </div>
+                )}
             </div>
 
             {/* Action Bar - Incorporated into layout */}

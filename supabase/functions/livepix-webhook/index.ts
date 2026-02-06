@@ -58,13 +58,11 @@ serve(async (req: Request) => {
         const amount = body.data?.amount || 0;
         const message = body.data?.message || "";
 
+        console.log(`[LivePix] Processing: ${donorName} - R$ ${amount} (${userId})`);
+
         // 1. Grant Loyalty Points
         if (settings.points_per_real > 0 && amount > 0) {
             const pointsToAdd = Math.floor(amount * settings.points_per_real);
-
-            // Search for user in the message or use donor name
-            // Simplified: we try to find a chatter with this name in the queue or chatters table
-            // In a real bot, we'd search for @username in the message
             let targetUser = donorName;
             const mentionMatch = message.match(/@(\w+)/);
             if (mentionMatch) {
@@ -73,7 +71,6 @@ serve(async (req: Request) => {
 
             console.log(`[LivePix] Adding ${pointsToAdd} points to ${targetUser}`);
 
-            // Here you would call an RPC or update the loyalty_points table
             const { error: pointsError } = await supabase.rpc('add_loyalty_points', {
                 p_user_id: userId,
                 p_username: targetUser,
@@ -85,9 +82,8 @@ serve(async (req: Request) => {
 
         // 2. Fura-Fila (Skip Queue)
         if (settings.skip_queue_enabled && amount >= settings.skip_queue_price) {
-            console.log(`[LivePix] Skipping queue for ${donorName}`);
+            console.log(`[LivePix] Skipping queue check for ${donorName}`);
 
-            // Find user in queue
             const { data: queueUser } = await supabase
                 .from('queue')
                 .select('*')
@@ -101,21 +97,14 @@ serve(async (req: Request) => {
 
                 await supabase
                     .from('queue')
-                    .update({ priority_amount: newPriority })
+                    .update({ priority_amount: newPriority, is_priority: true })
                     .eq('id', queueUser.id);
 
                 console.log(`[LivePix] User ${donorName} priority increased to ${newPriority}.`);
+            } else {
+                console.log(`[LivePix] User ${donorName} not found in queue.`);
             }
         }
-
-        // 3. Flashy Alert in Chat
-        // We can't send to chat directly from here easily without a token
-        // But we can insert into a 'pending_announcements' table or similar
-        // Or simply rely on the frontend polling for updates.
-        // For now, let's assume the user wants a chat message.
-        // We'll use the existing youtube-chat-send logic if possible, 
-        // but that requires an active token.
-        // A better way is to have a 'bot_notifications' table that the frontend reads.
 
         const alertMsg = settings.skip_queue_message.replace('{user}', donorName);
         await supabase.from('bot_notifications').insert({
@@ -125,16 +114,16 @@ serve(async (req: Request) => {
             created_at: new Date().toISOString()
         });
 
-        return new Response(JSON.stringify({ success: true }), {
+        return new Response(JSON.stringify({ success: true, message: "Webhook processed" }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
         });
 
     } catch (error: any) {
-        console.error("[LivePix] Webhook error:", error.message);
+        console.error("[LivePix] CRITICAL ERROR:", error.message);
         return new Response(JSON.stringify({ error: error.message }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200, // Still return 200 so LivePix doesn't retry infinitely on user errors
+            status: 200,
         });
     }
 });
