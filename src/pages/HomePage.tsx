@@ -1475,8 +1475,8 @@ export const HomePage: React.FC = () => {
                                     <>
                                         <div className="flex items-center gap-3">
                                             <div className="relative">
-                                                <div className="p-2 rounded-xl bg-red-500/10 shadow-[0_0_15px_rgba(255,0,0,0.15)] ring-1 ring-red-500/20">
-                                                    <YoutubeIcon className="w-6 h-6 drop-shadow-[0_0_5px_rgba(255,0,0,0.3)]" />
+                                                <div className="p-2 rounded-xl bg-red-500/5 ring-1 ring-red-500/10">
+                                                    <YoutubeIcon className="w-6 h-6" />
                                                 </div>
                                                 {isPolling && (
                                                     <span className="absolute -top-1 -right-1 flex h-3 w-3">
