@@ -48,6 +48,80 @@ body {
     animation: fadeIn 0.3s ease-out forwards;
 }
 
+/* Premium Alert Animations */
+@keyframes neon-flow {
+    0% {
+        border-color: #06b6d4;
+        box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+    }
+
+    50% {
+        border-color: #22d3ee;
+        box-shadow: 0 0 50px rgba(34, 211, 238, 0.8);
+    }
+
+    100% {
+        border-color: #06b6d4;
+        box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+    }
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+@keyframes text-shimmer {
+    0% {
+        background-position: -200% center;
+    }
+
+    100% {
+        background-position: 200% center;
+    }
+}
+
+@keyframes flash {
+    0% {
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+.animate-neon {
+    animation: neon-flow 3s infinite ease-in-out;
+}
+
+.animate-float {
+    animation: float 4s infinite ease-in-out;
+}
+
+.animate-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    animation: text-shimmer 3s infinite linear;
+}
+
+.animate-flash {
+    animation: flash 0.8s ease-out forwards;
+}
+
 .bg-transparent-important {
     background-color: transparent !important;
     background: transparent !important;

@@ -192,40 +192,67 @@ export const OBSAlertsPage: React.FC = () => {
                 />
             )}
 
-            <div className="relative w-[1000px] h-[1000px] flex items-center justify-center">
+            {/* EXPLOSION FLASH EFFECT */}
+            {phase === 'explosion' && (
+                <div className="fixed inset-0 bg-white z-[100] animate-flash pointer-events-none" />
+            )}
+
+            <div className="relative w-full h-full flex items-center justify-center">
                 {(phase === 'takeoff' || phase === 'flight') && (
                     <div className={`
                         absolute bottom-0 w-80 h-auto transition-all duration-[1200ms] ease-in
                         ${phase === 'takeoff' ? 'animate-shake' : ''}
                         ${phase === 'flight' ? '-translate-y-[1500px] opacity-100 scale-125' : ''}
                     `}>
-                        <img src={rocketImageUrl} className="w-full h-auto drop-shadow-[0_0_50px_rgba(255,100,0,0.8)]" alt="rocket" />
-                        <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-12 h-60 bg-gradient-to-t from-orange-600 via-orange-400 to-yellow-200 blur-2xl animate-pulse rounded-full opacity-90"></div>
+                        <img src={rocketImageUrl} className="w-full h-auto drop-shadow-[0_0_80px_rgba(255,100,0,0.9)]" alt="rocket" />
+                        <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-16 h-80 bg-gradient-to-t from-orange-600 via-orange-400 to-yellow-200 blur-3xl animate-pulse rounded-full opacity-90"></div>
                     </div>
                 )}
 
-                <div style={{
-                    backgroundColor: '#0f172a',
-                    backgroundImage: 'linear-gradient(135deg, #1e293b 0%, #020617 100%)',
-                    border: '6px solid #06b6d4',
-                    borderRadius: '3rem',
-                    padding: '4rem 6rem',
-                    boxShadow: '0 0 120px rgba(6, 182, 212, 0.7)',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '2.5rem',
-                    transition: 'all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                    transform: phase === 'explosion' ? 'scale(1) translateY(0)' : 'scale(0.5) translateY(-60px)',
-                    opacity: phase === 'explosion' ? 1 : 0,
-                    maxWidth: '900px', position: 'relative', zIndex: 50
-                }}>
-                    <div className="space-y-6">
-                        <h1 style={{ color: '#22d3ee', fontWeight: 900, fontSize: '3.5rem', textTransform: 'uppercase', letterSpacing: '0.4em', textShadow: '0 0 20px rgba(34, 211, 238, 0.7)' }}>
+                <div
+                    className={`
+                        flex flex-col items-center text-center gap-10 p-16 rounded-[4rem] relative z-50 transition-all duration-700
+                        ${phase === 'explosion' ? 'scale-100 opacity-100 translate-y-0 animate-float' : 'scale-75 opacity-0 -translate-y-20'}
+                    `}
+                    style={{
+                        background: 'rgba(15, 23, 42, 0.75)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        border: '8px solid #06b6d4',
+                        boxShadow: '0 0 100px rgba(6, 182, 212, 0.5), inset 0 0 40px rgba(6, 182, 212, 0.2)',
+                    }}
+                >
+                    {/* NEON BORDER GLOW */}
+                    <div className="absolute inset-0 rounded-[4rem] border-[3px] border-cyan-400 opacity-30 animate-pulse pointer-events-none" />
+
+                    <div className="space-y-4 relative">
+                        <h1
+                            className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-white to-cyan-400 font-black text-6xl uppercase tracking-[0.2em] animate-shimmer"
+                            style={{
+                                filter: 'drop-shadow(0 0 15px rgba(34, 211, 238, 0.8))',
+                                lineHeight: 1.2
+                            }}
+                        >
                             🚀 COMPROU FILA! 🚀
                         </h1>
-                        <div style={{ height: '0.6rem', width: '100%', background: 'linear-gradient(to right, transparent, #06b6d4, transparent)', opacity: 0.6 }}></div>
+                        <div className="h-1.5 w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-80" />
                     </div>
-                    <p style={{ color: 'white', fontWeight: 900, fontSize: '4.5rem', lineHeight: 1.1, textShadow: '0 4px 25px rgba(0,0,0,1)' }}>
-                        {alert?.message}
-                    </p>
+
+                    <div className="relative">
+                        <p className="text-white font-black text-7xl leading-tight drop-shadow-[0_10px_30px_rgba(0,0,0,1)] tracking-tight">
+                            {alert?.message}
+                        </p>
+
+                        {/* DECORATIVE ELEMENTS */}
+                        <div className="absolute -top-10 -left-10 w-20 h-20 border-t-4 border-l-4 border-cyan-500 rounded-tl-3xl opacity-50" />
+                        <div className="absolute -bottom-10 -right-10 w-20 h-20 border-b-4 border-r-4 border-cyan-500 rounded-br-3xl opacity-50" />
+                    </div>
+
+                    <div className="flex gap-4">
+                        {[...Array(3)].map((_, i) => (
+                            <div key={i} className="w-3 h-3 rounded-full bg-cyan-500 animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
+                        ))}
+                    </div>
                 </div>
             </div>
 
