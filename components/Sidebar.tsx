@@ -54,7 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'settings', label: 'Configurações', icon: SettingsIcon },
         {
             id: 'youtube', label: 'YouTube Chat', icon: (props: any) => (
-                <YoutubeIcon {...props} />
+                <YoutubeIcon {...props} className={props.className + " drop-shadow-[0_0_8px_rgba(255,0,0,0.4)]"} />
             )
         },
         { id: 'timer', label: 'Timer Inatividade', icon: TimerIcon },

@@ -1475,23 +1475,22 @@ export const HomePage: React.FC = () => {
                                     <>
                                         <div className="flex items-center gap-3">
                                             <div className="relative">
-                                                <div className={`p-1.5 rounded-lg ${isPolling ? 'bg-emerald-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
-                                                    <YoutubeIcon className="w-5 h-5" />
+                                                <div className="p-2 rounded-xl bg-red-500/10 shadow-[0_0_15px_rgba(255,0,0,0.15)] ring-1 ring-red-500/20">
+                                                    <YoutubeIcon className="w-6 h-6 drop-shadow-[0_0_5px_rgba(255,0,0,0.3)]" />
                                                 </div>
                                                 {isPolling && (
-                                                    <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
                                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 ring-2 ring-white dark:ring-[#0f111a]"></span>
+                                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 ring-2 ring-white dark:ring-[#0f111a]"></span>
                                                     </span>
                                                 )}
                                             </div>
-
-                                            <div className="flex flex-col">
-                                                <span className={`text-[10px] font-black uppercase tracking-wider ${isPolling ? 'text-emerald-500' : 'text-gray-500 dark:text-gray-400'}`}>
-                                                    {isPolling ? 'Ao Vivo' : 'YouTube'}
+                                            <div className="flex flex-col -gap-0.5">
+                                                <span className="text-xs font-black text-gray-900 dark:text-white tracking-tight">
+                                                    YouTube
                                                 </span>
-                                                <span className="text-[10px] font-medium text-gray-400">
-                                                    {isPolling ? 'Sincronizado' : 'Conectado'}
+                                                <span className={`text-[10px] font-bold ${isPolling ? 'text-emerald-500' : 'text-gray-400 dark:text-gray-500'}`}>
+                                                    {isPolling ? 'Ao Vivo' : 'Conectado'}
                                                 </span>
                                             </div>
                                         </div>

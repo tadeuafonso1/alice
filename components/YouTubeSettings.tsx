@@ -27,12 +27,14 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
     return (
         <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-red-500/10 rounded-xl">
-                    <YoutubeIcon className="w-8 h-8" />
+                <div className="p-3 bg-red-500/10 rounded-2xl shadow-[0_0_20px_rgba(255,0,0,0.15)] ring-1 ring-red-500/20">
+                    <YoutubeIcon className="w-10 h-10 drop-shadow-[0_0_8px_rgba(255,0,0,0.4)]" />
                 </div>
                 <div>
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">YouTube Chat</h3>
-                    <p className="text-gray-500 dark:text-[#8bcbd5]">Gerencie a conexão com sua transmissão ao vivo.</p>
+                    <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter flex items-center gap-2">
+                        YouTube <span className="font-medium text-gray-500 dark:text-gray-400 text-xl tracking-tight">Chat</span>
+                    </h3>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">Gerencie a conexão com sua transmissão ao vivo.</p>
                 </div>
             </div>
 
