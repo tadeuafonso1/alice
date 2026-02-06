@@ -431,8 +431,8 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
                 </div>
             </div>
 
-            {/* Action Bar */}
-            <div className="flex items-center justify-between bg-white/80 dark:bg-[#131b2e]/80 backdrop-blur-md p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl sticky bottom-0 z-30 mb-2">
+            {/* Action Bar - Incorporated into layout */}
+            <div className="flex items-center justify-between bg-white dark:bg-[#131b2e] p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-lg mt-8">
                 <div className="flex-grow">
                     {message && (
                         <p className={`text-sm font-bold uppercase tracking-wider ${message.type === 'success' ? 'text-emerald-500' : 'text-red-500'} animate-in fade-in duration-300`}>
