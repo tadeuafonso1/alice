@@ -25,25 +25,20 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
     onReconnect,
 }) => {
     return (
-        <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-800">
-            <div className="flex items-center gap-4 mb-8">
-                <div className="p-4 bg-[#1e2230] dark:bg-[#151921] rounded-[2.5rem] shadow-xl ring-1 ring-white/5">
-                    <YoutubeIcon className="w-12 h-12" />
-                </div>
-                <div>
-                    <h3 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter flex items-center gap-2">
-                        YouTube <span className="font-normal text-gray-500 dark:text-gray-400 text-2xl tracking-normal">Chat</span>
-                    </h3>
-                    <p className="text-cyan-500/80 dark:text-cyan-400/60 text-sm font-medium mt-1">Gerencie a conexão com sua transmissão ao vivo.</p>
-                </div>
+        <div className="bg-[#0f1421] dark:bg-[#0f1421] rounded-[2.5rem] shadow-2xl p-8 border border-white/5">
+            {/* Header with YouTube Logo and Wordmark */}
+            <div className="flex items-center gap-2 mb-10">
+                <YoutubeIcon className="w-10 h-10" />
+                <span className="text-3xl font-black text-white tracking-tighter">YouTube</span>
             </div>
 
-            <div className="space-y-6 max-w-2xl">
-                <div className="space-y-6">
-                    <div className="flex items-center gap-4 bg-gray-50 dark:bg-[#0f111a] p-6 rounded-2xl border border-gray-200 dark:border-gray-700">
-                        <div className="relative">
-                            <div className={`w-16 h-16 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center overflow-hidden border-4 ${isPolling ? 'border-emerald-500 shadow-emerald-500/20' : 'border-cyan-500'} shadow-md transition-all`}>
-                                <svg className="w-8 h-8" viewBox="0 0 24 24">
+            <div className="space-y-6 max-w-full">
+                {/* Connection Account Card */}
+                <div className="flex items-center gap-4 bg-[#0a0d14] p-6 rounded-[2rem] border border-white/5 shadow-inner">
+                    <div className="relative">
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center bg-[#0a0d14] ring-2 ring-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                            <div className="w-13 h-13 rounded-full overflow-hidden flex items-center justify-center p-3 ring-1 ring-white/10">
+                                <svg className="w-full h-full" viewBox="0 0 24 24">
                                     <path
                                         fill="#4285F4"
                                         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -62,87 +57,61 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                                     />
                                 </svg>
                             </div>
-                            {isPolling && (
-                                <span className="absolute -bottom-1 -right-1 flex h-5 w-5">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-5 w-5 bg-emerald-500 ring-4 ring-gray-50 dark:ring-[#0f111a]"></span>
-                                </span>
-                            )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-gray-900 dark:text-white text-lg font-bold truncate">
-                                {googleEmail || 'Conta Google'}
-                            </p>
-                            <p
-                                className={`text-sm font-medium ${isPolling
-                                    ? 'text-emerald-500'
-                                    : 'text-gray-500'
-                                    } flex items-center gap-2 mt-1`}
-                            >
-                                {isPolling ? (
-                                    <>
-                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                        Chat Ativo e Sincronizado
-                                    </>
-                                ) : (
-                                    'Conectado e Pronto'
-                                )}
-                            </p>
-                        </div>
-                        <button
-                            onClick={onReconnect}
-                            className="p-2 text-gray-400 hover:text-cyan-500 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-                            title="Reconectar conta Google (corrigir erro 401)"
-                        >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-white text-xl font-bold tracking-tight truncate">
+                            {googleEmail || 'Conta não conectada'}
+                        </p>
+                        <p className="text-gray-500 text-sm font-medium mt-0.5">
+                            {isPolling ? 'Sincronizando' : 'Conectado e Pronto'}
+                        </p>
+                    </div>
+                    <button
+                        onClick={onReconnect}
+                        className="p-2.5 text-gray-500 hover:text-white transition-all bg-white/5 rounded-xl hover:bg-white/10"
+                        title="Reconectar"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+                </div>
+
+                {/* Main Action Button */}
+                <button
+                    onClick={isPolling ? stopPolling : onFindLiveChat}
+                    disabled={isFindingChat}
+                    className={`w-full py-5 rounded-[2rem] transition-all font-black uppercase tracking-widest text-base shadow-lg active:scale-95 flex items-center justify-center gap-3 ${isPolling
+                        ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-500/20'
+                        : 'bg-[#10b981] hover:bg-[#059669] text-white shadow-emerald-500/20'
+                        }`}
+                >
+                    {isFindingChat ? 'Buscando...' : isPolling ? 'PARAR SINCRONIZAÇÃO' : 'CONECTAR AO CHAT AO VIVO'}
+                </button>
+
+                {/* Auto Sync Toggle Card */}
+                <div className="flex items-center justify-between p-5 bg-[#0a0d14] rounded-[1.5rem] border border-white/5 shadow-inner">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-[#1e2230] rounded-xl ring-1 ring-white/5">
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
-                        </button>
-                    </div>
-
-                    {isPolling ? (
-                        <button
-                            onClick={stopPolling}
-                            className="w-full py-4 bg-emerald-500/10 text-emerald-500 border-2 border-emerald-500/20 hover:bg-red-500 hover:text-white hover:border-red-500 active:scale-90 active:brightness-110 rounded-full transition-all font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 group"
-                        >
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse group-hover:hidden" />
-                            <span className="hidden group-hover:block">Parar Sincronização</span>
-                            <span className="group-hover:hidden">Chat Sincronizado</span>
-                        </button>
-                    ) : (
-                        <button
-                            onClick={onFindLiveChat}
-                            disabled={isFindingChat}
-                            className="w-full py-4 text-white bg-emerald-600 hover:bg-emerald-500 active:scale-90 active:brightness-110 disabled:scale-100 disabled:opacity-50 rounded-full transition-all font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-emerald-500/20"
-                        >
-                            {isFindingChat
-                                ? 'Buscando Live...'
-                                : 'Conectar ao Chat ao Vivo'}
-                        </button>
-                    )}
-
-                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#0f111a] rounded-2xl border border-gray-200 dark:border-gray-800 transition-all mt-4">
-                        <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${autoSyncEnabled ? 'bg-emerald-500/10 text-emerald-500' : 'bg-gray-200 dark:bg-gray-800 text-gray-400'}`}>
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                            </div>
-                            <div>
-                                <p className="text-sm font-bold text-gray-900 dark:text-white">Busca Automática</p>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400">Verifica se você entrou ao vivo a cada 15 min.</p>
-                            </div>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                                type="checkbox"
-                                className="sr-only peer"
-                                checked={autoSyncEnabled}
-                                onChange={(e) => onToggleAutoSync(e.target.checked)}
-                            />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
-                        </label>
+                        <div>
+                            <p className="text-sm font-black text-white tracking-tight">Busca Automática</p>
+                            <p className="text-[10px] text-gray-400/80 font-medium">Verifica se você entrou ao vivo a cada 15 min.</p>
+                        </div>
                     </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={autoSyncEnabled}
+                            onChange={(e) => onToggleAutoSync(e.target.checked)}
+                        />
+                        <div className="w-12 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-white"></div>
+                    </label>
                 </div>
             </div>
         </div>
