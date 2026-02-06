@@ -1484,7 +1484,7 @@ export const HomePage: React.FC = () => {
                                                 )}
                                             </div>
                                             <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                                <span className="text-sm font-bold text-gray-900 dark:text-white tracking-tight">
+                                                <span className="text-sm font-bold text-gray-900 dark:text-white tracking-tight" style={{ fontFamily: '"Roboto", sans-serif' }}>
                                                     YouTube
                                                 </span>
                                                 <span className={`text-sm font-medium ${isPolling ? 'text-emerald-500 animate-pulse' : 'text-gray-400 dark:text-gray-500'}`}>

@@ -79,7 +79,10 @@ export const LoginPage: React.FC = () => {
                         className="w-full flex items-center justify-center gap-3 py-4 px-6 border-2 border-gray-300 dark:border-gray-600 rounded-full shadow-lg text-base font-black uppercase tracking-widest text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-red-500 dark:hover:border-red-400 active:scale-95 transition-all focus:outline-none focus:ring-4 focus:ring-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed group"
                     >
                         <YoutubeIcon className="w-6 h-6" />
-                        <span className="group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                        <span
+                            className="group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors"
+                            style={{ fontFamily: '"Roboto", sans-serif' }}
+                        >
                             {loading ? 'Conectando...' : 'Login com YouTube'}
                         </span>
                     </button>

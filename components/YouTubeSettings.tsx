@@ -86,6 +86,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                         ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-500/10'
                         : 'bg-[#10b981] hover:bg-[#059669] text-white shadow-emerald-500/10'
                         }`}
+                    style={{ fontFamily: '"Roboto", sans-serif' }}
                 >
                     {isFindingChat ? 'Buscando...' : isPolling ? 'PARAR SINCRONIZAÇÃO' : 'CONECTAR AO CHAT AO VIVO'}
                 </button>
