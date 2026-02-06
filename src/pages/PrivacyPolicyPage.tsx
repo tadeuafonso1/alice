@@ -58,6 +58,12 @@ export const PrivacyPolicyPage: React.FC = () => {
                     <h3 className="text-lg font-semibold pt-2">7. Informações de Contato</h3>
                     <p>Se você tiver dúvidas sobre esta Política de Privacidade ou sobre o tratamento de seus dados, entre em contato conosco através do e-mail: <span className="text-cyan-500 font-bold">canalobot@gmail.com</span></p>
 
+                    <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                            YouTube is a trademark of Google LLC. This application uses the YouTube API Services to interact with live chat and channel data.
+                        </p>
+                    </div>
+
                     <p className="italic mt-6 text-xs text-gray-500 dark:text-gray-400">
                         <strong>Aviso:</strong> Este é um modelo de política de privacidade. Recomenda-se que você revise este texto e, se necessário, consulte um profissional jurídico para garantir que ele atenda a todos os requisitos legais aplicáveis à sua situação.
                     </p>

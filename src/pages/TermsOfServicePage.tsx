@@ -46,6 +46,12 @@ export const TermsOfServicePage: React.FC = () => {
 
                     <h3 className="text-lg font-semibold pt-2">6. Modificações nos Termos</h3>
                     <p>Reservamo-nos o direito de modificar estes termos a qualquer momento. Notificaremos sobre quaisquer alterações, publicando os novos termos no aplicativo. Seu uso continuado do aplicativo após tais alterações constitui sua aceitação dos novos termos.</p>
+
+                    <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                            YouTube is a trademark of Google LLC. This application uses the YouTube API Services to interact with live chat and channel data.
+                        </p>
+                    </div>
                 </main>
             </div>
         </div>

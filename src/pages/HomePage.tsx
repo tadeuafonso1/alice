@@ -1476,7 +1476,7 @@ export const HomePage: React.FC = () => {
                                         <div className="flex items-center gap-3">
                                             <div className="relative">
                                                 <div className={`p-1.5 rounded-lg ${isPolling ? 'bg-emerald-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
-                                                    <YoutubeIcon className="w-4 h-4" />
+                                                    <YoutubeIcon className="w-5 h-5" />
                                                 </div>
                                                 {isPolling && (
                                                     <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
@@ -1534,7 +1534,7 @@ export const HomePage: React.FC = () => {
                                         onClick={() => setActiveTab('youtube')}
                                         className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors py-1 px-2"
                                     >
-                                        <YoutubeIcon className="w-4 h-4 grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100" />
+                                        <YoutubeIcon className="w-5 h-5 grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Conectar YouTube</span>
                                     </button>
                                 )}

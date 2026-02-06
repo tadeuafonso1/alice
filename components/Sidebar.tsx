@@ -106,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 : 'hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white'
                                 }`}
                         >
-                            <item.icon className={`w-5 h-5 flex-shrink-0 ${activeTab === item.id ? 'text-cyan-400' : 'text-gray-400 group-hover:text-cyan-400'}`} />
+                            <item.icon className={`w-6 h-6 flex-shrink-0 ${activeTab === item.id ? 'text-cyan-400' : 'text-gray-400 group-hover:text-cyan-400'}`} />
                             {isOpen && (
                                 <span className="ml-4 text-sm font-medium whitespace-nowrap">{item.label}</span>
                             )}
