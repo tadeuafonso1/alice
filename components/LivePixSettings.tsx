@@ -22,6 +22,12 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+    const [simData, setSimData] = useState({
+        donor: 'Doador Teste',
+        amount: 10.00,
+        message: 'Acabei de furar a fila! @{user}'
+    });
+    const [simulating, setSimulating] = useState(false);
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -75,6 +81,35 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
             setMessage({ text: `Erro ao salvar: ${err.message}`, type: 'error' });
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleSimulate = async () => {
+        if (!userId) return;
+        setSimulating(true);
+        try {
+            const response = await fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    data: {
+                        author: { name: simData.donor },
+                        amount: simData.amount,
+                        message: simData.message
+                    }
+                })
+            });
+
+            if (!response.ok) throw new Error('Falha ao enviar simulação');
+
+            setMessage({ text: 'Simulação enviada com sucesso! Verifique o painel/OBS.', type: 'success' });
+        } catch (err: any) {
+            console.error('Error simulating LivePix:', err);
+            setMessage({ text: `Erro na simulação: ${err.message}`, type: 'error' });
+        } finally {
+            setSimulating(false);
         }
     };
 
@@ -338,6 +373,60 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
                                 </p>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Simulation Card */}
+            <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-2xl p-8 border border-indigo-500/20 shadow-xl">
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="p-2 bg-indigo-500/20 rounded-lg">
+                        <RefreshCwIcon className={`w-6 h-6 text-indigo-500 ${simulating ? 'animate-spin' : ''}`} />
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-[0.2em]">Modo de Simulação</h4>
+                        <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest mt-1">Teste pontos, alertas e fura-fila sem gastar nada</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Doador (Exemplo)</label>
+                        <input
+                            type="text"
+                            value={simData.donor}
+                            onChange={(e) => setSimData({ ...simData, donor: e.target.value })}
+                            className="w-full bg-white dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Valor (R$)</label>
+                        <input
+                            type="number"
+                            value={simData.amount}
+                            onChange={(e) => setSimData({ ...simData, amount: Number(e.target.value) })}
+                            className="w-full bg-white dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white font-bold"
+                        />
+                    </div>
+                    <div className="flex items-end">
+                        <button
+                            onClick={handleSimulate}
+                            disabled={simulating || !settings.enabled}
+                            className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl py-3 text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 active:scale-95 disabled:opacity-50"
+                        >
+                            {simulating ? <RefreshCwIcon className="w-4 h-4 animate-spin" /> : <RocketIcon className="w-4 h-4" />}
+                            Simular Pix
+                        </button>
+                    </div>
+                    <div className="md:col-span-3">
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Mensagem do Pix</label>
+                        <input
+                            type="text"
+                            value={simData.message}
+                            onChange={(e) => setSimData({ ...simData, message: e.target.value })}
+                            placeholder="Dica: Use @username para testar pontos em outro usuário"
+                            className="w-full bg-white dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                        />
                     </div>
                 </div>
             </div>
