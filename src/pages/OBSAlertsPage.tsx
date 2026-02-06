@@ -200,9 +200,9 @@ export const OBSAlertsPage: React.FC = () => {
             <div className="relative w-full h-full flex items-center justify-center">
                 {(phase === 'takeoff' || phase === 'flight') && (
                     <div className={`
-                        absolute bottom-0 w-80 h-auto transition-all duration-[1200ms] ease-in
-                        ${phase === 'takeoff' ? 'animate-shake' : ''}
-                        ${phase === 'flight' ? '-translate-y-[1500px] opacity-100 scale-125' : ''}
+                        absolute top-[100%] w-80 h-auto transition-all duration-[1200ms] ease-in
+                        ${phase === 'takeoff' ? 'animate-shake -translate-y-[400px]' : ''}
+                        ${phase === 'flight' ? '-translate-y-[2500px] opacity-100 scale-125' : ''}
                     `}>
                         <img src={rocketImageUrl} className="w-full h-auto drop-shadow-[0_0_80px_rgba(255,100,0,0.9)]" alt="rocket" />
                         <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-16 h-80 bg-gradient-to-t from-orange-600 via-orange-400 to-yellow-200 blur-3xl animate-pulse rounded-full opacity-90"></div>
