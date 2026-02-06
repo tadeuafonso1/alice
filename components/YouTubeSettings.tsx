@@ -104,14 +104,14 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                             <p className="text-[10px] text-gray-500 font-medium">Auto-verificação a cada 15 min.</p>
                         </div>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
+                    <label className="relative inline-flex items-center cursor-pointer group">
                         <input
                             type="checkbox"
                             className="sr-only peer"
                             checked={autoSyncEnabled}
                             onChange={(e) => onToggleAutoSync(e.target.checked)}
                         />
-                        <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-lg peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-md after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-white"></div>
+                        <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full transition-all peer peer-checked:bg-emerald-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full after:shadow-sm"></div>
                     </label>
                 </div>
             </div>
