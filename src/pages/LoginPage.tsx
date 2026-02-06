@@ -58,9 +58,9 @@ export const LoginPage: React.FC = () => {
 
                 <div className="bg-white dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-gray-700">
                     <div className="text-center mb-6">
-                        <div className="inline-flex items-center gap-2 bg-red-500/10 text-red-600 dark:text-red-400 px-4 py-2 rounded-full text-sm font-bold mb-4">
+                        <div className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold mb-4 shadow-sm">
                             <YoutubeIcon className="w-6 h-6" />
-                            <span>Acesso YouTube</span>
+                            <span style={{ fontFamily: '"Roboto", sans-serif' }}>Acesso YouTube</span>
                         </div>
                         <p className="text-gray-600 dark:text-gray-400 text-sm">
                             Faça login com sua conta do YouTube para começar a gerenciar sua fila de forma profissional
