@@ -131,7 +131,7 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
         }
     };
 
-    const webhookUrl = `${window.location.origin.replace(/http:\/\/localhost(:\d+)?/, 'https://nvtlirmfavhahwtsdchk.functions.supabase.co')}/functions/v1/livepix-webhook?user_id=${userId || settings.user_id}`;
+    const webhookUrl = `https://nvtlirmfavhahwtsdchk.functions.supabase.co/functions/v1/livepix-webhook?user_id=${userId || settings.user_id}`;
 
     if (loading) {
         return (
