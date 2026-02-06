@@ -1473,23 +1473,21 @@ export const HomePage: React.FC = () => {
                             <div className={`hidden md:flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300 border ${isPolling ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-gray-50 dark:bg-[#162036] border-gray-200 dark:border-gray-800'}`}>
                                 {googleConnected ? (
                                     <>
-                                        <div className="flex items-center gap-3">
-                                            <div className="relative">
-                                                <div className="p-2 rounded-xl bg-red-500/5 ring-1 ring-red-500/10">
-                                                    <YoutubeIcon className="w-6 h-6" />
-                                                </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="relative flex items-center">
+                                                <YoutubeIcon className="w-7 h-7" />
                                                 {isPolling && (
-                                                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                                    <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
                                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 ring-2 ring-white dark:ring-[#0f111a]"></span>
+                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 ring-1 ring-white dark:ring-[#131b2e]"></span>
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="flex flex-col -gap-0.5">
-                                                <span className="text-xs font-black text-gray-900 dark:text-white tracking-tight">
+                                            <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                                <span className="text-sm font-bold text-gray-900 dark:text-white tracking-tight">
                                                     YouTube
                                                 </span>
-                                                <span className={`text-[10px] font-bold ${isPolling ? 'text-emerald-500' : 'text-gray-400 dark:text-gray-500'}`}>
+                                                <span className={`text-sm font-medium ${isPolling ? 'text-emerald-500 animate-pulse' : 'text-gray-400 dark:text-gray-500'}`}>
                                                     {isPolling ? 'Ao Vivo' : 'Conectado'}
                                                 </span>
                                             </div>
