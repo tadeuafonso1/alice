@@ -25,19 +25,19 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
     onReconnect,
 }) => {
     return (
-        <div className="bg-[#0f1421] dark:bg-[#0f1421] rounded-[1.5rem] shadow-xl p-6 border border-white/5">
+        <div className="bg-[#0f1421] dark:bg-[#0f1421] rounded-2xl shadow-xl p-5 border border-white/5">
             {/* Header with YouTube Logo and Wordmark */}
-            <div className="flex items-center gap-1.5 mb-8">
-                <YoutubeIcon className="w-8 h-8" />
-                <span className="text-xl font-bold text-white tracking-tighter" style={{ fontFamily: '"Roboto", sans-serif' }}>YouTube</span>
+            <div className="flex items-center gap-1.5 mb-5">
+                <YoutubeIcon className="w-6 h-6" />
+                <span className="text-lg font-bold text-white tracking-tighter" style={{ fontFamily: '"Roboto", sans-serif' }}>YouTube</span>
             </div>
 
-            <div className="space-y-4 max-w-full">
+            <div className="space-y-3 max-w-full">
                 {/* Connection Account Card */}
-                <div className="flex items-center gap-4 bg-[#0a0d14] p-4 rounded-[1.2rem] border border-white/5 shadow-inner">
+                <div className="flex items-center gap-3 bg-[#0a0d14] p-3 rounded-xl border border-white/5 shadow-inner">
                     <div className="relative">
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#0a0d14] ring-2 ring-cyan-500/30">
-                            <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center p-2.5 ring-1 ring-white/5">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#0a0d14] ring-1 ring-cyan-500/30">
+                            <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center p-2 ring-1 ring-white/5">
                                 <svg className="w-full h-full" viewBox="0 0 24 24">
                                     <path
                                         fill="#4285F4"
@@ -60,19 +60,19 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                         </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-white text-base font-bold tracking-tight truncate">
+                        <p className="text-white text-sm font-bold tracking-tight truncate">
                             {googleEmail || 'Conta não conectada'}
                         </p>
-                        <p className="text-gray-500 text-[11px] font-medium mt-0.5">
+                        <p className="text-gray-500 text-[10px] font-medium mt-0.5">
                             {isPolling ? 'Ao vivo agora' : 'Conectado e Pronto'}
                         </p>
                     </div>
                     <button
                         onClick={onReconnect}
-                        className="p-2 text-gray-500 hover:text-white transition-all bg-white/5 rounded-lg hover:bg-white/10"
+                        className="p-1.5 text-gray-400 hover:text-white transition-all bg-white/5 rounded-lg hover:bg-white/10"
                         title="Reconectar"
                     >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                     </button>
@@ -82,7 +82,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                 <button
                     onClick={isPolling ? stopPolling : onFindLiveChat}
                     disabled={isFindingChat}
-                    className={`w-full py-4 rounded-full transition-all font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 flex items-center justify-center gap-2 ${isPolling
+                    className={`w-full py-3 rounded-xl transition-all font-black uppercase tracking-widest text-[10px] shadow-lg active:scale-95 flex items-center justify-center gap-2 ${isPolling
                         ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-500/10'
                         : 'bg-[#10b981] hover:bg-[#059669] text-white shadow-emerald-500/10'
                         }`}
@@ -91,16 +91,16 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                 </button>
 
                 {/* Auto Sync Toggle Card */}
-                <div className="flex items-center justify-between p-4 bg-[#0a0d14] rounded-[1rem] border border-white/5 shadow-inner">
+                <div className="flex items-center justify-between p-3 bg-[#0a0d14] rounded-xl border border-white/5 shadow-inner">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-[#1e2230] rounded-lg ring-1 ring-white/5">
-                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="p-1.5 bg-[#1e2230] rounded-lg ring-1 ring-white/5">
+                            <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
                         </div>
                         <div>
-                            <p className="text-xs font-black text-white tracking-tight">Busca Automática</p>
-                            <p className="text-[9px] text-gray-500 font-medium">Verifica se você entrou ao vivo a cada 15 min.</p>
+                            <p className="text-[11px] font-black text-white tracking-tight">Busca Automática</p>
+                            <p className="text-[9px] text-gray-500 font-medium">Auto-verificação a cada 15 min.</p>
                         </div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -110,7 +110,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                             checked={autoSyncEnabled}
                             onChange={(e) => onToggleAutoSync(e.target.checked)}
                         />
-                        <div className="w-10 h-5 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-white"></div>
+                        <div className="w-8 h-4 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-gray-600 peer-checked:bg-white"></div>
                     </label>
                 </div>
             </div>
