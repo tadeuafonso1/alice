@@ -49,16 +49,21 @@ serve(async (req: Request) => {
             });
         }
 
-        console.log("[LivePix] Webhook received:", JSON.stringify(body));
+        console.log("[LivePix] Full Body Received:", JSON.stringify(body, null, 2));
 
-        // Basic validation: LivePix sends a 'type' field
-        // For production, you should validate settings.webhook_secret if LivePix supports it
+        // Detect structure: LivePix usually nests in 'data', but some versions or events might differ
+        const root = body.data || body;
 
-        const donorName = body.data?.author?.name || "Doador Anônimo";
-        const amount = body.data?.amount || 0;
-        const message = body.data?.message || "";
+        const donorName = root.author?.name || root.authorName || "Doador Anônimo";
+        let rawAmount = root.amount || 0;
+        const message = root.message || "";
 
-        console.log(`[LivePix] Processing: ${donorName} - R$ ${amount} (${userId})`);
+        // Smart amount parsing: if it's an integer > 50, it's likely cents (R$ 1,00 = 100)
+        // Unless skip_queue_price is also very high, but usually it's around 5-20.
+        // We divide by 100 if it seems to be in cents.
+        const amount = (rawAmount > 50 && (rawAmount % 1 === 0)) ? rawAmount / 100 : rawAmount;
+
+        console.log(`[LivePix] Detected Payload: Type=${body.type}, Donor=${donorName}, Amount=${amount}, Original=${rawAmount}`);
 
         // 1. Grant Loyalty Points
         if (settings.points_per_real > 0 && amount > 0) {

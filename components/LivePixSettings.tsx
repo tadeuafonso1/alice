@@ -131,7 +131,7 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
         }
     };
 
-    const webhookUrl = `${window.location.origin.replace(/localhost(:\d+)?/, 'nvtlirmfavhahwtsdchk.functions.supabase.co')}/functions/v1/livepix-webhook?user_id=${userId}`;
+    const webhookUrl = `${window.location.origin.replace(/http:\/\/localhost(:\d+)?/, 'https://nvtlirmfavhahwtsdchk.functions.supabase.co')}/functions/v1/livepix-webhook?user_id=${userId || settings.user_id}`;
 
     if (loading) {
         return (
@@ -151,7 +151,7 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
                             <div className="w-8 h-8 rounded-lg bg-[#3b82f6] flex items-center justify-center p-1.5 shadow-lg shadow-blue-500/20">
                                 <RocketIcon className="w-full h-full text-white" />
                             </div>
-                            Integração LivePix <span className="text-[8px] bg-red-500 px-1 rounded animate-pulse">V3</span>
+                            Integração LivePix
                         </h3>
                         <p className="text-gray-400 mt-2 max-w-xl">
                             Automatize o seu bot com doações em tempo real. Ative o "Fura-Fila" e recompense seus apoiadores com pontos de lealdade.
