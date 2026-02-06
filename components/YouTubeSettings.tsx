@@ -28,7 +28,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
         <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-4 mb-8">
                 <div className="p-3 bg-red-500/10 rounded-xl">
-                    <YoutubeIcon className="w-8 h-8 text-red-500" />
+                    <YoutubeIcon className="w-8 h-8" />
                 </div>
                 <div>
                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white">YouTube Chat</h3>

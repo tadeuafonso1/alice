@@ -1534,7 +1534,7 @@ export const HomePage: React.FC = () => {
                                         onClick={() => setActiveTab('youtube')}
                                         className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors py-1 px-2"
                                     >
-                                        <YoutubeIcon className="w-5 h-5 grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100" />
+                                        <YoutubeIcon className="w-5 h-5" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Conectar YouTube</span>
                                     </button>
                                 )}
