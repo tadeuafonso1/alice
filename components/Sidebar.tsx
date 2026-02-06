@@ -101,14 +101,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <button
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center px-6 py-3 transition-all relative group ${activeTab === item.id
-                                ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 border-r-4 border-cyan-500'
-                                : 'hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white'
+                            className={`w-full flex items-center px-6 py-4 transition-all relative group ${activeTab === item.id
+                                ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/50 border-r-4 border-cyan-500'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-800/30 hover:text-gray-900 dark:hover:text-white'
                                 }`}
                         >
-                            <item.icon className={`w-6 h-6 flex-shrink-0 ${activeTab === item.id ? 'text-cyan-400' : 'text-gray-400 group-hover:text-cyan-400'}`} />
+                            <div className={`p-2 rounded-xl transition-all ${item.id === 'youtube'
+                                ? 'bg-[#2d2d35] shadow-lg ring-1 ring-white/5'
+                                : ''
+                                }`}>
+                                <item.icon className={`${item.id === 'youtube' ? 'w-5 h-5' : 'w-6 h-6'} flex-shrink-0 ${activeTab === item.id ? 'text-cyan-400' : 'text-gray-400 group-hover:text-cyan-400'}`} />
+                            </div>
+
                             {isOpen && (
-                                <span className="ml-4 text-sm font-medium whitespace-nowrap">{item.label}</span>
+                                <div className="ml-4 flex flex-col items-start">
+                                    {item.id === 'youtube' ? (
+                                        <>
+                                            <span className="text-base font-black tracking-tight leading-none whitespace-nowrap">
+                                                YouTube <span className="font-normal text-gray-400 ml-0.5">Chat</span>
+                                            </span>
+                                            <span className="text-[10px] font-medium text-cyan-500/80 mt-1 whitespace-nowrap">
+                                                Gerencie a conexão com sua transmissão ao vivo.
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
+                                    )}
+                                </div>
                             )}
                             {!isOpen && (
                                 <div className="absolute left-16 bg-gray-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
