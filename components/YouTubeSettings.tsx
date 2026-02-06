@@ -25,7 +25,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
     onReconnect,
 }) => {
     return (
-        <div className="bg-[#0f1421] dark:bg-[#0f1421] rounded-2xl shadow-xl p-5 border border-white/5">
+        <div className="bg-[#0f1421] dark:bg-[#0f1421] rounded-[1.5rem] shadow-xl p-5 border border-white/5">
             {/* Header - Simple and Horizontal */}
             <div className="flex items-center gap-1.5 mb-4">
                 <YoutubeIcon className="w-8 h-8" />
@@ -34,7 +34,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
 
             <div className="space-y-3 max-w-full">
                 {/* Connection Account Card */}
-                <div className="flex items-center gap-4 bg-[#0a0d14] p-4 rounded-xl border border-white/5 shadow-inner">
+                <div className="flex items-center gap-4 bg-[#0a0d14] p-4 rounded-2xl border border-white/5 shadow-inner">
                     <div className="relative">
                         <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#0a0d14] ring-1 ring-cyan-500/30">
                             <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center p-2.5 ring-1 ring-white/5">
@@ -69,7 +69,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                     </div>
                     <button
                         onClick={onReconnect}
-                        className="p-2 text-gray-500 hover:text-white transition-all bg-white/5 rounded-lg hover:bg-white/10"
+                        className="p-2 text-gray-400 hover:text-white transition-all bg-white/5 rounded-lg hover:bg-white/10"
                         title="Reconectar"
                     >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -78,11 +78,11 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                     </button>
                 </div>
 
-                {/* Main Action Button - Short but Bold */}
+                {/* Main Action Button - Rounded Rectangle style ("Quadrado") */}
                 <button
                     onClick={isPolling ? stopPolling : onFindLiveChat}
                     disabled={isFindingChat}
-                    className={`w-full py-4 rounded-xl transition-all font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 flex items-center justify-center gap-3 ${isPolling
+                    className={`w-full py-4 rounded-2xl transition-all font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 flex items-center justify-center gap-3 ${isPolling
                         ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-500/10'
                         : 'bg-[#10b981] hover:bg-[#059669] text-white shadow-emerald-500/10'
                         }`}
@@ -91,7 +91,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                 </button>
 
                 {/* Auto Sync Toggle Card */}
-                <div className="flex items-center justify-between p-4 bg-[#0a0d14] rounded-xl border border-white/5 shadow-inner">
+                <div className="flex items-center justify-between p-4 bg-[#0a0d14] rounded-2xl border border-white/5 shadow-inner">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-[#1e2230] rounded-lg ring-1 ring-white/5">
                             <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +110,7 @@ export const YouTubeSettings: React.FC<YouTubeSettingsProps> = ({
                             checked={autoSyncEnabled}
                             onChange={(e) => onToggleAutoSync(e.target.checked)}
                         />
-                        <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-white"></div>
+                        <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-md peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-md after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-white"></div>
                     </label>
                 </div>
             </div>
