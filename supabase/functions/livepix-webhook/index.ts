@@ -89,36 +89,32 @@ serve(async (req: Request) => {
         if (settings.skip_queue_enabled && amount >= settings.skip_queue_price) {
             console.log(`[LivePix] Skipping queue check for ${donorName}. Price threshold: ${settings.skip_queue_price}`);
 
-            // First, try exact match, then case-insensitive, then partial
-            const { data: exactMatch } = await supabase
-                .from('queue')
-                .select('*')
-                .eq('user_id', userId)
-                .eq('username', donorName)
-                .maybeSingle();
-
-            let queueUser = exactMatch;
-
             if (!queueUser) {
-                const { data: ilikeMatch } = await supabase
+                // Fetch all users in the queue for this owner to do flexible matching in JS
+                const { data: allQueue } = await supabase
                     .from('queue')
                     .select('*')
-                    .eq('user_id', userId)
-                    .ilike('username', donorName)
-                    .maybeSingle();
-                queueUser = ilikeMatch;
-            }
+                    .eq('user_id', userId);
 
-            if (!queueUser) {
-                // Try to find if the donor name is contained in any username or vice-versa
-                const { data: partialMatch } = await supabase
-                    .from('queue')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .or(`username.ilike.%${donorName}%,nickname.ilike.%${donorName}%`)
-                    .limit(1)
-                    .maybeSingle();
-                queueUser = partialMatch;
+                if (allQueue) {
+                    const donorNormalized = donorName.toLowerCase().trim();
+                    const donorWords = donorNormalized.split(/\s+/);
+
+                    queueUser = allQueue.find(u => {
+                        const userNormalized = u.username.toLowerCase().trim();
+                        const nickNormalized = (u.nickname || "").toLowerCase().trim();
+
+                        // 1. Exact or partial match (either direction)
+                        if (userNormalized === donorNormalized || nickNormalized === donorNormalized) return true;
+                        if (userNormalized.includes(donorNormalized) || donorNormalized.includes(userNormalized)) return true;
+                        if (nickNormalized && (nickNormalized.includes(donorNormalized) || donorNormalized.includes(nickNormalized))) return true;
+
+                        // 2. Word matching (check if any word of donor name matches username or nickname)
+                        return donorWords.some(word =>
+                            (word.length > 2 && (userNormalized.includes(word) || nickNormalized.includes(word)))
+                        );
+                    });
+                }
             }
 
             if (queueUser) {
@@ -139,7 +135,7 @@ serve(async (req: Request) => {
                     console.log(`[LivePix] User ${queueUser.username} priority increased from ${currentPriority} to ${newPriority}.`);
                 }
             } else {
-                console.log(`[LivePix] User "${donorName}" not found in queue (Tried exact, ilike, and partial).`);
+                console.log(`[LivePix] User "${donorName}" not found in queue (tried exact, ilike, and broad JS matching).`);
             }
         }
 

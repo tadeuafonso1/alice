@@ -13,6 +13,7 @@ interface QueueDisplayProps {
     onMoveToTop: (user: string) => void;
     onNext?: () => void;
     onReset?: () => void;
+    onRefresh?: () => void;
 }
 
 const TimerBar: React.FC<{ timeLeft: number; totalSeconds: number }> = ({ timeLeft, totalSeconds }) => {
@@ -161,7 +162,7 @@ const QueueItem: React.FC<{
     );
 };
 
-export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, isTimerActive, timeoutMinutes, adminName, onMoveToPlaying, onRemoveUser, onMoveToTop, onNext, onReset }) => {
+export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, isTimerActive, timeoutMinutes, adminName, onMoveToPlaying, onRemoveUser, onMoveToTop, onNext, onReset, onRefresh }) => {
     return (
         <div className="bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl flex flex-col h-full overflow-hidden">
             <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#162036] flex items-center justify-between gap-2 overflow-hidden">
@@ -181,13 +182,22 @@ export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, i
                             <span className="hidden md:inline">Próximo</span>
                         </button>
                     )}
+                    {onRefresh && (
+                        <button
+                            onClick={onRefresh}
+                            className="bg-transparent border border-gray-600 hover:border-cyan-400 text-gray-400 hover:text-cyan-400 p-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all active:scale-90 flex items-center gap-1.5 flex-shrink-0"
+                            title="Atualizar"
+                        >
+                            <RefreshCwIcon className="w-3.5 h-3.5" />
+                        </button>
+                    )}
                     {onReset && (
                         <button
                             onClick={onReset}
                             className="bg-transparent border border-gray-600 hover:border-gray-400 text-white px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all active:scale-90 flex items-center gap-1.5 flex-shrink-0"
                             title="Resetar"
                         >
-                            <RefreshCwIcon className="w-3 h-3" />
+                            <RefreshCwIcon className="w-3.5 h-3.5" />
                             <span className="hidden md:inline">Resetar</span>
                         </button>
                     )}

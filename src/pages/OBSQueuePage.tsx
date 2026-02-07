@@ -92,11 +92,20 @@ export const OBSQueuePage: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-4 max-w-[400px]">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-cyan-500 rounded-lg shadow-[0_0_20px_rgba(6,182,212,0.5)]">
-                        <UsersIcon className="w-6 h-6 text-white" />
+                <div className="flex items-center justify-between gap-4 pr-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-cyan-500 rounded-lg shadow-[0_0_20px_rgba(6,182,212,0.5)]">
+                            <UsersIcon className="w-6 h-6 text-white" />
+                        </div>
+                        <h2 className="text-2xl font-black text-white uppercase tracking-widest drop-shadow-lg">Fila de Espera</h2>
                     </div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-widest drop-shadow-lg">Fila de Espera</h2>
+                    <button
+                        onClick={fetchAllData}
+                        className="p-2 bg-slate-800/30 hover:bg-cyan-500/20 rounded-lg text-white/30 hover:text-cyan-400 transition-all active:scale-95"
+                        title="Atualizar Fila"
+                    >
+                        <RefreshCwIcon className="w-5 h-5" />
+                    </button>
                 </div>
 
                 <div className="flex flex-col gap-2">

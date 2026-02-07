@@ -863,7 +863,14 @@ export const HomePage: React.FC = () => {
                 }
             }
         } else if (commands.position.enabled && (commandText === normalizeText(commands.position.command) || commandText === '!posicao' || commandText === '!posição')) {
-            const queueIndex = queue.findIndex(u => u.user === author);
+            const { data: currentQueue } = await supabase
+                .from('queue')
+                .select('username')
+                .eq('user_id', session?.user?.id)
+                .order('priority_amount', { ascending: false })
+                .order('joined_at', { ascending: true });
+
+            const queueIndex = currentQueue ? currentQueue.findIndex(u => u.username === author) : -1;
             if (queueIndex !== -1) {
                 const pos = queueIndex + 1;
                 sendBotMessage('userPosition', { user: author, position: pos });
@@ -1604,6 +1611,7 @@ export const HomePage: React.FC = () => {
                                         onMoveToTop={handleMoveToTop}
                                         onNext={handleNextUser}
                                         onReset={() => handleSendMessage(adminName, appSettings.commands.reset.command)}
+                                        onRefresh={() => refreshData()}
                                     />
                                 </div>
 
@@ -1662,7 +1670,7 @@ export const HomePage: React.FC = () => {
                                             <div className="p-2 bg-cyan-500/10 rounded-lg">
                                                 <BotIcon className="w-6 h-6 text-cyan-500" />
                                             </div>
-                                            <h4 className="text-lg font-bold text-gray-900 dark:text-white">Identidade do Bot</h4>
+                                            <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-widest text-sm">Bot & Comandos</h4>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
@@ -1688,15 +1696,6 @@ export const HomePage: React.FC = () => {
                                             </p>
                                         </div>
                                     </div>
-
-                                    <SettingsModal
-                                        isOpen={true}
-                                        onClose={() => setActiveTab('dashboard')}
-                                        settings={appSettings}
-                                        onSave={handleSettingsSave}
-                                        onReset={() => handleSettingsSave(defaultSettings)}
-                                        isInline={true}
-                                    />
                                 </div>
                             </div>
                         )}
