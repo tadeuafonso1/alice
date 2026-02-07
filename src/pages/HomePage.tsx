@@ -296,134 +296,170 @@ export const HomePage: React.FC = () => {
     }, [appSettings.messages, addBotMessage]);
 
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if (adminName === 'Admin') return;
-            try {
-                // Tenta buscar as configurações. RLS deve garantir que buscamos apenas a nossa.
-                const { data: settingsData, error: settingsError } = await supabase
-                    .from('settings')
-                    .select('id, settings_data')
-                    .maybeSingle(); // maybeSingle não erro se não houver linhas
+    const refreshData = useCallback(async (silent = false) => {
+        if (adminName === 'Admin') return;
+        try {
+            if (!silent) setIsLoadingSettings(true);
 
-                if (settingsError) throw settingsError;
+            // 1. Configurações
+            const { data: settingsData, error: settingsError } = await supabase
+                .from('settings')
+                .select('id, settings_data')
+                .maybeSingle();
 
-                if (settingsData) {
-                    setSettingsId(settingsData.id);
-                    const dbSettings = settingsData.settings_data as Partial<AppSettings>;
-                    const mergedSettings: AppSettings = JSON.parse(JSON.stringify(defaultSettings));
+            if (settingsError) throw settingsError;
 
-                    if (dbSettings.botName) mergedSettings.botName = dbSettings.botName;
-                    if (dbSettings.commands) {
-                        for (const key in dbSettings.commands) {
-                            if (key in mergedSettings.commands) {
-                                const typedKey = key as keyof CommandSettings;
-                                mergedSettings.commands[typedKey] = {
-                                    ...mergedSettings.commands[typedKey],
-                                    ...dbSettings.commands[typedKey]
-                                };
-                            }
+            if (settingsData) {
+                setSettingsId(settingsData.id);
+                const dbSettings = settingsData.settings_data as Partial<AppSettings>;
+                const mergedSettings: AppSettings = JSON.parse(JSON.stringify(defaultSettings));
+
+                if (dbSettings.botName) mergedSettings.botName = dbSettings.botName;
+                if (dbSettings.commands) {
+                    for (const key in dbSettings.commands) {
+                        if (key in mergedSettings.commands) {
+                            const typedKey = key as keyof CommandSettings;
+                            mergedSettings.commands[typedKey] = {
+                                ...mergedSettings.commands[typedKey],
+                                ...dbSettings.commands[typedKey]
+                            };
                         }
                     }
-                    if (dbSettings.messages) {
-                        for (const key in dbSettings.messages) {
-                            if (key in mergedSettings.messages) {
-                                const typedKey = key as keyof MessageSettings;
-                                mergedSettings.messages[typedKey] = {
-                                    ...mergedSettings.messages[typedKey],
-                                    ...dbSettings.messages[typedKey]
-                                };
-                            }
+                }
+                if (dbSettings.messages) {
+                    for (const key in dbSettings.messages) {
+                        if (key in mergedSettings.messages) {
+                            const typedKey = key as keyof MessageSettings;
+                            mergedSettings.messages[typedKey] = {
+                                ...mergedSettings.messages[typedKey],
+                                ...dbSettings.messages[typedKey]
+                            };
                         }
                     }
-
-                    if (dbSettings.loyalty) {
-                        mergedSettings.loyalty = {
-                            ...mergedSettings.loyalty,
-                            ...dbSettings.loyalty
-                        };
-                    }
-                    mergedSettings.customCommands = dbSettings.customCommands || [];
-                    if (dbSettings.youtubeChannelId) mergedSettings.youtubeChannelId = dbSettings.youtubeChannelId;
-                    if (typeof dbSettings.autoSyncYoutube === 'boolean') mergedSettings.autoSyncYoutube = dbSettings.autoSyncYoutube;
-
-                    setAppSettings(mergedSettings);
                 }
 
-                // Busca fila e jogadores com os novos campos de persistência
-                const { data: queueData, error: queueError } = await supabase
-                    .from('queue')
-                    .select('username, nickname, joined_at, timer_start_time, warning_sent, priority_amount')
-                    .order('priority_amount', { ascending: false })
-                    .order('joined_at', { ascending: true });
-
-                if (queueError) throw queueError;
-                setQueue(queueData.map(q => ({
-                    user: q.username,
-                    nickname: q.nickname,
-                    priority_amount: q.priority_amount ? Number(q.priority_amount) : 0
-                })));
-
-                const { data: playingData, error: playingError } = await supabase
-                    .from('playing_users')
-                    .select('username, nickname');
-
-                if (playingError) throw playingError;
-                setPlayingUsers(playingData.map(p => ({ user: p.username, nickname: p.nickname })));
-
-                // Restaurar timers dos usuários usando timer_start_time do banco
-                const initialTimers = queueData.reduce((acc, q) => {
-                    const timerTime = q.timer_start_time || q.joined_at;
-                    acc[q.username] = new Date(timerTime).getTime();
-                    return acc;
-                }, {} as Record<string, number>);
-                setUserTimers(initialTimers);
-
-                // Também pré-popula o activeChatters com quem já está na fila/jogo
-                const initialActive = [...queueData, ...playingData].reduce((acc, u) => {
-                    acc[u.username] = Date.now(); // Assume ativo agora por estar na fila
-                    return acc;
-                }, {} as Record<string, number>);
-                setActiveChatters(prev => ({ ...initialActive, ...prev }));
-
-                // Restaurar avisos enviados
-                const warningsSet = new Set<string>();
-                queueData.forEach(q => {
-                    if (q.warning_sent) {
-                        warningsSet.add(q.username);
-                    }
-                });
-                setWarningSentUsers(warningsSet);
-
-                // Carregar estado do timer (ativo/inativo e timeout)
-                const queueState = await loadQueueState();
-                if (queueState) {
-                    console.log('[HomePage] Estado do timer restaurado:', queueState);
-                    setIsTimerActive(queueState.isTimerActive);
-                    setTimeoutMinutes(queueState.timeoutMinutes);
-                } else {
-                    console.log('[HomePage] Nenhum estado de timer salvo, usando padrões');
+                if (dbSettings.loyalty) {
+                    mergedSettings.loyalty = {
+                        ...mergedSettings.loyalty,
+                        ...dbSettings.loyalty
+                    };
                 }
+                mergedSettings.customCommands = dbSettings.customCommands || [];
+                if (dbSettings.youtubeChannelId) mergedSettings.youtubeChannelId = dbSettings.youtubeChannelId;
+                if (typeof dbSettings.autoSyncYoutube === 'boolean') mergedSettings.autoSyncYoutube = dbSettings.autoSyncYoutube;
 
-                // Marca fim do carregamento inicial para permitir salvamentos automáticos
+                setAppSettings(mergedSettings);
+            }
+
+            // 2. Fila
+            const { data: queueData, error: queueError } = await supabase
+                .from('queue')
+                .select('username, nickname, joined_at, timer_start_time, warning_sent, priority_amount')
+                .order('priority_amount', { ascending: false })
+                .order('joined_at', { ascending: true });
+
+            if (queueError) throw queueError;
+            setQueue(queueData.map(q => ({
+                user: q.username,
+                nickname: q.nickname,
+                priority_amount: q.priority_amount ? Number(q.priority_amount) : 0
+            })));
+
+            // 3. Jogando
+            const { data: playingData, error: playingError } = await supabase
+                .from('playing_users')
+                .select('username, nickname');
+
+            if (playingError) throw playingError;
+            setPlayingUsers(playingData.map(p => ({ user: p.username, nickname: p.nickname })));
+
+            // 4. Timers e Atividade
+            const initialTimers = queueData.reduce((acc, q) => {
+                const timerTime = q.timer_start_time || q.joined_at;
+                acc[q.username] = new Date(timerTime).getTime();
+                return acc;
+            }, {} as Record<string, number>);
+            setUserTimers(initialTimers);
+
+            const initialActive = [...queueData, ...playingData].reduce((acc, u) => {
+                acc[u.username] = Date.now();
+                return acc;
+            }, {} as Record<string, number>);
+            setActiveChatters(prev => ({ ...initialActive, ...prev }));
+
+            const warningsSet = new Set<string>();
+            queueData.forEach(q => {
+                if (q.warning_sent) warningsSet.add(q.username);
+            });
+            setWarningSentUsers(warningsSet);
+
+            // 5. Estado do Timer
+            const queueState = await loadQueueState();
+            if (queueState) {
+                setIsTimerActive(queueState.isTimerActive);
+                setTimeoutMinutes(queueState.timeoutMinutes);
+            }
+
+            if (isInitialLoad.current) {
                 setTimeout(() => {
                     isInitialLoad.current = false;
                     console.log('[HomePage] Carregamento inicial concluído.');
                 }, 500);
-
-            } catch (error: any) {
-                console.error("Error fetching initial data:", error);
-                // Não alertar erro se for apenas falta de dados iniciais
-                if (error.code !== 'PGRST116') {
-                    addBotMessageRef.current(`Erro ao carregar dados: ${error.message} `);
-                }
-            } finally {
-                setIsLoadingSettings(false);
             }
-        };
 
-        fetchData();
+        } catch (error: any) {
+            console.error("Error refreshing data:", error);
+            if (error.code !== 'PGRST116' && !silent) {
+                addBotMessageRef.current(`Erro ao atualizar dados: ${error.message} `);
+            }
+        } finally {
+            if (!silent) setIsLoadingSettings(false);
+        }
     }, [adminName, loadQueueState]);
+
+    useEffect(() => {
+        refreshData();
+    }, [refreshData]);
+
+    // Realtime Listener for Queue and Playing Users
+    useEffect(() => {
+        if (!session?.user?.id) return;
+
+        console.log('[HomePage] Setting up realtime listeners...');
+        const channel = supabase
+            .channel('db-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'queue',
+                    filter: `user_id=eq.${session.user.id}`
+                },
+                () => {
+                    console.log('[HomePage] Realtime: Queue changed, re-fetching...');
+                    refreshData(true);
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'playing_users',
+                    filter: `user_id=eq.${session.user.id}`
+                },
+                () => {
+                    console.log('[HomePage] Realtime: Playing users changed, re-fetching...');
+                    refreshData(true);
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [session?.user?.id, refreshData]);
 
     // Persistência automática do estado do timer (Debounced)
     useEffect(() => {

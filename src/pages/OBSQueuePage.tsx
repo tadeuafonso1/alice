@@ -6,6 +6,7 @@ import { UserIcon, Gamepad2Icon, TimerIcon, UsersIcon } from '../../components/I
 interface QueueUser {
     username: string;
     nickname?: string;
+    priority_amount?: number;
     started_at?: string;
 }
 
@@ -20,11 +21,16 @@ export const OBSQueuePage: React.FC = () => {
         // 1. Fetch Queue
         const { data: queueData } = await supabase
             .from('queue')
-            .select('username, nickname')
+            .select('username, nickname, priority_amount')
             .eq('user_id', userId)
+            .order('priority_amount', { ascending: false })
             .order('joined_at', { ascending: true });
 
-        if (queueData) setQueue(queueData.map(u => ({ username: u.username, nickname: u.nickname })));
+        if (queueData) setQueue(queueData.map(u => ({
+            username: u.username,
+            nickname: u.nickname,
+            priority_amount: u.priority_amount ? Number(u.priority_amount) : 0
+        })));
 
         // 2. Fetch Playing
         const { data: playingData } = await supabase
@@ -102,7 +108,14 @@ export const OBSQueuePage: React.FC = () => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-white font-bold text-sm truncate">{u.username}</p>
-                                    {u.nickname && <p className="text-cyan-400/60 text-[9px] font-bold truncate uppercase">{u.nickname}</p>}
+                                    <div className="flex items-center gap-2">
+                                        {u.nickname && <p className="text-cyan-400/60 text-[9px] font-bold truncate uppercase">{u.nickname}</p>}
+                                        {u.priority_amount ? (
+                                            <span className="text-[8px] font-black bg-amber-500/20 text-amber-500 px-1 rounded border border-amber-500/30">
+                                                IDOSA / VIP
+                                            </span>
+                                        ) : null}
+                                    </div>
                                 </div>
                             </div>
                         ))

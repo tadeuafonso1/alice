@@ -87,27 +87,59 @@ serve(async (req: Request) => {
 
         // 2. Fura-Fila (Skip Queue)
         if (settings.skip_queue_enabled && amount >= settings.skip_queue_price) {
-            console.log(`[LivePix] Skipping queue check for ${donorName}`);
+            console.log(`[LivePix] Skipping queue check for ${donorName}. Price threshold: ${settings.skip_queue_price}`);
 
-            const { data: queueUser } = await supabase
+            // First, try exact match, then case-insensitive, then partial
+            const { data: exactMatch } = await supabase
                 .from('queue')
                 .select('*')
                 .eq('user_id', userId)
-                .ilike('username', `%${donorName}%`)
+                .eq('username', donorName)
                 .maybeSingle();
+
+            let queueUser = exactMatch;
+
+            if (!queueUser) {
+                const { data: ilikeMatch } = await supabase
+                    .from('queue')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .ilike('username', donorName)
+                    .maybeSingle();
+                queueUser = ilikeMatch;
+            }
+
+            if (!queueUser) {
+                // Try to find if the donor name is contained in any username or vice-versa
+                const { data: partialMatch } = await supabase
+                    .from('queue')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .or(`username.ilike.%${donorName}%,nickname.ilike.%${donorName}%`)
+                    .limit(1)
+                    .maybeSingle();
+                queueUser = partialMatch;
+            }
 
             if (queueUser) {
                 const currentPriority = Number(queueUser.priority_amount || 0);
                 const newPriority = currentPriority + amount;
 
-                await supabase
+                const { error: updateError } = await supabase
                     .from('queue')
-                    .update({ priority_amount: newPriority, is_priority: true })
+                    .update({
+                        priority_amount: newPriority,
+                        is_priority: true
+                    })
                     .eq('id', queueUser.id);
 
-                console.log(`[LivePix] User ${donorName} priority increased to ${newPriority}.`);
+                if (updateError) {
+                    console.error("[LivePix] Error updating priority:", updateError);
+                } else {
+                    console.log(`[LivePix] User ${queueUser.username} priority increased from ${currentPriority} to ${newPriority}.`);
+                }
             } else {
-                console.log(`[LivePix] User ${donorName} not found in queue.`);
+                console.log(`[LivePix] User "${donorName}" not found in queue (Tried exact, ilike, and partial).`);
             }
         }
 
