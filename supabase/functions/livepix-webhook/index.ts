@@ -85,61 +85,8 @@ serve(async (req: Request) => {
             if (pointsError) console.error("[LivePix] Error adding points:", pointsError);
         }
 
-        // 2. Fura-Fila (Skip Queue)
-        if (settings.skip_queue_enabled && amount >= settings.skip_queue_price) {
-            console.log(`[LivePix] Skipping queue check for ${donorName}. Price threshold: ${settings.skip_queue_price}`);
-
-            if (!queueUser) {
-                // Fetch all users in the queue for this owner to do flexible matching in JS
-                const { data: allQueue } = await supabase
-                    .from('queue')
-                    .select('*')
-                    .eq('user_id', userId);
-
-                if (allQueue) {
-                    const donorNormalized = donorName.toLowerCase().trim();
-                    const donorWords = donorNormalized.split(/\s+/);
-
-                    queueUser = allQueue.find(u => {
-                        const userNormalized = u.username.toLowerCase().trim();
-                        const nickNormalized = (u.nickname || "").toLowerCase().trim();
-
-                        // 1. Exact or partial match (either direction)
-                        if (userNormalized === donorNormalized || nickNormalized === donorNormalized) return true;
-                        if (userNormalized.includes(donorNormalized) || donorNormalized.includes(userNormalized)) return true;
-                        if (nickNormalized && (nickNormalized.includes(donorNormalized) || donorNormalized.includes(nickNormalized))) return true;
-
-                        // 2. Word matching (check if any word of donor name matches username or nickname)
-                        return donorWords.some(word =>
-                            (word.length > 2 && (userNormalized.includes(word) || nickNormalized.includes(word)))
-                        );
-                    });
-                }
-            }
-
-            if (queueUser) {
-                const currentPriority = Number(queueUser.priority_amount || 0);
-                const newPriority = currentPriority + amount;
-
-                const { error: updateError } = await supabase
-                    .from('queue')
-                    .update({
-                        priority_amount: newPriority,
-                        is_priority: true
-                    })
-                    .eq('id', queueUser.id);
-
-                if (updateError) {
-                    console.error("[LivePix] Error updating priority:", updateError);
-                } else {
-                    console.log(`[LivePix] User ${queueUser.username} priority increased from ${currentPriority} to ${newPriority}.`);
-                }
-            } else {
-                console.log(`[LivePix] User "${donorName}" not found in queue (tried exact, ilike, and broad JS matching).`);
-            }
-        }
-
-        const alertMsg = settings.skip_queue_message.replace('{user}', donorName);
+        // 2. Alert Notification
+        const alertMsg = (settings.skip_queue_message || 'Novo Pix de @{user}!').replace('{user}', donorName);
         await supabase.from('bot_notifications').insert({
             user_id: userId,
             message: alertMsg,

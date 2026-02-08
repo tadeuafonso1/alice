@@ -354,15 +354,13 @@ export const HomePage: React.FC = () => {
             // 2. Fila
             const { data: queueData, error: queueError } = await supabase
                 .from('queue')
-                .select('username, nickname, joined_at, timer_start_time, warning_sent, priority_amount')
-                .order('priority_amount', { ascending: false })
+                .select('username, nickname, joined_at, timer_start_time, warning_sent')
                 .order('joined_at', { ascending: true });
 
             if (queueError) throw queueError;
             setQueue(queueData.map(q => ({
                 user: q.username,
-                nickname: q.nickname,
-                priority_amount: q.priority_amount ? Number(q.priority_amount) : 0
+                nickname: q.nickname
             })));
 
             // 3. Jogando
@@ -867,8 +865,8 @@ export const HomePage: React.FC = () => {
                 .from('queue')
                 .select('username')
                 .eq('user_id', session?.user?.id)
-                .order('priority_amount', { ascending: false })
-                .order('joined_at', { ascending: true });
+                .order('joined_at', { ascending: true }) // Default order when joining or refreshing logic elsewhere
+                ;
 
             const queueIndex = currentQueue ? currentQueue.findIndex(u => u.username === author) : -1;
             if (queueIndex !== -1) {

@@ -7,7 +7,6 @@ export interface Message {
 export interface QueueUser {
   user: string;
   nickname?: string;
-  priority_amount?: number;
   started_at?: string;
 }
 
@@ -91,9 +90,6 @@ export interface LivePixSettings {
   enabled: boolean;
   client_id: string;
   client_secret: string;
-  skip_queue_enabled: boolean;
-  skip_queue_price: number;
-  skip_queue_message: string;
   points_per_real: number;
   webhook_secret: string;
   updated_at?: string;

@@ -13,9 +13,6 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
         enabled: false,
         client_id: '',
         client_secret: '',
-        skip_queue_enabled: false,
-        skip_queue_price: 5.00,
-        skip_queue_message: '🚀🚀 ALERTA: @{user} acaba de furar a fila com um Pix! 🚀🚀',
         points_per_real: 100,
         webhook_secret: '',
     });
@@ -65,10 +62,8 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
                     setSettings({
                         ...data,
                         user_id: data.user_id || userId || '',
-                        skip_queue_price: Number(data.skip_queue_price),
                         client_id: data.client_id || '',
                         client_secret: data.client_secret || '',
-                        skip_queue_message: data.skip_queue_message || '',
                         webhook_secret: data.webhook_secret || '',
                     });
                 }
@@ -154,7 +149,7 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
                             Integração LivePix
                         </h3>
                         <p className="text-gray-400 mt-2 max-w-xl">
-                            Automatize o seu bot com doações em tempo real. Ative o "Fura-Fila" e recompense seus apoiadores com pontos de lealdade.
+                            Automatize o seu bot com doações em tempo real e recompense seus apoiadores com pontos de lealdade.
                         </p>
                     </div>
                     <div className="flex flex-col md:flex-row items-center gap-4">
@@ -353,7 +348,7 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
                                         try {
                                             const { error } = await supabase.from('bot_notifications').insert({
                                                 user_id: userId,
-                                                message: '🚀 TESTE: Alguém acabou de furar a fila! 🚀',
+                                                message: '🚀 TESTE: Alguém enviou um Pix! 🚀',
                                                 type: 'livepix_alert',
                                                 created_at: new Date().toISOString()
                                             });
@@ -396,48 +391,8 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
 
                 {expandedSections.automation && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 animate-fadeIn">
-                        {/* Fura Fila */}
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <RocketIcon className="w-5 h-5 text-cyan-500" />
-                                    <span className="font-bold text-gray-900 dark:text-white uppercase text-sm">Fura-Fila Automático</span>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        className="sr-only peer"
-                                        checked={settings.skip_queue_enabled}
-                                        onChange={(e) => setSettings({ ...settings, skip_queue_enabled: e.target.checked })}
-                                    />
-                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
-                                </label>
-                            </div>
+                        {/* Fura Fila Removido */}
 
-                            <div className={`space-y-4 transition-opacity duration-300 ${settings.skip_queue_enabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
-                                <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Valor Mínimo (R$)</label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        step="0.5"
-                                        value={settings.skip_queue_price}
-                                        onChange={(e) => setSettings({ ...settings, skip_queue_price: Number(e.target.value) })}
-                                        className="w-full bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cyan-500 outline-none dark:text-white font-bold"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Mensagem de Alerta (Chamativo)</label>
-                                    <textarea
-                                        value={settings.skip_queue_message}
-                                        onChange={(e) => setSettings({ ...settings, skip_queue_message: e.target.value })}
-                                        rows={3}
-                                        className="w-full bg-gray-50 dark:bg-[#0f111a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cyan-500 outline-none dark:text-white resize-none"
-                                    />
-                                    <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold tracking-wider">Use {'{user}'} para mencionar o doador.</p>
-                                </div>
-                            </div>
-                        </div>
 
                         {/* Loyalty Points */}
                         <div className="space-y-6">
@@ -475,7 +430,7 @@ export const LivePixSettings: React.FC<Props> = ({ userId }) => {
                         </div>
                         <div>
                             <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-[0.2em]">Modo de Simulação</h4>
-                            <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest mt-1">Teste pontos, alertas e fura-fila sem gastar nada</p>
+                            <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest mt-1">Teste pontos e alertas sem gastar nada</p>
                         </div>
                     </div>
                     <button

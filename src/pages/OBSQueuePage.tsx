@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { UserIcon, Gamepad2Icon, TimerIcon, UsersIcon } from '../../components/Icons';
+import { UserIcon, Gamepad2Icon, TimerIcon, UsersIcon, RefreshCwIcon } from '../../components/Icons';
 
 interface QueueUser {
     username: string;
     nickname?: string;
-    priority_amount?: number;
     started_at?: string;
 }
 
@@ -21,15 +20,13 @@ export const OBSQueuePage: React.FC = () => {
         // 1. Fetch Queue
         const { data: queueData } = await supabase
             .from('queue')
-            .select('username, nickname, priority_amount')
+            .select('username, nickname')
             .eq('user_id', userId)
-            .order('priority_amount', { ascending: false })
             .order('joined_at', { ascending: true });
 
         if (queueData) setQueue(queueData.map(u => ({
             username: u.username,
-            nickname: u.nickname,
-            priority_amount: u.priority_amount ? Number(u.priority_amount) : 0
+            nickname: u.nickname
         })));
 
         // 2. Fetch Playing
@@ -119,11 +116,6 @@ export const OBSQueuePage: React.FC = () => {
                                     <p className="text-white font-bold text-sm truncate">{u.username}</p>
                                     <div className="flex items-center gap-2">
                                         {u.nickname && <p className="text-cyan-400/60 text-[9px] font-bold truncate uppercase">{u.nickname}</p>}
-                                        {u.priority_amount ? (
-                                            <span className="text-[8px] font-black bg-amber-500/20 text-amber-500 px-1 rounded border border-amber-500/30">
-                                                IDOSA / VIP
-                                            </span>
-                                        ) : null}
                                     </div>
                                 </div>
                             </div>
