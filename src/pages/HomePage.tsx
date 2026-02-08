@@ -12,7 +12,6 @@ import { LoyaltySettings } from '@/components/LoyaltySettings';
 import { LikesTab } from '@/components/LikesTab';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings, CommandSetting } from '@/types';
 import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, UsersIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon, RocketIcon } from '@/components/Icons';
-import { LivePixSettings } from '@/components/LivePixSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/src/contexts/SessionContext';
 import { useTheme } from '@/src/contexts/ThemeContext';
@@ -1496,7 +1495,8 @@ export const HomePage: React.FC = () => {
                                             activeTab === 'youtube' ? 'Conexão YouTube' :
                                                 activeTab === 'timer' ? 'Timer' :
                                                     activeTab === 'loyalty' ? 'Sistema de Lealdade' :
-                                                        activeTab === 'livepix' ? 'Integração LivePix' : 'Alice Bot'}
+                                                        activeTab === 'likes' ? 'Contador de Likes' :
+                                                            activeTab === 'giveaway' ? 'Sorteio' : 'Alice Bot'}
                             </h2>
                             <p className="text-[10px] text-gray-500 font-medium">
                                 {activeTab === 'dashboard' ? 'Gerencie sua fila e interação com o bot.' :
@@ -1767,9 +1767,6 @@ export const HomePage: React.FC = () => {
                             />
                         )}
 
-                        {activeTab === 'livepix' && (
-                            <LivePixSettings userId={session?.user?.id} />
-                        )}
 
                     </div>
 

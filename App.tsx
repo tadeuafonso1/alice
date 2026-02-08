@@ -7,7 +7,6 @@ import { CommandsPage } from './src/pages/CommandsPage';
 import { PrivacyPolicyPage } from './src/pages/PrivacyPolicyPage';
 import { TermsOfServicePage } from './src/pages/TermsOfServicePage';
 import { OBSLikesPage } from './src/pages/OBSLikesPage';
-import { OBSAlertsPage } from './src/pages/OBSAlertsPage';
 import { OBSQueuePage } from './src/pages/OBSQueuePage';
 
 const AppRoutes: React.FC = () => {
@@ -68,7 +67,6 @@ const AppRoutes: React.FC = () => {
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/terms" element={<TermsOfServicePage />} />
             <Route path="/obs/likes/:userId" element={<OBSLikesPage />} />
-            <Route path="/obs/alerts/:userId" element={<OBSAlertsPage />} />
             <Route path="/obs/queue/:userId" element={<OBSQueuePage />} />
         </Routes>
     );

@@ -85,15 +85,7 @@ export interface AppSettings {
   autoSyncYoutube?: boolean;
 }
 
-export interface LivePixSettings {
-  user_id: string;
-  enabled: boolean;
-  client_id: string;
-  client_secret: string;
-  points_per_real: number;
-  webhook_secret: string;
-  updated_at?: string;
-}
+
 
 export interface SubscriberGoal {
   user_id: string;
