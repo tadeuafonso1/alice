@@ -1516,7 +1516,7 @@ export const HomePage: React.FC = () => {
                                     <>
                                         <div className="flex items-center gap-2">
                                             <div className="relative flex items-center">
-                                                <YoutubeIcon className="w-7 h-7" />
+                                                <YoutubeIcon className="w-8 h-8" />
                                                 {isPolling && (
                                                     <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
                                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -1572,7 +1572,7 @@ export const HomePage: React.FC = () => {
                                         onClick={() => setActiveTab('youtube')}
                                         className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors py-1 px-2"
                                     >
-                                        <YoutubeIcon className="w-5 h-5" />
+                                        <YoutubeIcon className="w-8 h-8" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Conectar YouTube</span>
                                     </button>
                                 )}

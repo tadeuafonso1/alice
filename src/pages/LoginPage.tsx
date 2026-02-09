@@ -59,7 +59,7 @@ export const LoginPage: React.FC = () => {
                 <div className="bg-white dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-gray-700">
                     <div className="text-center mb-6">
                         <div className="inline-flex items-center gap-2 text-white text-sm font-bold mb-4">
-                            <YoutubeIcon className="w-6 h-6" />
+                            <YoutubeIcon className="w-8 h-8" />
                             <span style={{ fontFamily: '"Roboto", sans-serif' }}>Acesso YouTube</span>
                         </div>
                         <p className="text-gray-600 dark:text-gray-400 text-sm">
@@ -78,7 +78,7 @@ export const LoginPage: React.FC = () => {
                         disabled={loading}
                         className="w-full flex items-center justify-center gap-3 py-4 px-6 border-2 border-gray-300 dark:border-gray-600 rounded-full shadow-lg text-base font-black text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-red-500 dark:hover:border-red-400 active:scale-95 transition-all focus:outline-none focus:ring-4 focus:ring-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed group"
                     >
-                        <YoutubeIcon className="w-6 h-6" />
+                        <YoutubeIcon className="w-8 h-8" />
                         <span
                             className="group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors"
                             style={{ fontFamily: '"Roboto", sans-serif' }}

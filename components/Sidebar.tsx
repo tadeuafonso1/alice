@@ -53,9 +53,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'commands', label: 'Comandos do Bot', icon: MessageSquareIcon },
         { id: 'settings', label: 'Configurações', icon: SettingsIcon },
         {
-            id: 'youtube', label: 'YouTube Chat', icon: (props: any) => (
-                <YoutubeIcon {...props} />
-            )
+            id: 'youtube', label: 'YouTube Chat', icon: (props: any) => {
+                const newProps = { ...props, className: props.className?.replace('w-6 h-6', 'w-8 h-8') };
+                return <YoutubeIcon {...newProps} />;
+            }
         },
         { id: 'timer', label: 'Timer Inatividade', icon: TimerIcon },
         { id: 'loyalty', label: 'Lealdade', icon: CrownIcon },
