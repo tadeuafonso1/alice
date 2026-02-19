@@ -88,8 +88,8 @@ export const OBSLikesPage: React.FC = () => {
 
     useEffect(() => {
         fetchStats();
-        // Poll every 60s to be slightly faster for OBS visual
-        const interval = setInterval(fetchStats, 60000);
+        // Poll every 10s now that we have more quota
+        const interval = setInterval(fetchStats, 10000);
         return () => clearInterval(interval);
     }, [userId]);
 

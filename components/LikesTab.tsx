@@ -138,7 +138,7 @@ export const LikesTab: React.FC = () => {
 
     useEffect(() => {
         fetchLikes();
-        const interval = setInterval(fetchLikes, 60000);
+        const interval = setInterval(fetchLikes, 10000);
         return () => clearInterval(interval);
     }, []);
 

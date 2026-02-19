@@ -73,7 +73,7 @@ export const LikeGoalWidget: React.FC<LikeGoalWidgetProps> = ({ isOpen }) => {
     // Poll every 60 seconds
     useEffect(() => {
         fetchLikes(); // Initial fetch
-        const interval = setInterval(fetchLikes, 60000);
+        const interval = setInterval(fetchLikes, 10000);
         return () => clearInterval(interval);
     }, [goal, step, autoUpdate]); // Depend on goal/step so next tick uses current values
 
