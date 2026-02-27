@@ -611,7 +611,7 @@ export const HomePage: React.FC = () => {
                 .from('blocked_users')
                 .insert({
                     user_id: session.user.id,
-                    youtube_channel_id: channelId,
+                    youtube_channel_id: channelId.trim(),
                     username: username
                 });
 
@@ -728,17 +728,28 @@ export const HomePage: React.FC = () => {
     const handleSendMessage = useCallback(async (author: string, text: string, authorChannelId?: string) => {
         if (!text.trim()) return;
 
-        // Verificar se usuário está bloqueado
-        if (authorChannelId && blockedChannelIds.has(authorChannelId)) {
-            console.log(`[BlockedUsers] Comando ignorado de usuário bloqueado: ${author} (${authorChannelId})`);
-            return;
-        }
-
-        // Normalização do autor: remove @ e espaços extras
+        // Normalização do autor e ID
         author = author.trim().replace(/@/g, '');
+        const trimmedChannelId = authorChannelId?.trim();
 
-        const userMessage: Message = { author, text, type: 'user', authorChannelId };
+        // SEMPRE adiciona a mensagem ao chat local para "uso normal"
+        const userMessage: Message = { author, text, type: 'user', authorChannelId: trimmedChannelId };
         setMessages(prev => [...prev, userMessage]);
+
+        // Verificar se usuário está bloqueado para COMANDOS
+        if (trimmedChannelId && blockedChannelIds.has(trimmedChannelId)) {
+            console.log(`[BlockedUsers] USUÁRIO BLOQUEADO DETECTADO: ${author} (${trimmedChannelId})`);
+
+            const isPotentialCommand = text.trim().startsWith('!') ||
+                appSettings.customCommands.some(c => text.trim().toLowerCase().startsWith(c.command.toLowerCase()));
+
+            if (isPotentialCommand) {
+                console.log(`[BlockedUsers] Bloqueando execução do comando: ${text}`);
+                return;
+            } else {
+                console.log(`[BlockedUsers] Mensagem comum permitida para usuário bloqueado.`);
+            }
+        }
 
         // Rastreia como chatter ativo - Incluído Admin para facilitar testes
         setActiveChatters(prev => ({
@@ -1047,7 +1058,7 @@ export const HomePage: React.FC = () => {
             const points = userPointsData?.points || 0;
             sendBotMessage('userPoints', { user: author, points });
         }
-    }, [adminName, queue, playingUsers, isTimerActive, timeoutMinutes, addBotMessage, appSettings, warningSentUsers, handleNextUser, activateTimer, deactivateTimer, sendBotMessage, updateUserTimer, session?.user?.id]);
+    }, [adminName, queue, playingUsers, isTimerActive, timeoutMinutes, addBotMessage, appSettings, warningSentUsers, handleNextUser, activateTimer, deactivateTimer, sendBotMessage, updateUserTimer, session?.user?.id, blockedChannelIds]);
 
     const handleSendMessageRef = useRef(handleSendMessage);
     useEffect(() => {
