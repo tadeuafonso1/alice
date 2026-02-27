@@ -68,7 +68,7 @@ const MessageItem: React.FC<{
         <div className={`flex flex-col ${alignment} min-w-0 animate-fadeIn`}>
             <div className="flex items-center gap-2 px-1 mb-1">
                 <p
-                    className={`font-bold ${small ? 'text-[10px]' : 'text-[13px]'} tracking-tight`}
+                    className={`font-bold ${small ? 'text-[10px]' : 'text-[13px]'} tracking-tight text-slate-900 dark:text-slate-100`}
                     style={{ color: isCurrentUser ? undefined : nameColor }}
                 >
                     {author}
