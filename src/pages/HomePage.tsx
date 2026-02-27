@@ -10,6 +10,7 @@ import { TimerSettings } from '@/components/TimerSettings';
 import { GiveawayRoulette } from '@/components/GiveawayRoulette';
 import { LoyaltySettings } from '@/components/LoyaltySettings';
 import { LikesTab } from '@/components/LikesTab';
+import { BlockedUsersTab } from '@/components/BlockedUsersTab';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings, CommandSetting } from '@/types';
 import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, UsersIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon, RocketIcon } from '@/components/Icons';
 import { supabase } from '@/integrations/supabase/client';
@@ -89,6 +90,7 @@ export const HomePage: React.FC = () => {
     const [warningSentUsers, setWarningSentUsers] = useState<Set<string>>(new Set());
     const [activeChatters, setActiveChatters] = useState<Record<string, number>>({});
     const [giveawayParticipants, setGiveawayParticipants] = useState<Set<string>>(new Set());
+    const [blockedChannelIds, setBlockedChannelIds] = useState<Set<string>>(new Set());
     const isInitialLoad = useRef(true);
 
     // Persistence: Load giveaway participants
@@ -458,6 +460,44 @@ export const HomePage: React.FC = () => {
         };
     }, [session?.user?.id, refreshData]);
 
+    // Listener para usuários bloqueados
+    useEffect(() => {
+        if (!session?.user?.id) return;
+
+        const fetchBlocked = async () => {
+            const { data, error } = await supabase
+                .from('blocked_users')
+                .select('youtube_channel_id')
+                .eq('user_id', session.user.id);
+
+            if (!error && data) {
+                setBlockedChannelIds(new Set(data.map(u => u.youtube_channel_id)));
+            }
+        };
+
+        fetchBlocked();
+
+        const channel = supabase
+            .channel('blocked-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'blocked_users',
+                    filter: `user_id=eq.${session.user.id}`
+                },
+                () => {
+                    fetchBlocked();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [session?.user?.id]);
+
     // Persistência automática do estado do timer (Debounced)
     useEffect(() => {
         if (isInitialLoad.current) return;
@@ -655,8 +695,14 @@ export const HomePage: React.FC = () => {
         }
     }, [isTimerActive, deactivateTimer, activateTimer]);
 
-    const handleSendMessage = useCallback(async (author: string, text: string) => {
+    const handleSendMessage = useCallback(async (author: string, text: string, authorChannelId?: string) => {
         if (!text.trim()) return;
+
+        // Verificar se usuário está bloqueado
+        if (authorChannelId && blockedChannelIds.has(authorChannelId)) {
+            console.log(`[BlockedUsers] Comando ignorado de usuário bloqueado: ${author} (${authorChannelId})`);
+            return;
+        }
 
         // Normalização do autor: remove @ e espaços extras
         author = author.trim().replace(/@/g, '');
@@ -1031,7 +1077,8 @@ export const HomePage: React.FC = () => {
 
                         const author = item.authorDetails.displayName;
                         const text = item.snippet.displayMessage;
-                        await handleSendMessageRef.current(author, text);
+                        const authorChannelId = item.authorDetails.channelId;
+                        await handleSendMessageRef.current(author, text, authorChannelId);
                     }
                 } else {
                     console.log("Sessão iniciada: Histórico ignorado. Pronto para as próximas mensagens.");
@@ -1751,6 +1798,7 @@ export const HomePage: React.FC = () => {
                         )}
 
                         {activeTab === 'likes' && <LikesTab />}
+                        {activeTab === 'blocked' && <BlockedUsersTab />}
 
                         {activeTab === 'giveaway' && (
                             <GiveawayRoulette

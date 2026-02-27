@@ -20,7 +20,8 @@ import {
     UsersIcon,
     AnchorIcon,
     ExternalLinkIcon,
-    YoutubeIcon
+    YoutubeIcon,
+    ShieldIcon
 } from './Icons';
 import { LikeGoalWidget } from './LikeGoalWidget';
 import { useSession } from '../src/contexts/SessionContext';
@@ -62,6 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'loyalty', label: 'Lealdade', icon: CrownIcon },
         { id: 'likes', label: 'Contador de Likes', icon: ThumbsUpIcon },
         { id: 'giveaway', label: 'Sorteio', icon: GiftIcon },
+        { id: 'blocked', label: 'Usuários Bloqueados', icon: ShieldIcon },
     ];
 
     return (
