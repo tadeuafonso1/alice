@@ -2,6 +2,7 @@ export interface Message {
   author: string;
   text: string;
   type: 'user' | 'bot';
+  authorChannelId?: string;
 }
 
 export interface QueueUser {

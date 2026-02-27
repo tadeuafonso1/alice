@@ -600,6 +600,36 @@ export const HomePage: React.FC = () => {
         await handleMoveToPlaying(nextUserObj.user);
     }, [queue, sendBotMessage, handleMoveToPlaying]);
 
+    const handleQuickBlock = useCallback(async (channelId: string, username: string) => {
+        if (!session?.user?.id || !channelId) return;
+
+        const confirmed = window.confirm(`Deseja bloquear os comandos de @${username}?`);
+        if (!confirmed) return;
+
+        try {
+            const { error } = await supabase
+                .from('blocked_users')
+                .insert({
+                    user_id: session.user.id,
+                    youtube_channel_id: channelId,
+                    username: username
+                });
+
+            if (error) {
+                if (error.code === '23505') {
+                    addBotMessage(`@${username} já está bloqueado.`);
+                    return;
+                }
+                throw error;
+            }
+
+            addBotMessage(`@${username} foi bloqueado e não pode mais usar comandos.`);
+        } catch (err: any) {
+            console.error('Error blocking user from chat:', err);
+            addBotMessage(`Erro ao bloquear @${username}: ${err.message}`);
+        }
+    }, [session?.user?.id, addBotMessage]);
+
     const handleRemovePlayingUser = useCallback(async (userToRemove: string) => {
         setPlayingUsers(prev => prev.filter(u => u.user !== userToRemove));
         try {
@@ -707,7 +737,7 @@ export const HomePage: React.FC = () => {
         // Normalização do autor: remove @ e espaços extras
         author = author.trim().replace(/@/g, '');
 
-        const userMessage: Message = { author, text, type: 'user' };
+        const userMessage: Message = { author, text, type: 'user', authorChannelId };
         setMessages(prev => [...prev, userMessage]);
 
         // Rastreia como chatter ativo - Incluído Admin para facilitar testes
@@ -1686,7 +1716,11 @@ export const HomePage: React.FC = () => {
                                         </div>
                                         {isChatVisible && (
                                             <div className="flex-grow overflow-hidden flex flex-col bg-gray-100 dark:bg-[#0f111a]">
-                                                <ChatWindow messages={messages} currentUser={currentUser} />
+                                                <ChatWindow
+                                                    messages={messages}
+                                                    currentUser={currentUser}
+                                                    onBlockUser={handleQuickBlock}
+                                                />
                                                 <MessageInput
                                                     onSendMessage={(text) => handleSendMessage(adminName, text)}
                                                     commands={appSettings.commands}

@@ -1,11 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import type { Message } from '../types';
-import { BotIcon, UserIcon } from './Icons';
+import { BotIcon, UserIcon, ShieldIcon } from './Icons';
 
 interface ChatWindowProps {
     messages: Message[];
     currentUser: string;
     small?: boolean;
+    onBlockUser?: (channelId: string, username: string) => void;
 }
 
 const TWITCH_COLORS = [
@@ -32,7 +33,12 @@ const getUsernameColor = (username: string) => {
     return TWITCH_COLORS[index];
 };
 
-const MessageItem: React.FC<{ message: Message; isCurrentUser: boolean; small?: boolean }> = ({ message, isCurrentUser, small }) => {
+const MessageItem: React.FC<{
+    message: Message;
+    isCurrentUser: boolean;
+    small?: boolean;
+    onBlockClick?: (channelId: string, username: string) => void;
+}> = ({ message, isCurrentUser, small, onBlockClick }) => {
     const { author, text, type } = message;
 
     if (type === 'bot') {
@@ -60,12 +66,23 @@ const MessageItem: React.FC<{ message: Message; isCurrentUser: boolean; small?: 
 
     return (
         <div className={`flex flex-col ${alignment} min-w-0 animate-fadeIn`}>
-            <p
-                className={`font-bold ${small ? 'text-[10px]' : 'text-[13px]'} px-1 mb-1 tracking-tight`}
-                style={{ color: isCurrentUser ? undefined : nameColor }}
-            >
-                {author}
-            </p>
+            <div className="flex items-center gap-2 px-1 mb-1">
+                <p
+                    className={`font-bold ${small ? 'text-[10px]' : 'text-[13px]'} tracking-tight`}
+                    style={{ color: isCurrentUser ? undefined : nameColor }}
+                >
+                    {author}
+                </p>
+                {!isCurrentUser && message.authorChannelId && onBlockClick && (
+                    <button
+                        onClick={() => onBlockClick(message.authorChannelId!, author)}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-0.5"
+                        title="Bloquear comandos deste usuário"
+                    >
+                        <ShieldIcon className="w-3.5 h-3.5" />
+                    </button>
+                )}
+            </div>
             <div className={`flex items-start gap-3 max-w-full`}>
                 <div className={`border ${bubbleBg} ${borderColor} ${small ? 'py-1 px-3 text-[11px]' : 'py-2 px-4 text-[14px]'} rounded-xl ${roundedClass} ${textColor} break-words shadow-sm leading-relaxed`}>
                     {text}
@@ -75,7 +92,7 @@ const MessageItem: React.FC<{ message: Message; isCurrentUser: boolean; small?: 
     );
 };
 
-export const ChatWindow: React.FC<ChatWindowProps> = ({ messages, currentUser, small }) => {
+export const ChatWindow: React.FC<ChatWindowProps> = ({ messages, currentUser, small, onBlockUser }) => {
     const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -90,7 +107,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ messages, currentUser, s
         <div className={`flex-grow ${small ? 'p-3' : 'p-6'} overflow-y-auto custom-scrollbar bg-slate-50/30 dark:bg-slate-950/20`}>
             <div className={`${small ? 'space-y-4' : 'space-y-6'}`}>
                 {messages.map((msg, index) => (
-                    <MessageItem key={index} message={msg} isCurrentUser={msg.author === currentUser} small={small} />
+                    <MessageItem
+                        key={index}
+                        message={msg}
+                        isCurrentUser={msg.author === currentUser}
+                        small={small}
+                        onBlockClick={onBlockUser}
+                    />
                 ))}
                 <div ref={endOfMessagesRef} />
             </div>
