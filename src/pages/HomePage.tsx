@@ -91,6 +91,7 @@ export const HomePage: React.FC = () => {
     const [activeChatters, setActiveChatters] = useState<Record<string, number>>({});
     const [giveawayParticipants, setGiveawayParticipants] = useState<Set<string>>(new Set());
     const [blockedChannelIds, setBlockedChannelIds] = useState<Set<string>>(new Set());
+    const [blockedUsernames, setBlockedUsernames] = useState<Set<string>>(new Set());
     const isInitialLoad = useRef(true);
 
     // Persistence: Load giveaway participants
@@ -467,15 +468,19 @@ export const HomePage: React.FC = () => {
         const fetchBlocked = async () => {
             const { data, error } = await supabase
                 .from('blocked_users')
-                .select('youtube_channel_id')
+                .select('youtube_channel_id, username')
                 .eq('user_id', session.user.id);
 
             if (!error && data) {
                 setBlockedChannelIds(new Set(data.map(u => u.youtube_channel_id)));
+                const userNames = data.filter(u => u.username).map(u => u.username!.toLowerCase().trim());
+                setBlockedUsernames(new Set(userNames));
             }
         };
 
         fetchBlocked();
+
+        window.addEventListener('blockedUsersChanged', fetchBlocked);
 
         const channel = supabase
             .channel('blocked-changes')
@@ -495,6 +500,7 @@ export const HomePage: React.FC = () => {
 
         return () => {
             supabase.removeChannel(channel);
+            window.removeEventListener('blockedUsersChanged', fetchBlocked);
         };
     }, [session?.user?.id]);
 
@@ -624,6 +630,7 @@ export const HomePage: React.FC = () => {
             }
 
             addBotMessage(`@${username} foi bloqueado e não pode mais usar comandos.`);
+            window.dispatchEvent(new CustomEvent('blockedUsersChanged'));
         } catch (err: any) {
             console.error('Error blocking user from chat:', err);
             addBotMessage(`Erro ao bloquear @${username}: ${err.message}`);
@@ -737,8 +744,11 @@ export const HomePage: React.FC = () => {
         setMessages(prev => [...prev, userMessage]);
 
         // Verificar se usuário está bloqueado para COMANDOS
-        if (trimmedChannelId && blockedChannelIds.has(trimmedChannelId)) {
-            console.log(`[BlockedUsers] USUÁRIO BLOQUEADO DETECTADO: ${author} (${trimmedChannelId})`);
+        const isUserBlockedById = trimmedChannelId && blockedChannelIds.has(trimmedChannelId);
+        const isUserBlockedByName = blockedUsernames.has(author.toLowerCase().trim());
+
+        if (isUserBlockedById || isUserBlockedByName) {
+            console.log(`[BlockedUsers] USUÁRIO BLOQUEADO DETECTADO: ${author} (ID: ${trimmedChannelId})`);
 
             const normalizeText = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
             const commandText = normalizeText(text.trim());
@@ -1064,7 +1074,7 @@ export const HomePage: React.FC = () => {
             const points = userPointsData?.points || 0;
             sendBotMessage('userPoints', { user: author, points });
         }
-    }, [adminName, queue, playingUsers, isTimerActive, timeoutMinutes, addBotMessage, appSettings, warningSentUsers, handleNextUser, activateTimer, deactivateTimer, sendBotMessage, updateUserTimer, session?.user?.id, blockedChannelIds]);
+    }, [adminName, queue, playingUsers, isTimerActive, timeoutMinutes, addBotMessage, appSettings, warningSentUsers, handleNextUser, activateTimer, deactivateTimer, sendBotMessage, updateUserTimer, session?.user?.id, blockedChannelIds, blockedUsernames]);
 
     const handleSendMessageRef = useRef(handleSendMessage);
     useEffect(() => {

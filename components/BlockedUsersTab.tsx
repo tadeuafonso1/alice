@@ -64,6 +64,7 @@ export const BlockedUsersTab: React.FC = () => {
             setNewChannelId('');
             setNewUsername('');
             fetchBlockedUsers();
+            window.dispatchEvent(new CustomEvent('blockedUsersChanged'));
         } catch (err: any) {
             console.error('Error blocking user:', err);
             showNotification(err.message || 'Erro ao bloquear usuário', 'error');
@@ -90,6 +91,7 @@ export const BlockedUsersTab: React.FC = () => {
 
             showNotification('Usuário desbloqueado!');
             fetchBlockedUsers();
+            window.dispatchEvent(new CustomEvent('blockedUsersChanged'));
         } catch (err: any) {
             console.error('Error unblocking user:', err);
             showNotification('Erro ao desbloquear usuário', 'error');
