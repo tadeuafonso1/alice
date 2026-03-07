@@ -740,8 +740,14 @@ export const HomePage: React.FC = () => {
         if (trimmedChannelId && blockedChannelIds.has(trimmedChannelId)) {
             console.log(`[BlockedUsers] USUÁRIO BLOQUEADO DETECTADO: ${author} (${trimmedChannelId})`);
 
-            const isPotentialCommand = text.trim().startsWith('!') ||
-                appSettings.customCommands.some(c => text.trim().toLowerCase().startsWith(c.command.toLowerCase()));
+            const normalizeText = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            const commandText = normalizeText(text.trim());
+
+            const isPotentialCommand =
+                text.trim().startsWith('!') ||
+                Object.values(appSettings.commands).some(c => c.enabled && commandText.startsWith(normalizeText(c.command))) ||
+                appSettings.customCommands.some(c => commandText.startsWith(normalizeText(c.command))) ||
+                (appSettings.loyalty.enabled && (commandText === '!pontos' || commandText === '!points'));
 
             if (isPotentialCommand) {
                 console.log(`[BlockedUsers] Bloqueando execução do comando: ${text}`);
