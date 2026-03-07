@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/src/contexts/SessionContext';
-import { ShieldIcon, SearchIcon, TrashIcon, RefreshCwIcon, PlusIcon, UsersIcon } from './Icons';
+import { ShieldIcon, SearchIcon, TrashIcon, RefreshCwIcon, PlusIcon, UsersIcon, EditIcon } from './Icons';
 
 export const BlockedUsersTab: React.FC = () => {
     const { session } = useSession();
@@ -10,6 +10,7 @@ export const BlockedUsersTab: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [newChannelId, setNewChannelId] = useState('');
     const [newUsername, setNewUsername] = useState('');
+    const [newReason, setNewReason] = useState('');
     const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
     const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
@@ -50,7 +51,8 @@ export const BlockedUsersTab: React.FC = () => {
                 .insert({
                     user_id: session.user.id,
                     youtube_channel_id: newChannelId.trim(),
-                    username: newUsername.trim() || null
+                    username: newUsername.trim() || null,
+                    reason: newReason.trim() || null
                 });
 
             if (error) {
@@ -63,11 +65,38 @@ export const BlockedUsersTab: React.FC = () => {
             showNotification('Usuário bloqueado com sucesso!');
             setNewChannelId('');
             setNewUsername('');
+            setNewReason('');
             fetchBlockedUsers();
             window.dispatchEvent(new CustomEvent('blockedUsersChanged'));
         } catch (err: any) {
             console.error('Error blocking user:', err);
             showNotification(err.message || 'Erro ao bloquear usuário', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleEditReason = async (channelId: string, currentReason: string) => {
+        if (!session?.user?.id) return;
+
+        const newReasonPrompt = window.prompt("Digite o novo motivo do bloqueio:", currentReason || "");
+        if (newReasonPrompt === null) return;
+
+        setIsLoading(true);
+        try {
+            const { error } = await supabase
+                .from('blocked_users')
+                .update({ reason: newReasonPrompt.trim() || null })
+                .eq('youtube_channel_id', channelId)
+                .eq('user_id', session.user.id);
+
+            if (error) throw error;
+
+            showNotification('Motivo atualizado com sucesso!');
+            fetchBlockedUsers();
+        } catch (err: any) {
+            console.error('Error updating reason:', err);
+            showNotification('Erro ao atualizar motivo', 'error');
         } finally {
             setIsLoading(false);
         }
@@ -136,6 +165,16 @@ export const BlockedUsersTab: React.FC = () => {
                                 placeholder="Nome para identificar o usuário"
                                 value={newUsername}
                                 onChange={(e) => setNewUsername(e.target.value)}
+                                className="w-full bg-gray-50 dark:bg-[#0F172A] dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 focus:ring-2 focus:ring-red-500 outline-none transition-all text-sm font-medium"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Motivo do Bloqueio (Opcional)</label>
+                            <input
+                                type="text"
+                                placeholder="Por que este usuário foi bloqueado?"
+                                value={newReason}
+                                onChange={(e) => setNewReason(e.target.value)}
                                 className="w-full bg-gray-50 dark:bg-[#0F172A] dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 focus:ring-2 focus:ring-red-500 outline-none transition-all text-sm font-medium"
                             />
                         </div>
@@ -227,19 +266,35 @@ export const BlockedUsersTab: React.FC = () => {
                                             <p className="text-sm font-bold text-gray-900 dark:text-zinc-100 truncate">
                                                 {user.username || 'Usuário Sem Nome'}
                                             </p>
-                                            <p className="text-[10px] font-mono text-gray-500 dark:text-gray-400 uppercase tracking-tight truncate">
-                                                ID: {user.youtube_channel_id}
-                                            </p>
+                                            <div className="flex flex-col">
+                                                <p className="text-[10px] font-mono text-gray-500 dark:text-gray-400 uppercase tracking-tight truncate">
+                                                    ID: {user.youtube_channel_id}
+                                                </p>
+                                                {user.reason && (
+                                                    <p className="text-xs text-red-600 dark:text-red-400 mt-1 italic truncate max-w-[200px] xl:max-w-[300px]" title={user.reason}>
+                                                        Motivo: {user.reason}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <button
-                                        onClick={() => handleUnblockUser(user.youtube_channel_id)}
-                                        className="p-3 bg-gray-100 dark:bg-gray-800 hover:bg-emerald-500 hover:text-white rounded-xl transition-all text-gray-500"
-                                        title="Desbloquear usuário"
-                                    >
-                                        <TrashIcon className="w-4 h-4" />
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleEditReason(user.youtube_channel_id, user.reason)}
+                                            className="p-3 bg-gray-100 dark:bg-gray-800 hover:bg-blue-500 hover:text-white rounded-xl transition-all text-gray-500"
+                                            title="Editar Motivo"
+                                        >
+                                            <EditIcon className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => handleUnblockUser(user.youtube_channel_id)}
+                                            className="p-3 bg-gray-100 dark:bg-gray-800 hover:bg-emerald-500 hover:text-white rounded-xl transition-all text-gray-500"
+                                            title="Desbloquear usuário"
+                                        >
+                                            <TrashIcon className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             ))
                         )}
