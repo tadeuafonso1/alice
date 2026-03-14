@@ -11,6 +11,7 @@ import { GiveawayRoulette } from '@/components/GiveawayRoulette';
 import { LoyaltySettings } from '@/components/LoyaltySettings';
 import { LikesTab } from '@/components/LikesTab';
 import { BlockedUsersTab } from '@/components/BlockedUsersTab';
+import { AlertsTab } from '@/components/AlertsTab';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings, CommandSetting } from '@/types';
 import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, UsersIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon, RocketIcon } from '@/components/Icons';
 import { supabase } from '@/integrations/supabase/client';
@@ -1600,7 +1601,8 @@ export const HomePage: React.FC = () => {
                                                 activeTab === 'timer' ? 'Timer' :
                                                     activeTab === 'loyalty' ? 'Sistema de Lealdade' :
                                                         activeTab === 'likes' ? 'Contador de Likes' :
-                                                            activeTab === 'giveaway' ? 'Sorteio' : 'Alice Bot'}
+                                                            activeTab === 'giveaway' ? 'Sorteio' : 
+                                                                activeTab === 'alerts' ? 'Alertas na Tela' : 'Alice Bot'}
                             </h2>
                             <p className="text-[10px] text-gray-500 font-medium">
                                 {activeTab === 'dashboard' ? 'Gerencie sua fila e interação com o bot.' :
@@ -1608,6 +1610,7 @@ export const HomePage: React.FC = () => {
                                         activeTab === 'youtube' ? 'Gerencie a conexão com o chat da live.' :
                                             activeTab === 'timer' ? 'Configuração de inatividade automática.' :
                                                 activeTab === 'loyalty' ? 'Configure pontos e recompensas.' :
+                                                    activeTab === 'alerts' ? 'Configure os banners que aparecem no seu OBS.' :
                                                     'Painel administrativo.'}
                             </p>
                         </div>
@@ -1860,6 +1863,7 @@ export const HomePage: React.FC = () => {
 
                         {activeTab === 'likes' && <LikesTab />}
                         {activeTab === 'blocked' && <BlockedUsersTab />}
+                        {activeTab === 'alerts' && <AlertsTab />}
 
                         {activeTab === 'giveaway' && (
                             <GiveawayRoulette
