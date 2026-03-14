@@ -108,7 +108,86 @@ export const AlertsTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* Seção 2: Controles de Teste */}
+            {/* Seção 2: Som Personalizado do Alerta */}
+            <div className="mb-8 p-6 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-800 rounded-2xl">
+                <h4 className="text-lg font-bold mb-4">Som Personalizado do Alerta</h4>
+                <p className="text-sm text-gray-500 mb-6">
+                    Envie um arquivo de áudio curto (.mp3 ou .wav) para tocar no lugar do som padrão quando o alerta aparecer no OBS.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                    <input 
+                        type="file" 
+                        accept="audio/mp3, audio/wav, audio/mpeg"
+                        className="block w-full text-sm text-slate-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-cyan-50 file:text-cyan-700
+                        hover:file:bg-cyan-100
+                        dark:file:bg-cyan-900/30 dark:file:text-cyan-400
+                        dark:hover:file:bg-cyan-900/50 cursor-pointer"
+                        onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file || !session?.user?.id) return;
+                            
+                            // Validar tamanho (max 2MB para não pesar no OBS)
+                            if (file.size > 2 * 1024 * 1024) {
+                                alert('O arquivo deve ter no máximo 2MB.');
+                                e.target.value = '';
+                                return;
+                            }
+
+                            try {
+                                setIsTesting(true); // Reaproveitando o state de loading para simplificar
+                                
+                                const fileExt = file.name.split('.').pop();
+                                const filePath = `${session.user.id}/alert.${fileExt}`;
+
+                                // 1. Upload para o Storage
+                                const { error: uploadError } = await supabase.storage
+                                    .from('alert_sounds')
+                                    .upload(filePath, file, { upsert: true });
+
+                                if (uploadError) throw uploadError;
+
+                                // 2. Pegar a URL pública
+                                const { data: { publicUrl } } = supabase.storage
+                                    .from('alert_sounds')
+                                    .getPublicUrl(filePath);
+
+                                // 3. Salvar no Settings (se as settings existirem)
+                                const { data: settingsData } = await supabase
+                                    .from('settings')
+                                    .select('id')
+                                    .eq('user_id', session.user.id)
+                                    .single();
+                                
+                                if (settingsData) {
+                                    const { error: updateError } = await supabase
+                                        .from('settings')
+                                        .update({ alert_audio_url: publicUrl })
+                                        .eq('id', settingsData.id);
+                                        
+                                    if (updateError) throw updateError;
+                                } else {
+                                     // Se por acaso o user não tiver settings ainda
+                                     console.warn("Usuário sem registro na tabela settings. Não foi possível salvar o vínculo da URL.");
+                                }
+
+                                alert('Som de alerta atualizado com sucesso! Agora clique em Testar Alerta para ouvir.');
+                            } catch (error) {
+                                console.error('Erro ao fazer upload do som:', error);
+                                alert('Erro ao fazer upload do som. Verifique se o Bucket "alert_sounds" foi criado no SQL.');
+                            } finally {
+                                setIsTesting(false);
+                            }
+                        }}
+                    />
+                </div>
+            </div>
+
+            {/* Seção 3: Controles de Teste */}
             <div className="p-6 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-800 rounded-2xl">
                 <h4 className="text-lg font-bold mb-4">Testar Alertas</h4>
                 <p className="text-sm text-gray-500 mb-6">

@@ -84,6 +84,7 @@ export interface AppSettings {
   loyalty: LoyaltySettings;
   youtubeChannelId?: string;
   autoSyncYoutube?: boolean;
+  alert_audio_url?: string;
 }
 
 
