@@ -124,19 +124,33 @@ export const OBSAlertsPage: React.FC = () => {
     }, [userId]);
 
     // 3. Processar Fila de Alertas
-    useEffect(() => {
+    const processQueue = () => {
         if (alertQueue.length > 0 && !isPlaying && !currentAlert) {
             playNextAlert();
         }
-    }, [alertQueue, isPlaying, currentAlert]);
+    };
+
+    useEffect(() => {
+        processQueue();
+    }, [alertQueue.length, isPlaying, currentAlert]);
 
     const playNextAlert = async () => {
-        if (alertQueue.length === 0) return;
+        if (alertQueue.length === 0 || isPlaying || currentAlert) return;
 
-        // Pega o primeiro da fila
-        const alertToPlay = alertQueue[0];
-        setAlertQueue(prev => prev.slice(1)); // Remove da fila local
+        // Tira o primeiro da fila instantaneamente no state usando a função de callback
+        // para garantir que não haja recriação dupla caso o React faça batch
+        let alertToPlay: ObsAlert | null = null;
+        setAlertQueue(prev => {
+            if (prev.length === 0) return prev;
+            alertToPlay = prev[0];
+            return prev.slice(1);
+        });
+
+        // Espera o state sync se necessário (gambiarra de microtask par garantir que alertToPlay exista antes de continuar)
+        await new Promise(resolve => setTimeout(resolve, 0));
         
+        if (!alertToPlay) return;
+
         setIsPlaying(true);
         setCurrentAlert(alertToPlay);
 
@@ -210,13 +224,13 @@ export const OBSAlertsPage: React.FC = () => {
 
         // Timer para tirar o alerta da tela
         timeoutRef.current = setTimeout(() => {
-            // Inicia animação de saída (removendo currentAlert após delay)
             setIsPlaying(false);
             
-            // Espera a animação de saída terminar para limpar o componente e chamar o próximo
+            // Espera a animação de saída terminar para limpar o componente
+            // Usa const pura no timeout para não depender do state atual
             setTimeout(() => {
                 setCurrentAlert(null);
-            }, 1000); // 1 segundo para a animação de saída
+            }, 1000); 
 
         }, ANIMATION_OUT_DELAY_MS);
     };
