@@ -1,5 +1,8 @@
--- Adicionar coluna para a URL de audio na tabela settings
-ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS alert_audio_url TEXT;
+-- Adicionar colunas para a URL de audio na tabela settings para cada tipo de alerta
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS alert_audio_subscriber TEXT;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS alert_audio_member TEXT;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS alert_audio_superchat TEXT;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS alert_audio_donation TEXT;
 
 -- Criação do Bucket de Storage para os sons (Se não existir)
 -- Como isso pode dar erro dependendo do setup, envolvemos num bloco PL/PGSQL seguro

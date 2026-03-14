@@ -108,82 +108,85 @@ export const AlertsTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* Seção 2: Som Personalizado do Alerta */}
+            {/* Seção 2: Sons Personalizados dos Alertas */}
             <div className="mb-8 p-6 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-800 rounded-2xl">
-                <h4 className="text-lg font-bold mb-4">Som Personalizado do Alerta</h4>
+                <h4 className="text-lg font-bold mb-4">Sons Personalizados</h4>
                 <p className="text-sm text-gray-500 mb-6">
-                    Envie um arquivo de áudio curto (.mp3 ou .wav) para tocar no lugar do som padrão quando o alerta aparecer no OBS.
+                    Envie um arquivo de áudio curto (.mp3 ou .wav, max 2MB) para cada tipo de alerta. Se você não enviar, o som padrão será tocado.
                 </p>
                 
-                <div className="flex flex-col sm:flex-row gap-4 items-center">
-                    <input 
-                        type="file" 
-                        accept="audio/mp3, audio/wav, audio/mpeg"
-                        className="block w-full text-sm text-slate-500
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-full file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-cyan-50 file:text-cyan-700
-                        hover:file:bg-cyan-100
-                        dark:file:bg-cyan-900/30 dark:file:text-cyan-400
-                        dark:hover:file:bg-cyan-900/50 cursor-pointer"
-                        onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file || !session?.user?.id) return;
-                            
-                            // Validar tamanho (max 2MB para não pesar no OBS)
-                            if (file.size > 2 * 1024 * 1024) {
-                                alert('O arquivo deve ter no máximo 2MB.');
-                                e.target.value = '';
-                                return;
-                            }
+                <div className="flex flex-col gap-6">
+                    {[
+                        { id: 'subscriber', label: '🌟 Novo Inscrito', column: 'alert_audio_subscriber' },
+                        { id: 'member', label: '👑 Novo Membro', column: 'alert_audio_member' },
+                        { id: 'superchat', label: '💰 Super Chat', column: 'alert_audio_superchat' },
+                        { id: 'donation', label: '💳 Doação Externa', column: 'alert_audio_donation' }
+                    ].map(type => (
+                        <div key={type.id} className="flex flex-col sm:flex-row gap-4 items-center justify-between p-4 bg-gray-50 dark:bg-[#0f111a] rounded-xl border border-gray-100 dark:border-gray-800">
+                            <div className="font-semibold">{type.label}</div>
+                            <input 
+                                type="file" 
+                                accept="audio/mp3, audio/wav, audio/mpeg"
+                                className="block w-full sm:w-auto text-sm text-slate-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-xl file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-cyan-50 file:text-cyan-700
+                                hover:file:bg-cyan-100
+                                dark:file:bg-cyan-900/30 dark:file:text-cyan-400
+                                dark:hover:file:bg-cyan-900/50 cursor-pointer"
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file || !session?.user?.id) return;
+                                    
+                                    if (file.size > 2 * 1024 * 1024) {
+                                        alert('O arquivo deve ter no máximo 2MB.');
+                                        e.target.value = '';
+                                        return;
+                                    }
 
-                            try {
-                                setIsTesting(true); // Reaproveitando o state de loading para simplificar
-                                
-                                const fileExt = file.name.split('.').pop();
-                                const filePath = `${session.user.id}/alert.${fileExt}`;
-
-                                // 1. Upload para o Storage
-                                const { error: uploadError } = await supabase.storage
-                                    .from('alert_sounds')
-                                    .upload(filePath, file, { upsert: true });
-
-                                if (uploadError) throw uploadError;
-
-                                // 2. Pegar a URL pública
-                                const { data: { publicUrl } } = supabase.storage
-                                    .from('alert_sounds')
-                                    .getPublicUrl(filePath);
-
-                                // 3. Salvar no Settings (se as settings existirem)
-                                const { data: settingsData } = await supabase
-                                    .from('settings')
-                                    .select('id')
-                                    .eq('user_id', session.user.id)
-                                    .single();
-                                
-                                if (settingsData) {
-                                    const { error: updateError } = await supabase
-                                        .from('settings')
-                                        .update({ alert_audio_url: publicUrl })
-                                        .eq('id', settingsData.id);
+                                    try {
+                                        setIsTesting(true); 
                                         
-                                    if (updateError) throw updateError;
-                                } else {
-                                     // Se por acaso o user não tiver settings ainda
-                                     console.warn("Usuário sem registro na tabela settings. Não foi possível salvar o vínculo da URL.");
-                                }
+                                        const fileExt = file.name.split('.').pop();
+                                        const filePath = `${session.user.id}/alert_${type.id}.${fileExt}`;
 
-                                alert('Som de alerta atualizado com sucesso! Agora clique em Testar Alerta para ouvir.');
-                            } catch (error) {
-                                console.error('Erro ao fazer upload do som:', error);
-                                alert('Erro ao fazer upload do som. Verifique se o Bucket "alert_sounds" foi criado no SQL.');
-                            } finally {
-                                setIsTesting(false);
-                            }
-                        }}
-                    />
+                                        const { error: uploadError } = await supabase.storage
+                                            .from('alert_sounds')
+                                            .upload(filePath, file, { upsert: true });
+
+                                        if (uploadError) throw uploadError;
+
+                                        const { data: { publicUrl } } = supabase.storage
+                                            .from('alert_sounds')
+                                            .getPublicUrl(filePath);
+
+                                        const { data: settingsData } = await supabase
+                                            .from('settings')
+                                            .select('id')
+                                            .eq('user_id', session.user.id)
+                                            .single();
+                                        
+                                        if (settingsData) {
+                                            const { error: updateError } = await supabase
+                                                .from('settings')
+                                                .update({ [type.column]: publicUrl })
+                                                .eq('id', settingsData.id);
+                                                
+                                            if (updateError) throw updateError;
+                                        }
+
+                                        alert(`Som de ${type.label} atualizado com sucesso!`);
+                                    } catch (error) {
+                                        console.error('Erro ao fazer upload do som:', error);
+                                        alert('Erro ao fazer upload. Verifique as configurações de Storage.');
+                                    } finally {
+                                        setIsTesting(false);
+                                    }
+                                }}
+                            />
+                        </div>
+                    ))}
                 </div>
             </div>
 

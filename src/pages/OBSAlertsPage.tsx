@@ -19,7 +19,7 @@ export const OBSAlertsPage: React.FC = () => {
     const [currentAlert, setCurrentAlert] = useState<ObsAlert | null>(null);
     const [alertQueue, setAlertQueue] = useState<ObsAlert[]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [customAudioUrl, setCustomAudioUrl] = useState<string | null>(null);
+    const [customAudioUrls, setCustomAudioUrls] = useState<Record<string, string>>({});
 
     // Configurações Globais do Alerta (Tempo de exibição)
     const ALERT_DURATION_MS = 6000;
@@ -35,12 +35,17 @@ export const OBSAlertsPage: React.FC = () => {
         const fetchUserSettings = async () => {
             const { data } = await supabase
                 .from('settings')
-                .select('alert_audio_url')
+                .select('alert_audio_subscriber, alert_audio_member, alert_audio_superchat, alert_audio_donation')
                 .eq('user_id', userId)
                 .single();
             
-            if (data?.alert_audio_url) {
-                setCustomAudioUrl(data.alert_audio_url);
+            if (data) {
+                setCustomAudioUrls({
+                    subscriber: data.alert_audio_subscriber,
+                    member: data.alert_audio_member,
+                    superchat: data.alert_audio_superchat,
+                    donation: data.alert_audio_donation
+                });
             }
         };
 
@@ -99,8 +104,13 @@ export const OBSAlertsPage: React.FC = () => {
                     table: 'settings',
                 },
                 (payload) => {
-                    if (payload.new.user_id === userId && payload.new.alert_audio_url !== undefined) {
-                        setCustomAudioUrl(payload.new.alert_audio_url);
+                    if (payload.new.user_id === userId) {
+                        setCustomAudioUrls({
+                            subscriber: payload.new.alert_audio_subscriber,
+                            member: payload.new.alert_audio_member,
+                            superchat: payload.new.alert_audio_superchat,
+                            donation: payload.new.alert_audio_donation
+                        });
                     }
                 }
             )
@@ -130,10 +140,12 @@ export const OBSAlertsPage: React.FC = () => {
         setIsPlaying(true);
         setCurrentAlert(alertToPlay);
 
-        // Se tiver som customizado, toca ele. Se não, toca o sintetizado.
-        if (customAudioUrl) {
+        // Se tiver som customizado para ESTE tipo, toca ele. Se não, toca o sintetizado.
+        const specificAudioUrl = customAudioUrls[alertToPlay.type];
+
+        if (specificAudioUrl) {
             try {
-                const audio = new Audio(customAudioUrl);
+                const audio = new Audio(specificAudioUrl);
                 audio.play().catch(e => console.error("Erro ao tocar audio customizado", e));
             } catch (e) {
                 console.error("Erro ao instanciar Audio customizado", e);
