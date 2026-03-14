@@ -115,76 +115,81 @@ export const AlertsTab: React.FC = () => {
                     Envie um arquivo de áudio curto (.mp3 ou .wav, max 2MB) para cada tipo de alerta. Se você não enviar, o som padrão será tocado.
                 </p>
                 
-                <div className="flex flex-col gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {[
-                        { id: 'subscriber', label: '🌟 Novo Inscrito', column: 'alert_audio_subscriber' },
-                        { id: 'member', label: '👑 Novo Membro', column: 'alert_audio_member' },
-                        { id: 'superchat', label: '💰 Super Chat', column: 'alert_audio_superchat' },
-                        { id: 'donation', label: '💳 Doação Externa', column: 'alert_audio_donation' }
+                        { id: 'subscriber', label: 'Novo Inscrito', icon: '🌟', column: 'alert_audio_subscriber' },
+                        { id: 'member', label: 'Novo Membro', icon: '👑', column: 'alert_audio_member' },
+                        { id: 'superchat', label: 'Super Chat', icon: '💰', column: 'alert_audio_superchat' },
+                        { id: 'donation', label: 'Doação Externa', icon: '💳', column: 'alert_audio_donation' }
                     ].map(type => (
-                        <div key={type.id} className="flex flex-col sm:flex-row gap-4 items-center justify-between p-4 bg-gray-50 dark:bg-[#0f111a] rounded-xl border border-gray-100 dark:border-gray-800">
-                            <div className="font-semibold">{type.label}</div>
-                            <input 
-                                type="file" 
-                                accept="audio/mp3, audio/wav, audio/mpeg"
-                                className="block w-full sm:w-auto text-sm text-slate-500
-                                file:mr-4 file:py-2 file:px-4
-                                file:rounded-xl file:border-0
-                                file:text-sm file:font-semibold
-                                file:bg-cyan-50 file:text-cyan-700
-                                hover:file:bg-cyan-100
-                                dark:file:bg-cyan-900/30 dark:file:text-cyan-400
-                                dark:hover:file:bg-cyan-900/50 cursor-pointer"
-                                onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (!file || !session?.user?.id) return;
-                                    
-                                    if (file.size > 2 * 1024 * 1024) {
-                                        alert('O arquivo deve ter no máximo 2MB.');
-                                        e.target.value = '';
-                                        return;
-                                    }
-
-                                    try {
-                                        setIsTesting(true); 
+                        <div key={type.id} className="flex flex-col gap-4 p-5 bg-gray-50 dark:bg-[#0f111a] rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-cyan-500/50 transition-colors shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <span className="text-2xl p-2 bg-white dark:bg-[#1E293B] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">{type.icon}</span>
+                                <h5 className="font-bold text-gray-800 dark:text-gray-200 text-lg">{type.label}</h5>
+                            </div>
+                            <div className="relative group">
+                                <input 
+                                    type="file" 
+                                    accept="audio/mp3, audio/wav, audio/mpeg"
+                                    className="block w-full text-sm text-slate-500
+                                    file:mr-4 file:py-2.5 file:px-4
+                                    file:rounded-xl file:border-0
+                                    file:text-sm file:font-bold
+                                    file:bg-cyan-500 file:text-white
+                                    hover:file:bg-cyan-600 focus:outline-none
+                                    cursor-pointer
+                                    bg-white dark:bg-[#1E293B] border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-2 transition-all group-hover:border-cyan-400 dark:group-hover:border-cyan-500"
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file || !session?.user?.id) return;
                                         
-                                        const fileExt = file.name.split('.').pop();
-                                        const filePath = `${session.user.id}/alert_${type.id}.${fileExt}`;
-
-                                        const { error: uploadError } = await supabase.storage
-                                            .from('alert_sounds')
-                                            .upload(filePath, file, { upsert: true });
-
-                                        if (uploadError) throw uploadError;
-
-                                        const { data: { publicUrl } } = supabase.storage
-                                            .from('alert_sounds')
-                                            .getPublicUrl(filePath);
-
-                                        const { data: settingsData } = await supabase
-                                            .from('settings')
-                                            .select('id')
-                                            .eq('user_id', session.user.id)
-                                            .single();
-                                        
-                                        if (settingsData) {
-                                            const { error: updateError } = await supabase
-                                                .from('settings')
-                                                .update({ [type.column]: publicUrl })
-                                                .eq('id', settingsData.id);
-                                                
-                                            if (updateError) throw updateError;
+                                        if (file.size > 2 * 1024 * 1024) {
+                                            alert('O arquivo deve ter no máximo 2MB.');
+                                            e.target.value = '';
+                                            return;
                                         }
 
-                                        alert(`Som de ${type.label} atualizado com sucesso!`);
-                                    } catch (error) {
-                                        console.error('Erro ao fazer upload do som:', error);
-                                        alert('Erro ao fazer upload. Verifique as configurações de Storage.');
-                                    } finally {
-                                        setIsTesting(false);
-                                    }
-                                }}
-                            />
+                                        try {
+                                            setIsTesting(true); 
+                                            
+                                            const fileExt = file.name.split('.').pop();
+                                            const filePath = `${session.user.id}/alert_${type.id}.${fileExt}`;
+
+                                            const { error: uploadError } = await supabase.storage
+                                                .from('alert_sounds')
+                                                .upload(filePath, file, { upsert: true });
+
+                                            if (uploadError) throw uploadError;
+
+                                            const { data: { publicUrl } } = supabase.storage
+                                                .from('alert_sounds')
+                                                .getPublicUrl(filePath);
+
+                                            const { data: settingsData } = await supabase
+                                                .from('settings')
+                                                .select('id')
+                                                .eq('user_id', session.user.id)
+                                                .single();
+                                            
+                                            if (settingsData) {
+                                                const { error: updateError } = await supabase
+                                                    .from('settings')
+                                                    .update({ [type.column]: publicUrl })
+                                                    .eq('id', settingsData.id);
+                                                    
+                                                if (updateError) throw updateError;
+                                            }
+
+                                            alert(`Som de ${type.label} atualizado com sucesso!`);
+                                        } catch (error) {
+                                            console.error('Erro ao fazer upload do som:', error);
+                                            alert('Erro ao fazer upload. Verifique as configurações de Storage.');
+                                        } finally {
+                                            setIsTesting(false);
+                                        }
+                                    }}
+                                />
+                            </div>
                         </div>
                     ))}
                 </div>
