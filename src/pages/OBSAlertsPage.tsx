@@ -1,0 +1,208 @@
+import React, { useEffect, useState, useRef } from 'react';
+import { useParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+
+type AlertType = 'subscriber' | 'member' | 'superchat' | 'donation';
+
+interface ObsAlert {
+    id: string;
+    type: AlertType;
+    name: string;
+    amount?: string;
+    message?: string;
+}
+
+export const OBSAlertsPage: React.FC = () => {
+    const { userId } = useParams<{ userId: string }>();
+    const [currentAlert, setCurrentAlert] = useState<ObsAlert | null>(null);
+    const [alertQueue, setAlertQueue] = useState<ObsAlert[]>([]);
+    const [isPlaying, setIsPlaying] = useState(false);
+    
+    // Configurações Globais do Alerta (Tempo de exibição)
+    const ALERT_DURATION_MS = 6000;
+    const ANIMATION_OUT_DELAY_MS = 5000;
+
+    // Ref para garantir que timers sejam limpados se desmontar
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        if (!userId) return;
+
+        // 1. Carregar Alertas Pendentes (Caso o OBS fechou e abriu)
+        const fetchPendingAlerts = async () => {
+            const { data, error } = await supabase
+                .from('obs_alerts')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('status', 'pending')
+                .order('created_at', { ascending: true });
+
+            if (!error && data) {
+                setAlertQueue(prev => [...prev, ...data]);
+            }
+        };
+
+        fetchPendingAlerts();
+
+        // 2. Escutar novos alertas em tempo real
+        const channel = supabase
+            .channel('obs_alerts_changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'obs_alerts',
+                    filter: `user_id=eq.${userId}`
+                },
+                (payload) => {
+                    const newAlert = payload.new as ObsAlert;
+                    // Se foi inserido como pending, adiciona na fila
+                    if (payload.new.status === 'pending') {
+                        setAlertQueue(prev => [...prev, newAlert]);
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        };
+    }, [userId]);
+
+    // 3. Processar Fila de Alertas
+    useEffect(() => {
+        if (alertQueue.length > 0 && !isPlaying && !currentAlert) {
+            playNextAlert();
+        }
+    }, [alertQueue, isPlaying, currentAlert]);
+
+    const playNextAlert = async () => {
+        if (alertQueue.length === 0) return;
+
+        // Pega o primeiro da fila
+        const alertToPlay = alertQueue[0];
+        setAlertQueue(prev => prev.slice(1)); // Remove da fila local
+        
+        setIsPlaying(true);
+        setCurrentAlert(alertToPlay);
+
+        // Dispara o som
+        // TODO: Adicionar um arquivo de audio real, por enquanto usaremos o audio tag invisivel se existir ou apenas delay
+        // const audio = new Audio('/sounds/alert.mp3');
+        // audio.play().catch(e => console.error("Erro ao tocar audio do alerta", e));
+
+        // Marca como tocado no banco (para não tocar de novo se atualizar a página)
+        try {
+            await supabase
+                .from('obs_alerts')
+                .update({ status: 'played' })
+                .eq('id', alertToPlay.id);
+        } catch (e) {
+            console.error("Erro ao atualizar status do alerta no banco", e);
+        }
+
+        // Timer para tirar o alerta da tela
+        timeoutRef.current = setTimeout(() => {
+            // Inicia animação de saída (removendo currentAlert após delay)
+            setIsPlaying(false);
+            
+            // Espera a animação de saída terminar para limpar o componente e chamar o próximo
+            setTimeout(() => {
+                setCurrentAlert(null);
+            }, 1000); // 1 segundo para a animação de saída
+
+        }, ANIMATION_OUT_DELAY_MS);
+    };
+
+    if (!currentAlert) {
+        return <div className="w-screen h-screen bg-transparent overflow-hidden"></div>;
+    }
+
+    // Configurações de layout baseadas no tipo de alerta
+    const getAlertStyle = (type: AlertType) => {
+        switch (type) {
+            case 'subscriber':
+                return {
+                    bg: 'bg-gradient-to-r from-red-600 to-rose-600',
+                    icon: '🌟',
+                    title: 'NOVO INSCRITO!',
+                    textColor: 'text-white'
+                };
+            case 'member':
+                return {
+                    bg: 'bg-gradient-to-r from-emerald-500 to-green-600',
+                    icon: '👑',
+                    title: 'NOVO MEMBRO!',
+                    textColor: 'text-white'
+                };
+            case 'superchat':
+            case 'donation':
+                return {
+                    bg: 'bg-gradient-to-r from-cyan-500 to-blue-600',
+                    icon: '💰',
+                    title: 'SUPER CHAT / DOAÇÃO!',
+                    textColor: 'text-white'
+                };
+            default:
+                return {
+                    bg: 'bg-gray-800',
+                    icon: '✨',
+                    title: 'ALERTA',
+                    textColor: 'text-white'
+                };
+        }
+    };
+
+    const style = getAlertStyle(currentAlert.type);
+
+    return (
+        <div className="w-screen h-screen bg-transparent overflow-hidden flex items-end justify-center pb-20">
+            {/* Alerta Container - Modifique estas classes do tailwind para mudar as animações */}
+            <div 
+                className={`
+                    flex flex-col items-center justify-center p-6 rounded-2xl shadow-2xl border-4 border-white/20
+                    transition-all duration-700 ease-out transform
+                    ${isPlaying ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-24 opacity-0 scale-95'}
+                    ${style.bg} ${style.textColor}
+                `}
+                style={{
+                    minWidth: '400px',
+                    maxWidth: '800px',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255,255,255,0.2)'
+                }}
+            >
+                {/* Cabeçalho do Alerta */}
+                <div className="flex items-center gap-4 mb-2">
+                    <span className="text-4xl animate-bounce">{style.icon}</span>
+                    <h1 className="text-3xl font-black uppercase tracking-widest drop-shadow-md">
+                        {style.title}
+                    </h1>
+                    <span className="text-4xl animate-bounce" style={{ animationDelay: '0.2s' }}>{style.icon}</span>
+                </div>
+
+                {/* Nome do Usuário */}
+                <h2 className="text-5xl font-extrabold text-white text-center drop-shadow-lg my-2">
+                    {currentAlert.name}
+                </h2>
+
+                {/* Valor (Se for doação) */}
+                {currentAlert.amount && (
+                    <div className="mt-2 text-4xl font-black text-yellow-300 drop-shadow-md animate-pulse">
+                        {currentAlert.amount}
+                    </div>
+                )}
+
+                {/* Mensagem (Se for doação) */}
+                {currentAlert.message && (
+                    <div className="mt-4 p-4 bg-black/30 rounded-xl w-full text-center border border-white/10">
+                        <p className="text-xl font-medium text-white/90">
+                            "{currentAlert.message}"
+                        </p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
