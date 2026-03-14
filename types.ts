@@ -88,6 +88,10 @@ export interface AppSettings {
   alert_audio_member?: string;
   alert_audio_superchat?: string;
   alert_audio_donation?: string;
+  alert_filename_subscriber?: string;
+  alert_filename_member?: string;
+  alert_filename_superchat?: string;
+  alert_filename_donation?: string;
 }
 
 

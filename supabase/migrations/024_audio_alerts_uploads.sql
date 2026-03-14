@@ -4,6 +4,12 @@ ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS alert_audio_member TEXT;
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS alert_audio_superchat TEXT;
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS alert_audio_donation TEXT;
 
+-- Adicionar colunas para salvar o nome original do arquivo exibido no frontend
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS alert_filename_subscriber TEXT;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS alert_filename_member TEXT;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS alert_filename_superchat TEXT;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS alert_filename_donation TEXT;
+
 -- Criação do Bucket de Storage para os sons (Se não existir)
 -- Como isso pode dar erro dependendo do setup, envolvemos num bloco PL/PGSQL seguro
 DO $$

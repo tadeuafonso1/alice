@@ -7,6 +7,28 @@ export const AlertsTab: React.FC = () => {
     const { session } = useSession();
     const [testingType, setTestingType] = useState<string | null>(null);
     const [uploadingType, setUploadingType] = useState<string | null>(null);
+    const [filenames, setFilenames] = useState<Record<string, string>>({});
+
+    React.useEffect(() => {
+        const fetchSettings = async () => {
+            if (!session?.user?.id) return;
+            const { data } = await supabase
+                .from('settings')
+                .select('alert_filename_subscriber, alert_filename_member, alert_filename_superchat, alert_filename_donation')
+                .eq('user_id', session.user.id)
+                .single();
+            
+            if (data) {
+                setFilenames({
+                    subscriber: data.alert_filename_subscriber || '',
+                    member: data.alert_filename_member || '',
+                    superchat: data.alert_filename_superchat || '',
+                    donation: data.alert_filename_donation || ''
+                });
+            }
+        };
+        fetchSettings();
+    }, [session?.user?.id]);
     
     // Gera a URL única do OBS para este usuário
     const obsUrl = session?.user?.id 
@@ -118,10 +140,10 @@ export const AlertsTab: React.FC = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {[
-                        { id: 'subscriber', label: 'Novo Inscrito', icon: '🌟', column: 'alert_audio_subscriber' },
-                        { id: 'member', label: 'Novo Membro', icon: '👑', column: 'alert_audio_member' },
-                        { id: 'superchat', label: 'Super Chat', icon: '💰', column: 'alert_audio_superchat' },
-                        { id: 'donation', label: 'Doação Externa', icon: '💳', column: 'alert_audio_donation' }
+                        { id: 'subscriber', label: 'Novo Inscrito', icon: '🌟', column: 'alert_audio_subscriber', fileCol: 'alert_filename_subscriber' },
+                        { id: 'member', label: 'Novo Membro', icon: '👑', column: 'alert_audio_member', fileCol: 'alert_filename_member' },
+                        { id: 'superchat', label: 'Super Chat', icon: '💰', column: 'alert_audio_superchat', fileCol: 'alert_filename_superchat' },
+                        { id: 'donation', label: 'Doação Externa', icon: '💳', column: 'alert_audio_donation', fileCol: 'alert_filename_donation' }
                     ].map(type => (
                         <div key={type.id} className="flex flex-col gap-4 p-5 bg-gray-50 dark:bg-[#0f111a] rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-cyan-500/50 transition-colors shadow-sm">
                             <div className="flex items-center gap-3">
@@ -177,13 +199,22 @@ export const AlertsTab: React.FC = () => {
                                                 .eq('user_id', session.user.id)
                                                 .single();
                                             
+                                            
                                             if (settingsData) {
                                                 const { error: updateError } = await supabase
                                                     .from('settings')
-                                                    .update({ [type.column]: timestampUrl })
+                                                    .update({ 
+                                                        [type.column]: timestampUrl,
+                                                        [type.fileCol]: file.name
+                                                    })
                                                     .eq('id', settingsData.id);
                                                     
                                                 if (updateError) throw updateError;
+
+                                                setFilenames(prev => ({
+                                                    ...prev,
+                                                    [type.id]: file.name
+                                                }));
                                             }
 
                                             alert(`Som de ${type.label} atualizado com sucesso!`);
@@ -195,6 +226,11 @@ export const AlertsTab: React.FC = () => {
                                         }
                                     }}
                                 />
+                                {filenames[type.id] && (
+                                    <div className="absolute -bottom-6 left-0 text-xs font-semibold text-cyan-600 dark:text-cyan-400 truncate w-full px-2" title={filenames[type.id]}>
+                                        🎵 {filenames[type.id]}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
