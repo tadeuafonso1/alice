@@ -120,11 +120,15 @@ export const HomePage: React.FC = () => {
     const [isPolling, setIsPolling] = useState(false);
     const [isFindingChat, setIsFindingChat] = useState(false);
     const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
+    const [subscriberCount, setSubscriberCount] = useState<number>(0);
+    const [likeCount, setLikeCount] = useState<number>(0);
     const nextPageTokenRef = useRef<string | null>(null);
     const consecutiveErrorsRef = useRef<number>(0);
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const processedMessageIds = useRef<Set<string>>(new Set());
     const isFetchingRef = useRef(false);
+    const isFetchingStatsRef = useRef(false);
 
 
     // Layout State - Restaura do localStorage se disponível
@@ -197,6 +201,40 @@ export const HomePage: React.FC = () => {
     useEffect(() => {
         localStorage.setItem('alice_sidebar_open', String(isSidebarOpen));
     }, [isSidebarOpen]);
+
+    // Polling central para estatísticas (Likes e Inscritos)
+    // Isso alimenta o contador global no Header e também detecta novos inscritos no background
+    const fetchStats = useCallback(async () => {
+        if (!session || isFetchingStatsRef.current) return;
+        isFetchingStatsRef.current = true;
+        try {
+            const { data, error } = await supabase.functions.invoke('youtube-stats-fetch', {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${session.access_token}`
+                }
+            });
+
+            if (data && !error) {
+                if (data.subscribers !== undefined) setSubscriberCount(data.subscribers);
+                if (data.likes !== undefined) setLikeCount(data.likes);
+            }
+        } catch (err) {
+            console.error('[HomePage] Erro ao buscar stats:', err);
+        } finally {
+            isFetchingStatsRef.current = false;
+        }
+    }, [session]);
+
+    useEffect(() => {
+        if (session) {
+            fetchStats();
+            statsIntervalRef.current = setInterval(fetchStats, 15000); // 15 segundos
+        }
+        return () => {
+            if (statsIntervalRef.current) clearInterval(statsIntervalRef.current);
+        };
+    }, [session, fetchStats]);
 
     const handleSignOut = async () => {
         const { error } = await supabase.auth.signOut();
@@ -1679,6 +1717,19 @@ export const HomePage: React.FC = () => {
                                         </div>
 
                                         <div className="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 mx-2"></div>
+
+                                        {/* Contador de Inscritos em Destaque */}
+                                        <div className="flex flex-col items-center px-2 min-w-[80px]">
+                                            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest leading-none mb-1">Inscritos</span>
+                                            <div className="flex items-center gap-1.5">
+                                                <UsersIcon className="w-3.5 h-3.5 text-gray-400" />
+                                                <span className="text-sm font-black text-gray-900 dark:text-white tabular-nums">
+                                                    {subscriberCount.toLocaleString()}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 mx-1"></div>
 
                                         {isPolling ? (
                                             <button

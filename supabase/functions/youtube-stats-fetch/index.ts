@@ -199,8 +199,55 @@ serve(async (req) => {
             console.error("[Stats-Fetch] Like fetch failed:", err.message);
         }
 
-        // 2. Fetch Subscriber Count - REMOVED PER USER REQUEST
-        // (Logic removed to save quota and disable feature)
+        // 2. Fetch Subscriber Count
+        try {
+            const channelUrl = `https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true`;
+            const channelData = await fetchYouTube(channelUrl);
+            if (channelData.items?.length > 0) {
+                subscriberCount = parseInt(channelData.items[0].statistics.subscriberCount || "0", 10);
+            }
+        } catch (err: any) {
+            console.error("[Stats-Fetch] Subscriber fetch failed:", err.message);
+        }
+
+        // Logic to detect new subscribers and trigger alerts
+        try {
+            const { data: subGoalData } = await supabaseClient
+                .from('subscriber_goals')
+                .select('current_subs')
+                .eq('user_id', userId)
+                .maybeSingle();
+
+            const previousSubs = subGoalData?.current_subs || 0;
+
+            if (subscriberCount > previousSubs && previousSubs > 0) {
+                // Determine how many new subscribers
+                const newSubsCount = subscriberCount - previousSubs;
+                
+                // Trigger an alert for each new subscriber (up to a reasonable limit to avoid spamming if many join at once)
+                // Or just trigger one alert if preferred. Let's trigger one for now or a loop.
+                // Usually one is enough if the count jumps by 1.
+                
+                for (let i = 0; i < Math.min(newSubsCount, 5); i++) {
+                    await supabaseClient.from('obs_alerts').insert({
+                        user_id: userId,
+                        type: 'subscriber',
+                        message: 'Novo Inscrito no Canal!',
+                        is_played: false
+                    });
+                }
+            }
+
+            // Always update/upsert the current subscriber count in the database
+            await supabaseClient.from('subscriber_goals').upsert({
+                user_id: userId,
+                current_subs: subscriberCount,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+
+        } catch (err: any) {
+            console.error("[Stats-Fetch] Subscriber alert logic failed:", err.message);
+        }
 
         // 3. Process Like Goal Progress
         if (autoUpdate && likeCount >= currentGoal) {
@@ -212,7 +259,6 @@ serve(async (req) => {
 
         // 4. Process Subscriber Goal Progress - REMOVED PER USER REQUEST
 
-        // 5. Update Like Goal in DB
         await supabaseClient.from('like_goals').update({
             current_likes: likeCount,
             current_goal: currentGoal,
@@ -223,14 +269,14 @@ serve(async (req) => {
 
         return new Response(JSON.stringify({
             likes: likeCount,
-            // subscribers: subscriberCount, // Removed
+            subscribers: subscriberCount,
             goal: currentGoal,
             step: stepCount,
             auto_update: autoUpdate,
             streamFound,
             goalUpdated,
             colors: { bar: barColor, bg: bgColor, border: borderColor, text: textColor },
-            version: '2.4-NO-SUBS'
+            version: '2.5-WITH-SUBS'
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
