@@ -226,11 +226,6 @@ export const AlertsTab: React.FC = () => {
                                         }
                                     }}
                                 />
-                                {filenames[type.id] && (
-                                    <div className="absolute -bottom-6 left-0 text-xs font-semibold text-cyan-600 dark:text-cyan-400 truncate w-full px-2" title={filenames[type.id]}>
-                                        🎵 {filenames[type.id]}
-                                    </div>
-                                )}
                             </div>
                         </div>
                     ))}
