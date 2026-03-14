@@ -131,15 +131,17 @@ export const AlertsTab: React.FC = () => {
                             <div className="relative group">
                                 <input 
                                     type="file" 
+                                    disabled={uploadingType === type.id}
                                     accept="audio/mp3, audio/wav, audio/mpeg"
-                                    className="block w-full text-sm text-slate-500
+                                    className={`block w-full text-sm text-slate-500
                                     file:mr-4 file:py-2.5 file:px-4
                                     file:rounded-xl file:border-0
                                     file:text-sm file:font-bold
                                     file:bg-cyan-500 file:text-white
                                     hover:file:bg-cyan-600 focus:outline-none
                                     cursor-pointer
-                                    bg-white dark:bg-[#1E293B] border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-2 transition-all group-hover:border-cyan-400 dark:group-hover:border-cyan-500"
+                                    bg-white dark:bg-[#1E293B] border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-2 transition-all 
+                                    ${uploadingType === type.id ? 'opacity-50 cursor-not-allowed' : 'group-hover:border-cyan-400 dark:group-hover:border-cyan-500'}`}
                                     onChange={async (e) => {
                                         const file = e.target.files?.[0];
                                         if (!file || !session?.user?.id) return;
@@ -213,7 +215,7 @@ export const AlertsTab: React.FC = () => {
                         className="p-4 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-red-900/20 flex flex-col items-center justify-center gap-2"
                     >
                         <span className="text-2xl">🌟</span>
-                        Novo Inscrito
+                        {testingType === 'subscriber' ? 'Enviando...' : 'Novo Inscrito'}
                     </button>
 
                     <button 
@@ -222,7 +224,7 @@ export const AlertsTab: React.FC = () => {
                         className="p-4 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-emerald-900/20 flex flex-col items-center justify-center gap-2"
                     >
                         <span className="text-2xl">👑</span>
-                        Novo Membro
+                        {testingType === 'member' ? 'Enviando...' : 'Novo Membro'}
                     </button>
 
                     <button 
@@ -231,7 +233,7 @@ export const AlertsTab: React.FC = () => {
                         className="p-4 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-blue-900/20 flex flex-col items-center justify-center gap-2"
                     >
                         <span className="text-2xl">💰</span>
-                        Super Chat
+                        {testingType === 'superchat' ? 'Enviando...' : 'Super Chat'}
                     </button>
 
                     <button 
@@ -240,7 +242,7 @@ export const AlertsTab: React.FC = () => {
                         className="p-4 bg-purple-500 hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-purple-900/20 flex flex-col items-center justify-center gap-2"
                     >
                         <span className="text-2xl">💳</span>
-                        Doação Externa
+                        {testingType === 'donation' ? 'Enviando...' : 'Doação Externa'}
                     </button>
                 </div>
             </div>
