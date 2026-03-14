@@ -19,7 +19,7 @@ export const OBSAlertsPage: React.FC = () => {
     const [currentAlert, setCurrentAlert] = useState<ObsAlert | null>(null);
     const [alertQueue, setAlertQueue] = useState<ObsAlert[]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [customAudioUrls, setCustomAudioUrls] = useState<Record<string, string>>({});
+    const customAudioUrlsRef = useRef<Record<string, string>>({});
 
     // Configurações Globais do Alerta (Tempo de exibição)
     const ALERT_DURATION_MS = 6000;
@@ -40,12 +40,12 @@ export const OBSAlertsPage: React.FC = () => {
                 .single();
             
             if (data) {
-                setCustomAudioUrls({
+                customAudioUrlsRef.current = {
                     subscriber: data.alert_audio_subscriber,
                     member: data.alert_audio_member,
                     superchat: data.alert_audio_superchat,
                     donation: data.alert_audio_donation
-                });
+                };
             }
         };
 
@@ -105,12 +105,12 @@ export const OBSAlertsPage: React.FC = () => {
                 },
                 (payload) => {
                     if (payload.new.user_id === userId) {
-                        setCustomAudioUrls({
+                        customAudioUrlsRef.current = {
                             subscriber: payload.new.alert_audio_subscriber,
                             member: payload.new.alert_audio_member,
                             superchat: payload.new.alert_audio_superchat,
                             donation: payload.new.alert_audio_donation
-                        });
+                        };
                     }
                 }
             )
@@ -141,7 +141,10 @@ export const OBSAlertsPage: React.FC = () => {
         setCurrentAlert(alertToPlay);
 
         // Se tiver som customizado para ESTE tipo, toca ele. Se não, toca o sintetizado.
-        const specificAudioUrl = customAudioUrls[alertToPlay.type];
+        const specificAudioUrl = customAudioUrlsRef.current[alertToPlay.type];
+        console.log(`[DEBUG AUDIO] Tocando alerta tipo: ${alertToPlay.type}`);
+        console.log(`[DEBUG AUDIO] URLs mapeadas nas settings:`, customAudioUrlsRef.current);
+        console.log(`[DEBUG AUDIO] URL selecionada para o toque:`, specificAudioUrl);
 
         if (specificAudioUrl) {
             try {
