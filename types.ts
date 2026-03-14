@@ -85,20 +85,3 @@ export interface AppSettings {
   youtubeChannelId?: string;
   autoSyncYoutube?: boolean;
 }
-
-
-
-export interface SubscriberGoal {
-  user_id: string;
-  current_subs: number;
-  initial_subs: number;
-  current_goal: number;
-  step: number;
-  auto_update: boolean;
-  bar_color: string;
-  bg_color: string;
-  border_color: string;
-  text_color: string;
-  stream_found: boolean;
-  updated_at?: string;
-}

@@ -12,7 +12,7 @@ import { LoyaltySettings } from '@/components/LoyaltySettings';
 import { LikesTab } from '@/components/LikesTab';
 import { BlockedUsersTab } from '@/components/BlockedUsersTab';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings, CommandSetting } from '@/types';
-import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, UsersIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon, RocketIcon } from '@/components/Icons';
+import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon, RocketIcon } from '@/components/Icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/src/contexts/SessionContext';
 import { useTheme } from '@/src/contexts/ThemeContext';
@@ -119,7 +119,6 @@ export const HomePage: React.FC = () => {
     const [isPolling, setIsPolling] = useState(false);
     const [isFindingChat, setIsFindingChat] = useState(false);
     const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
-    const [subscriberCount, setSubscriberCount] = useState<number>(0);
     const [likeCount, setLikeCount] = useState<number>(0);
     const nextPageTokenRef = useRef<string | null>(null);
     const consecutiveErrorsRef = useRef<number>(0);
@@ -215,7 +214,6 @@ export const HomePage: React.FC = () => {
             });
 
             if (data && !error) {
-                if (data.subscribers !== undefined) setSubscriberCount(data.subscribers);
                 if (data.likes !== undefined) setLikeCount(data.likes);
             }
         } catch (err) {
@@ -1680,19 +1678,6 @@ export const HomePage: React.FC = () => {
                                                 </span>
                                                 <span className={`text-sm font-medium ${isPolling ? 'text-emerald-500 animate-pulse' : 'text-gray-400 dark:text-gray-500'}`}>
                                                     {isPolling ? 'Ao Vivo' : 'Conectado'}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 mx-2"></div>
-
-                                        {/* Contador de Inscritos em Destaque */}
-                                        <div className="flex flex-col items-center px-2 min-w-[80px]">
-                                            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest leading-none mb-1">Inscritos</span>
-                                            <div className="flex items-center gap-1.5">
-                                                <UsersIcon className="w-3.5 h-3.5 text-gray-400" />
-                                                <span className="text-sm font-black text-gray-900 dark:text-white tabular-nums">
-                                                    {subscriberCount.toLocaleString()}
                                                 </span>
                                             </div>
                                         </div>
