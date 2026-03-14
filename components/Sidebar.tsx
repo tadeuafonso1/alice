@@ -63,7 +63,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'loyalty', label: 'Lealdade', icon: CrownIcon },
         { id: 'likes', label: 'Contador de Likes', icon: ThumbsUpIcon },
         { id: 'giveaway', label: 'Sorteio', icon: GiftIcon },
-        { id: 'alerts', label: 'Alertas OBS', icon: RocketIcon },
         { id: 'blocked', label: 'Usuários Bloqueados', icon: ShieldIcon },
     ];
 

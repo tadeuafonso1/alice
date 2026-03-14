@@ -8,7 +8,7 @@ import { PrivacyPolicyPage } from './src/pages/PrivacyPolicyPage';
 import { TermsOfServicePage } from './src/pages/TermsOfServicePage';
 import { OBSLikesPage } from './src/pages/OBSLikesPage';
 import { OBSQueuePage } from './src/pages/OBSQueuePage';
-import { OBSAlertsPage } from './src/pages/OBSAlertsPage';
+import { OBSQueuePage } from './src/pages/OBSQueuePage';
 
 const AppRoutes: React.FC = () => {
     const { session, loading } = useSession();
@@ -69,7 +69,6 @@ const AppRoutes: React.FC = () => {
             <Route path="/terms" element={<TermsOfServicePage />} />
             <Route path="/obs/likes/:userId" element={<OBSLikesPage />} />
             <Route path="/obs/queue/:userId" element={<OBSQueuePage />} />
-            <Route path="/obs/alerts/:userId" element={<OBSAlertsPage />} />
         </Routes>
     );
 };

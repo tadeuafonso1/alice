@@ -11,7 +11,6 @@ import { GiveawayRoulette } from '@/components/GiveawayRoulette';
 import { LoyaltySettings } from '@/components/LoyaltySettings';
 import { LikesTab } from '@/components/LikesTab';
 import { BlockedUsersTab } from '@/components/BlockedUsersTab';
-import { AlertsTab } from '@/components/AlertsTab';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings, CommandSetting } from '@/types';
 import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, UsersIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon, RocketIcon } from '@/components/Icons';
 import { supabase } from '@/integrations/supabase/client';
@@ -1176,37 +1175,6 @@ export const HomePage: React.FC = () => {
                         const text = item.snippet.displayMessage || "";
                         const authorChannelId = item.authorDetails.channelId;
                         
-                        // --- Integração Nativa de Alertas OBS ---
-                        try {
-                            if (type === 'superChatEvent' || type === 'superStickerEvent') {
-                                let amountDisplay = "";
-                                if (type === 'superChatEvent') {
-                                    amountDisplay = item.snippet.superChatDetails?.amountDisplayString || "";
-                                } else if (type === 'superStickerEvent') {
-                                    amountDisplay = item.snippet.superStickerDetails?.amountDisplayString || "";
-                                }
-
-                                await supabase.from('obs_alerts').insert({
-                                    user_id: session?.user?.id,
-                                    type: 'superchat',
-                                    name: author,
-                                    amount: amountDisplay,
-                                    message: text
-                                });
-                                console.log(`[ALERTE YOUTUBE] Novo SuperChat de ${author}! Valor: ${amountDisplay}`);
-                            } else if (type === 'newSponsorEvent') {
-                                await supabase.from('obs_alerts').insert({
-                                    user_id: session?.user?.id,
-                                    type: 'member',
-                                    name: author,
-                                    message: "Tornou-se membro!"
-                                });
-                                console.log(`[ALERTE YOUTUBE] Novo Membro: ${author}!`);
-                            }
-                        } catch (err) {
-                            console.error("Erro ao registrar alerta no Supabase:", err);
-                        }
-                        // ----------------------------------------
 
                         // Somente passa para o chatbot as mensagens de texto normais ou superchat (que contém texto)
                         if (type === 'textMessageEvent' || type === 'superChatEvent') {
@@ -1951,7 +1919,6 @@ export const HomePage: React.FC = () => {
 
                         {activeTab === 'likes' && <LikesTab />}
                         {activeTab === 'blocked' && <BlockedUsersTab />}
-                        {activeTab === 'alerts' && <AlertsTab />}
 
                         {activeTab === 'giveaway' && (
                             <GiveawayRoulette
