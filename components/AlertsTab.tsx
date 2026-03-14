@@ -5,7 +5,8 @@ import { useSession } from '../src/contexts/SessionContext';
 
 export const AlertsTab: React.FC = () => {
     const { session } = useSession();
-    const [isTesting, setIsTesting] = useState(false);
+    const [testingType, setTestingType] = useState<string | null>(null);
+    const [uploadingType, setUploadingType] = useState<string | null>(null);
     
     // Gera a URL única do OBS para este usuário
     const obsUrl = session?.user?.id 
@@ -22,7 +23,7 @@ export const AlertsTab: React.FC = () => {
     const handleTestAlert = async (type: 'subscriber' | 'member' | 'superchat' | 'donation') => {
         if (!session?.user?.id) return;
         
-        setIsTesting(true);
+        setTestingType(type);
         try {
             let name = 'Usuário Teste';
             let amount = '';
@@ -64,7 +65,7 @@ export const AlertsTab: React.FC = () => {
             console.error("Erro ao enviar alerta de teste:", error);
             alert("Erro ao disparar alerta de teste.");
         } finally {
-            setIsTesting(false);
+            setTestingType(null);
         }
     };
 
@@ -150,7 +151,7 @@ export const AlertsTab: React.FC = () => {
                                         }
 
                                         try {
-                                            setIsTesting(true); 
+                                            setUploadingType(type.id); 
                                             
                                             const fileExt = file.name.split('.').pop();
                                             const filePath = `${session.user.id}/alert_${type.id}.${fileExt}`;
@@ -165,6 +166,9 @@ export const AlertsTab: React.FC = () => {
                                                 .from('alert_sounds')
                                                 .getPublicUrl(filePath);
 
+                                            // Cache buster: Garante que o OBS e o Navegador baixem o áudio novo e não usem cache
+                                            const timestampUrl = `${publicUrl}?t=${Date.now()}`;
+
                                             const { data: settingsData } = await supabase
                                                 .from('settings')
                                                 .select('id')
@@ -174,7 +178,7 @@ export const AlertsTab: React.FC = () => {
                                             if (settingsData) {
                                                 const { error: updateError } = await supabase
                                                     .from('settings')
-                                                    .update({ [type.column]: publicUrl })
+                                                    .update({ [type.column]: timestampUrl })
                                                     .eq('id', settingsData.id);
                                                     
                                                 if (updateError) throw updateError;
@@ -185,7 +189,7 @@ export const AlertsTab: React.FC = () => {
                                             console.error('Erro ao fazer upload do som:', error);
                                             alert('Erro ao fazer upload. Verifique as configurações de Storage.');
                                         } finally {
-                                            setIsTesting(false);
+                                            setUploadingType(null);
                                         }
                                     }}
                                 />
@@ -205,7 +209,7 @@ export const AlertsTab: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <button 
                         onClick={() => handleTestAlert('subscriber')}
-                        disabled={isTesting}
+                        disabled={testingType === 'subscriber'}
                         className="p-4 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-red-900/20 flex flex-col items-center justify-center gap-2"
                     >
                         <span className="text-2xl">🌟</span>
@@ -214,7 +218,7 @@ export const AlertsTab: React.FC = () => {
 
                     <button 
                         onClick={() => handleTestAlert('member')}
-                        disabled={isTesting}
+                        disabled={testingType === 'member'}
                         className="p-4 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-emerald-900/20 flex flex-col items-center justify-center gap-2"
                     >
                         <span className="text-2xl">👑</span>
@@ -223,7 +227,7 @@ export const AlertsTab: React.FC = () => {
 
                     <button 
                         onClick={() => handleTestAlert('superchat')}
-                        disabled={isTesting}
+                        disabled={testingType === 'superchat'}
                         className="p-4 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-blue-900/20 flex flex-col items-center justify-center gap-2"
                     >
                         <span className="text-2xl">💰</span>
@@ -232,7 +236,7 @@ export const AlertsTab: React.FC = () => {
 
                     <button 
                         onClick={() => handleTestAlert('donation')}
-                        disabled={isTesting}
+                        disabled={testingType === 'donation'}
                         className="p-4 bg-purple-500 hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-purple-900/20 flex flex-col items-center justify-center gap-2"
                     >
                         <span className="text-2xl">💳</span>
