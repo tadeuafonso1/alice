@@ -6,10 +6,12 @@ type AlertType = 'subscriber' | 'member' | 'superchat' | 'donation';
 
 interface ObsAlert {
     id: string;
+    user_id: string;
     type: AlertType;
     name: string;
     amount?: string;
     message?: string;
+    status: 'pending' | 'played';
 }
 
 export const OBSAlertsPage: React.FC = () => {
@@ -46,24 +48,34 @@ export const OBSAlertsPage: React.FC = () => {
 
         // 2. Escutar novos alertas em tempo real
         const channel = supabase
-            .channel('obs_alerts_changes')
+            .channel('public:obs_alerts')
             .on(
                 'postgres_changes',
                 {
                     event: 'INSERT',
                     schema: 'public',
                     table: 'obs_alerts',
-                    filter: `user_id=eq.${userId}`
+                    // Importante: Tiramos o filter do supabase.channel porque, sem auth de admin no OBS, 
+                    // a política de RLS em cima de realtime filter pode não disparar corretamente no cliente JS.
+                    // Nós filtramos no manual aqui embaixo.
                 },
                 (payload) => {
                     const newAlert = payload.new as ObsAlert;
+                    
+                    // Checa manualmente se este alerta pertence ao usuário logado no link do OBS
+                    if (newAlert.user_id !== userId) return;
+
+                    console.log("NOVO ALERTA RECEBIDO NO REALTIME:", newAlert);
+
                     // Se foi inserido como pending, adiciona na fila
-                    if (payload.new.status === 'pending') {
+                    if (newAlert.status === 'pending') {
                         setAlertQueue(prev => [...prev, newAlert]);
                     }
                 }
             )
-            .subscribe();
+            .subscribe((status) => {
+                console.log("Realtime status:", status);
+            });
 
         return () => {
             supabase.removeChannel(channel);
@@ -88,10 +100,56 @@ export const OBSAlertsPage: React.FC = () => {
         setIsPlaying(true);
         setCurrentAlert(alertToPlay);
 
-        // Dispara o som
-        // TODO: Adicionar um arquivo de audio real, por enquanto usaremos o audio tag invisivel se existir ou apenas delay
-        // const audio = new Audio('/sounds/alert.mp3');
-        // audio.play().catch(e => console.error("Erro ao tocar audio do alerta", e));
+        // Sons em Base64 para não depender de arquivos externos na pasta public no momento
+        // Som curto, estilo "moeda/sino"
+        const alertSoundBase64 = "data:audio/mp3;base64,//OExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//OExEAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"; 
+        
+        // Em um projeto real, você colocaria os arquivos na pasta /public/sounds/ 
+        // Exemplo: const audio = new Audio('/sounds/alert.mp3');
+        // Para este MVP vamos tentar tocar um bipe usando a Web Audio API sintetizada, 
+        // já que o base64 de um MP3 real seria muito grande para colocar direto no código.
+        
+        try {
+            const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            // Frequências diferentes baseadas no tipo
+            if (alertToPlay.type === 'subscriber') {
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                oscillator.frequency.exponentialRampToValueAtTime(880.00, audioCtx.currentTime + 0.1); // A5
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.5);
+            } else if (alertToPlay.type === 'superchat' || alertToPlay.type === 'donation') {
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(880.00, audioCtx.currentTime); // A5
+                oscillator.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); // C#6
+                oscillator.frequency.setValueAtTime(1318.51, audioCtx.currentTime + 0.2); // E6
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.6);
+            } else {
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(440.00, audioCtx.currentTime); 
+                oscillator.frequency.exponentialRampToValueAtTime(880.00, audioCtx.currentTime + 0.2); 
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.1);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.4);
+            }
+        } catch (e) {
+            console.error("Erro ao tocar audio sintetizado do alerta", e);
+        }
 
         // Marca como tocado no banco (para não tocar de novo se atualizar a página)
         try {

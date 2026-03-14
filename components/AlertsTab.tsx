@@ -40,16 +40,25 @@ export const AlertsTab: React.FC = () => {
                 amount = 'R$ 10,00';
             }
 
-            const { error } = await supabase.from('obs_alerts').insert({
+            console.log("Enviando alerta para o banco de dados...", {
+                user_id: session.user.id, type, name, amount, message
+            });
+
+            const { data, error } = await supabase.from('obs_alerts').insert({
                 user_id: session.user.id,
                 type,
                 name,
                 amount,
                 message,
                 status: 'pending'
-            });
+            }).select();
 
-            if (error) throw error;
+            if (error) {
+                console.error("Erro do Supabase ao inserir alerta:", error);
+                throw error;
+            }
+            
+            console.log("Alerta inserido com sucesso!", data);
             
         } catch (error) {
             console.error("Erro ao enviar alerta de teste:", error);
