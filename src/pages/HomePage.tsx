@@ -1133,10 +1133,47 @@ export const HomePage: React.FC = () => {
                             processedMessageIds.current.delete(oldestId);
                         }
 
+                        const type = item.snippet.type;
                         const author = item.authorDetails.displayName;
-                        const text = item.snippet.displayMessage;
+                        const text = item.snippet.displayMessage || "";
                         const authorChannelId = item.authorDetails.channelId;
-                        await handleSendMessageRef.current(author, text, authorChannelId);
+                        
+                        // --- Integração Nativa de Alertas OBS ---
+                        try {
+                            if (type === 'superChatEvent' || type === 'superStickerEvent') {
+                                let amountDisplay = "";
+                                if (type === 'superChatEvent') {
+                                    amountDisplay = item.snippet.superChatDetails?.amountDisplayString || "";
+                                } else if (type === 'superStickerEvent') {
+                                    amountDisplay = item.snippet.superStickerDetails?.amountDisplayString || "";
+                                }
+
+                                await supabase.from('obs_alerts').insert({
+                                    user_id: session?.user?.id,
+                                    type: 'superchat',
+                                    name: author,
+                                    amount: amountDisplay,
+                                    message: text
+                                });
+                                console.log(`[ALERTE YOUTUBE] Novo SuperChat de ${author}! Valor: ${amountDisplay}`);
+                            } else if (type === 'newSponsorEvent') {
+                                await supabase.from('obs_alerts').insert({
+                                    user_id: session?.user?.id,
+                                    type: 'member',
+                                    name: author,
+                                    message: "Tornou-se membro!"
+                                });
+                                console.log(`[ALERTE YOUTUBE] Novo Membro: ${author}!`);
+                            }
+                        } catch (err) {
+                            console.error("Erro ao registrar alerta no Supabase:", err);
+                        }
+                        // ----------------------------------------
+
+                        // Somente passa para o chatbot as mensagens de texto normais ou superchat (que contém texto)
+                        if (type === 'textMessageEvent' || type === 'superChatEvent') {
+                            await handleSendMessageRef.current(author, text, authorChannelId);
+                        }
                     }
                 } else {
                     console.log("Sessão iniciada: Histórico ignorado. Pronto para as próximas mensagens.");
