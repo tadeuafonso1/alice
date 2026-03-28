@@ -1806,8 +1806,6 @@ export const HomePage: React.FC = () => {
                                         onNext={handleNextUser}
                                         onReset={() => handleSendMessage(adminName, appSettings.commands.reset.command)}
                                         onRefresh={() => refreshData()}
-                                        isQueueOpen={appSettings.isQueueOpen}
-                                        onToggleQueue={toggleQueueStatus}
                                     />
                                 </div>
 
@@ -1817,6 +1815,8 @@ export const HomePage: React.FC = () => {
                                         playingUsers={playingUsers}
                                         onRemoveUser={handleRemovePlayingUser}
                                         onMoveBackToQueue={handleMoveBackToQueue}
+                                        isQueueOpen={appSettings.isQueueOpen}
+                                        onToggleQueue={toggleQueueStatus}
                                     />
                                 </div>
 

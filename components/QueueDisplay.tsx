@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UsersIcon, ArrowRightCircleIcon, TrashIcon, CopyIcon, CheckIcon, ArrowUpCircleIcon, SkipForwardIcon, RefreshCwIcon, LockIcon, UnlockIcon } from './Icons';
+import { UsersIcon, ArrowRightCircleIcon, TrashIcon, CopyIcon, CheckIcon, ArrowUpCircleIcon, SkipForwardIcon, RefreshCwIcon } from './Icons';
 import type { QueueUser } from '../types';
 
 interface QueueDisplayProps {
@@ -14,8 +14,6 @@ interface QueueDisplayProps {
     onNext?: () => void;
     onReset?: () => void;
     onRefresh?: () => void;
-    isQueueOpen: boolean;
-    onToggleQueue: () => void;
 }
 
 const TimerBar: React.FC<{ timeLeft: number; totalSeconds: number }> = ({ timeLeft, totalSeconds }) => {
@@ -157,7 +155,7 @@ const QueueItem: React.FC<{
     );
 };
 
-export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, isTimerActive, timeoutMinutes, adminName, onMoveToPlaying, onRemoveUser, onMoveToTop, onNext, onReset, onRefresh, isQueueOpen, onToggleQueue }) => {
+export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, isTimerActive, timeoutMinutes, adminName, onMoveToPlaying, onRemoveUser, onMoveToTop, onNext, onReset, onRefresh }) => {
     return (
         <div className="bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl flex flex-col h-full overflow-hidden">
             <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#162036] flex items-center justify-between gap-2 overflow-hidden">
@@ -196,18 +194,6 @@ export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, i
                             <span className="hidden md:inline">Resetar</span>
                         </button>
                     )}
-                    <button
-                        onClick={onToggleQueue}
-                        className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all active:scale-90 flex items-center gap-1.5 flex-shrink-0 ${
-                            isQueueOpen 
-                                ? 'bg-amber-500 hover:bg-amber-400 text-white shadow-lg shadow-amber-500/20' 
-                                : 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-lg shadow-emerald-500/20'
-                        }`}
-                        title={isQueueOpen ? "Fechar Fila" : "Abrir Fila"}
-                    >
-                        {isQueueOpen ? <LockIcon className="w-3.5 h-3.5" /> : <UnlockIcon className="w-3.5 h-3.5" />}
-                        <span className="hidden md:inline">{isQueueOpen ? "Fechar Fila" : "Abrir Fila"}</span>
-                    </button>
                 </div>
 
                 <span className="bg-cyan-500/10 text-cyan-400 text-sm font-black px-4 py-1 rounded-full border border-cyan-500/20 uppercase tracking-tighter flex-shrink-0">

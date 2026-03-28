@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Gamepad2Icon, TrashIcon, UserIcon, CopyIcon, CheckIcon, ArrowUpCircleIcon, TimerIcon } from './Icons';
+import { Gamepad2Icon, TrashIcon, UserIcon, CopyIcon, CheckIcon, ArrowUpCircleIcon, TimerIcon, LockIcon, UnlockIcon } from './Icons';
 import type { QueueUser } from '../types';
 
 interface PlayingDisplayProps {
     playingUsers: QueueUser[];
     onRemoveUser: (user: string) => void;
     onMoveBackToQueue: (user: string) => void;
+    isQueueOpen: boolean;
+    onToggleQueue: () => void;
 }
 
 export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
     playingUsers,
     onRemoveUser,
     onMoveBackToQueue,
+    isQueueOpen,
+    onToggleQueue
 }) => {
     const [copiedUser, setCopiedUser] = useState<string | null>(null);
 
@@ -28,9 +32,23 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
                     <Gamepad2Icon className="w-4 h-4 text-lime-400" />
                     <span className="hidden sm:inline">Jogando Agora</span>
                 </h2>
-                <span className="bg-lime-500/10 text-lime-400 text-[10px] font-black px-2 py-0.5 rounded-full border border-lime-500/20 uppercase tracking-tighter flex-shrink-0">
-                    On-line
-                </span>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={onToggleQueue}
+                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all active:scale-90 flex items-center gap-1.5 border ${
+                            isQueueOpen 
+                                ? 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20' 
+                                : 'bg-lime-500/10 text-lime-500 border-lime-500/20 hover:bg-lime-500/20'
+                        }`}
+                        title={isQueueOpen ? "Fechar Fila" : "Abrir Fila"}
+                    >
+                        {isQueueOpen ? <LockIcon className="w-3.5 h-3.5" /> : <UnlockIcon className="w-3.5 h-3.5" />}
+                        <span className="hidden md:inline">{isQueueOpen ? "Fechar Fila" : "Abrir Fila"}</span>
+                    </button>
+                    <span className="bg-lime-500/10 text-lime-400 text-[10px] font-black px-2 py-0.5 rounded-full border border-lime-500/20 uppercase tracking-tighter flex-shrink-0">
+                        On-line
+                    </span>
+                </div>
             </div>
 
             <div className="p-6 space-y-3 overflow-y-auto custom-scrollbar flex-grow bg-gray-100 dark:bg-[#0f111a]">
