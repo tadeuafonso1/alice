@@ -29,6 +29,8 @@ export interface CommandSettings {
   queueList: CommandSetting;
   playingList: CommandSetting;
   participate: CommandSetting;
+  openQueue: CommandSetting;
+  closeQueue: CommandSetting;
 }
 
 export interface MessageSetting {
@@ -61,6 +63,9 @@ export interface MessageSettings {
   userParticipating: MessageSetting;
   userPoints: MessageSetting;
   insufficientPoints: MessageSetting;
+  queueClosed: MessageSetting;
+  queueOpened: MessageSetting;
+  queueIsClosed: MessageSetting;
 }
 
 export interface LoyaltySettings {
@@ -84,4 +89,5 @@ export interface AppSettings {
   loyalty: LoyaltySettings;
   youtubeChannelId?: string;
   autoSyncYoutube?: boolean;
+  isQueueOpen: boolean;
 }

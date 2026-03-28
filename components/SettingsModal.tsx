@@ -30,6 +30,8 @@ const translations = {
     queueList: 'Comando Público: Listar Fila',
     playingList: 'Comando Público: Listar Jogadores',
     participate: 'Comando: Entrar no Sorteio',
+    openQueue: 'Comando Admin: Abrir Fila',
+    closeQueue: 'Comando Admin: Fechar Fila',
   },
   messages: {
     userExistsQueue: 'Usuário já existe na fila',
@@ -54,6 +56,9 @@ const translations = {
     playingList: 'Resposta para !jogando',
     playingListEmpty: 'Resposta para !jogando (vazio)',
     userParticipating: 'Confirmação de entrada no sorteio',
+    queueClosed: 'Mensagem: Fila Fechada',
+    queueOpened: 'Mensagem: Fila Aberta',
+    queueIsClosed: 'Mensagem: Usuário tenta entrar na fila fechada',
   },
 };
 

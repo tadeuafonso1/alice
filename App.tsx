@@ -8,7 +8,6 @@ import { PrivacyPolicyPage } from './src/pages/PrivacyPolicyPage';
 import { TermsOfServicePage } from './src/pages/TermsOfServicePage';
 import { OBSLikesPage } from './src/pages/OBSLikesPage';
 import { OBSQueuePage } from './src/pages/OBSQueuePage';
-import { OBSQueuePage } from './src/pages/OBSQueuePage';
 
 const AppRoutes: React.FC = () => {
     const { session, loading } = useSession();

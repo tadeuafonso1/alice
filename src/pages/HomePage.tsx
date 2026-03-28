@@ -33,6 +33,8 @@ const defaultSettings: AppSettings = {
         queueList: { command: '!fila', enabled: true },
         playingList: { command: '!jogando', enabled: true },
         participate: { command: '!participar', enabled: true },
+        openQueue: { command: '!abrir', enabled: true },
+        closeQueue: { command: '!fechar', enabled: true },
     },
     messages: {
         userExistsQueue: { text: '@{user}, você já está na fila na posição {position}.', enabled: true },
@@ -59,6 +61,9 @@ const defaultSettings: AppSettings = {
         userParticipating: { text: '✅ @{user}, você entrou no sorteio!', enabled: true },
         userPoints: { text: '💰 @{user}, você tem {points} pontos.', enabled: true },
         insufficientPoints: { text: '❌ @{user}, você precisa de {cost} pontos para usar esse comando (Saldo: {points}).', enabled: true },
+        queueClosed: { text: '🚫 A fila está fechada agora!', enabled: true },
+        queueOpened: { text: '✅ A fila está aberta agora! Digite {join} para entrar.', enabled: true },
+        queueIsClosed: { text: '❌ @{user}, a fila está fechada no momento.', enabled: true },
     },
     customCommands: [],
     loyalty: {
@@ -70,6 +75,7 @@ const defaultSettings: AppSettings = {
     },
     youtubeChannelId: '',
     autoSyncYoutube: true,
+    isQueueOpen: true,
 };
 
 export const HomePage: React.FC = () => {
@@ -385,6 +391,7 @@ export const HomePage: React.FC = () => {
                 mergedSettings.customCommands = dbSettings.customCommands || [];
                 if (dbSettings.youtubeChannelId) mergedSettings.youtubeChannelId = dbSettings.youtubeChannelId;
                 if (typeof dbSettings.autoSyncYoutube === 'boolean') mergedSettings.autoSyncYoutube = dbSettings.autoSyncYoutube;
+                if (typeof dbSettings.isQueueOpen === 'boolean') mergedSettings.isQueueOpen = dbSettings.isQueueOpen;
 
                 setAppSettings(mergedSettings);
             }
@@ -767,6 +774,26 @@ export const HomePage: React.FC = () => {
             activateTimer();
         }
     }, [isTimerActive, deactivateTimer, activateTimer]);
+    
+    const toggleQueueStatus = useCallback(async () => {
+        const newStatus = !appSettings.isQueueOpen;
+        setAppSettings(prev => ({ ...prev, isQueueOpen: newStatus }));
+        
+        try {
+            await supabase
+                .from('settings')
+                .update({ settings_data: { ...appSettings, isQueueOpen: newStatus } })
+                .eq('id', settingsId);
+        } catch (e) {
+            console.error("Error updating queue status in DB", e);
+        }
+
+        if (newStatus) {
+            sendBotMessage('queueOpened', { join: appSettings.commands.join.command });
+        } else {
+            sendBotMessage('queueClosed');
+        }
+    }, [appSettings, settingsId, sendBotMessage]);
 
     const handleSendMessage = useCallback(async (author: string, text: string, authorChannelId?: string) => {
         if (!text.trim()) return;
@@ -774,6 +801,10 @@ export const HomePage: React.FC = () => {
         // Normalização do autor e ID
         author = author.trim().replace(/@/g, '');
         const trimmedChannelId = authorChannelId?.trim();
+
+        // Definições de normalização
+        const normalizeText = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const commandText = normalizeText(text.trim());
 
         // SEMPRE adiciona a mensagem ao chat local para "uso normal"
         const userMessage: Message = { author, text, type: 'user', authorChannelId: trimmedChannelId };
@@ -786,14 +817,10 @@ export const HomePage: React.FC = () => {
         if (isUserBlockedById || isUserBlockedByName) {
             console.log(`[BlockedUsers] USUÁRIO BLOQUEADO DETECTADO: ${author} (ID: ${trimmedChannelId})`);
 
-            const normalizeText = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-            const commandText = normalizeText(text.trim());
-
             const isPotentialCommand =
                 text.trim().startsWith('!') ||
                 Object.values(appSettings.commands).some(c => c.enabled && commandText.startsWith(normalizeText(c.command))) ||
-                appSettings.customCommands.some(c => commandText.startsWith(normalizeText(c.command))) ||
-                (appSettings.loyalty.enabled && (commandText === '!pontos' || commandText === '!points'));
+                appSettings.customCommands.some(c => commandText.startsWith(normalizeText(c.command)));
 
             if (isPotentialCommand) {
                 console.log(`[BlockedUsers] Bloqueando execução do comando: ${text}`);
@@ -820,10 +847,27 @@ export const HomePage: React.FC = () => {
             });
         }
 
-
-        const normalizeText = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-        const commandText = normalizeText(text.trim());
         const { commands, customCommands, loyalty } = appSettings;
+
+        const isJoinCommand = commandText === normalizeText(commands.join.command);
+        const isLeaveCommand = commandText === normalizeText(commands.leave.command);
+        const isPositionCommand = commandText === normalizeText(commands.position.command) || commandText === '!posicao' || commandText === '!posição';
+        const isNickCommand = commandText.startsWith(normalizeText(commands.nick.command));
+        const isOpenQueueCommand = commandText === normalizeText(commands.openQueue.command);
+        const isCloseQueueCommand = commandText === normalizeText(commands.closeQueue.command);
+        const isPointsCommand = loyalty.enabled && (commandText === '!pontos' || commandText === '!points');
+
+        // Admin Commands
+        if (author.toLowerCase() === adminName.toLowerCase()) {
+            if (isOpenQueueCommand) {
+                if (!appSettings.isQueueOpen) toggleQueueStatus();
+                return;
+            }
+            if (isCloseQueueCommand) {
+                if (appSettings.isQueueOpen) toggleQueueStatus();
+                return;
+            }
+        }
 
         // Verificar custo de comando se o sistema de lealdade estiver ativo
         console.log(`[Loyalty Debug] author: "${author}", adminName: "${adminName}", isAdmin: ${author === adminName}`);
@@ -834,16 +878,16 @@ export const HomePage: React.FC = () => {
             let commandToExecute: CommandSetting | null = null;
             let commandName = '';
 
-            if (commandText.startsWith(commands.join.command)) {
+            if (isJoinCommand) {
                 commandToExecute = commands.join;
                 commandName = 'join';
-            } else if (commandText === commands.leave.command) {
+            } else if (isLeaveCommand) {
                 commandToExecute = commands.leave;
                 commandName = 'leave';
-            } else if (commandText === commands.position.command || commandText === '!posicao' || commandText === '!posição') {
+            } else if (isPositionCommand) {
                 commandToExecute = commands.position;
                 commandName = 'position';
-            } else if (commandText.startsWith(commands.nick.command)) {
+            } else if (isNickCommand) {
                 commandToExecute = commands.nick;
                 commandName = 'nick';
             } else if (commandText === commands.queueList.command) {
@@ -951,9 +995,13 @@ export const HomePage: React.FC = () => {
             }
         }
 
-        if (commands.join.enabled && commandText.startsWith(commands.join.command)) {
-            const isUserInQueue = queue.some(u => u.user === author);
-            const isUserPlaying = playingUsers.some(u => u.user === author);
+        if (commands.join.enabled && isJoinCommand) {
+            if (!appSettings.isQueueOpen) {
+                sendBotMessage('queueIsClosed', { user: author });
+                return;
+            }
+            const isUserInQueue = queue.some(u => u.user.toLowerCase() === author.toLowerCase());
+            const isUserPlaying = playingUsers.some(u => u.user.toLowerCase() === author.toLowerCase());
 
             if (isUserInQueue || isUserPlaying) {
                 if (isUserInQueue) {
@@ -1758,6 +1806,8 @@ export const HomePage: React.FC = () => {
                                         onNext={handleNextUser}
                                         onReset={() => handleSendMessage(adminName, appSettings.commands.reset.command)}
                                         onRefresh={() => refreshData()}
+                                        isQueueOpen={appSettings.isQueueOpen}
+                                        onToggleQueue={toggleQueueStatus}
                                     />
                                 </div>
 
