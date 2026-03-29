@@ -849,13 +849,18 @@ export const HomePage: React.FC = () => {
 
         const { commands, customCommands, loyalty } = appSettings;
 
-        const isJoinCommand = commandText === normalizeText(commands.join.command);
-        const isLeaveCommand = commandText === normalizeText(commands.leave.command);
-        const isPositionCommand = commandText === normalizeText(commands.position.command) || commandText === '!posicao' || commandText === '!posição';
+        const checkCommand = (text: string, cmd: string) => {
+            const normalizedCmd = normalizeText(cmd);
+            return text === normalizedCmd || text.startsWith(normalizedCmd + ' ');
+        };
+
+        const isJoinCommand = checkCommand(commandText, commands.join.command);
+        const isLeaveCommand = checkCommand(commandText, commands.leave.command);
+        const isPositionCommand = checkCommand(commandText, commands.position.command) || commandText === '!posicao' || commandText === '!posição' || commandText.startsWith('!posicao ') || commandText.startsWith('!posição ');
         const isNickCommand = commandText.startsWith(normalizeText(commands.nick.command));
-        const isOpenQueueCommand = commandText === normalizeText(commands.openQueue.command);
-        const isCloseQueueCommand = commandText === normalizeText(commands.closeQueue.command);
-        const isPointsCommand = loyalty.enabled && (commandText === '!pontos' || commandText === '!points');
+        const isOpenQueueCommand = checkCommand(commandText, commands.openQueue.command);
+        const isCloseQueueCommand = checkCommand(commandText, commands.closeQueue.command);
+        const isPointsCommand = loyalty.enabled && (commandText === '!pontos' || commandText === '!points' || commandText.startsWith('!pontos ') || commandText.startsWith('!points '));
 
         // Admin Commands
         if (author.toLowerCase() === adminName.toLowerCase()) {
@@ -1139,7 +1144,10 @@ export const HomePage: React.FC = () => {
                 return next;
             });
         } else {
-            const customCommand = customCommands.find(c => normalizeText(c.command) === commandText);
+            const customCommand = customCommands.find(c => {
+                const normalizedCmd = normalizeText(c.command);
+                return commandText === normalizedCmd || commandText.startsWith(normalizedCmd + ' ');
+            });
             if (customCommand) {
                 const response = customCommand.response.replace(/{user}/g, author);
                 addBotMessage(response, true);
@@ -1147,7 +1155,7 @@ export const HomePage: React.FC = () => {
         }
 
         // Comando !pontos (sempre disponível se lealdade ativa)
-        if (loyalty.enabled && (commandText === '!pontos' || commandText === '!points')) {
+        if (loyalty.enabled && isPointsCommand) {
             const { data: userPointsData } = await supabase
                 .from('loyalty_points')
                 .select('points')
@@ -1195,6 +1203,11 @@ export const HomePage: React.FC = () => {
                     } catch (e) { }
                 }
                 throw new Error(errorMessage);
+            }
+
+            // Detecta erro se status for 200 mas corpo contiver erro
+            if (data && data.error) {
+                throw new Error(data.error);
             }
 
             if (data && data.items) {
