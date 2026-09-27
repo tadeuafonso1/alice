@@ -100,6 +100,10 @@ export const HomePage: React.FC = () => {
     const [blockedUsernames, setBlockedUsernames] = useState<Set<string>>(new Set());
     const isInitialLoad = useRef(true);
 
+    // Session Statistics
+    const [sessionStats, setSessionStats] = useState({ totalJoined: 0, peakQueue: 0, totalPlayed: 0 });
+    const [queueHistory, setQueueHistory] = useState<number[]>([]);
+
     // Persistence: Load giveaway participants
     useEffect(() => {
         const saved = localStorage.getItem('alice_giveaway_external');
@@ -613,6 +617,7 @@ export const HomePage: React.FC = () => {
         setQueue(prev => prev.filter(u => u.user !== userToMove));
         setPlayingUsers(prev => {
             if (prev.some(u => u.user === userToMove)) return prev;
+            setSessionStats(s => ({ ...s, totalPlayed: s.totalPlayed + 1 }));
             return [...prev, userObject];
         });
 
@@ -1026,7 +1031,16 @@ export const HomePage: React.FC = () => {
 
                 const newUser = { user: author, nickname };
 
-                setQueue(prev => [...prev, newUser]);
+                setQueue(prev => {
+                    const updated = [...prev, newUser];
+                    setSessionStats(s => ({
+                        ...s,
+                        totalJoined: s.totalJoined + 1,
+                        peakQueue: Math.max(s.peakQueue, updated.length),
+                    }));
+                    setQueueHistory(h => [...h.slice(-19), updated.length]);
+                    return updated;
+                });
                 setUserTimers(prev => ({ ...prev, [author]: now }));
 
                 try {
@@ -1804,7 +1818,76 @@ export const HomePage: React.FC = () => {
                     <div className="p-6 md:p-10 max-w-[1600px] mx-auto w-full flex-grow overflow-y-auto custom-scrollbar">
                         {activeTab === 'dashboard' && (
 
-                            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-[calc(100vh-140px)]">
+                            <div className="flex flex-col gap-4 h-[calc(100vh-140px)]">
+
+                            {/* ── Mini Stats Dashboard ── */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-shrink-0">
+
+                                {/* Entrou na Fila */}
+                                <div className="relative overflow-hidden bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 flex flex-col gap-1 shadow-sm group hover:border-cyan-500/40 hover:shadow-cyan-500/10 hover:shadow-md transition-all duration-300">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Entrou na Fila</span>
+                                    <span className="text-3xl font-black text-gray-900 dark:text-white tabular-nums">{sessionStats.totalJoined}</span>
+                                    <span className="text-[10px] text-cyan-500 font-semibold">nesta sessão</span>
+                                    <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                                        <svg className="w-4 h-4 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+                                    </div>
+                                </div>
+
+                                {/* Pico da Fila */}
+                                <div className="relative overflow-hidden bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 flex flex-col gap-1 shadow-sm group hover:border-purple-500/40 hover:shadow-purple-500/10 hover:shadow-md transition-all duration-300">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Pico da Fila</span>
+                                    <span className="text-3xl font-black text-gray-900 dark:text-white tabular-nums">{sessionStats.peakQueue}</span>
+                                    <span className="text-[10px] text-purple-500 font-semibold">simultâneos</span>
+                                    <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center">
+                                        <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                                    </div>
+                                </div>
+
+                                {/* Total Jogaram */}
+                                <div className="relative overflow-hidden bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 flex flex-col gap-1 shadow-sm group hover:border-emerald-500/40 hover:shadow-emerald-500/10 hover:shadow-md transition-all duration-300">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Jogaram</span>
+                                    <span className="text-3xl font-black text-gray-900 dark:text-white tabular-nums">{sessionStats.totalPlayed}</span>
+                                    <span className="text-[10px] text-emerald-500 font-semibold">usuários</span>
+                                    <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                                        <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    </div>
+                                </div>
+
+                                {/* Gráfico Sparkline */}
+                                <div className="relative overflow-hidden bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 flex flex-col gap-1 shadow-sm group hover:border-amber-500/40 hover:shadow-amber-500/10 hover:shadow-md transition-all duration-300">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Fila ao longo do tempo</span>
+                                    <div className="flex-1 flex items-end gap-[2px] mt-1" style={{ minHeight: 36 }}>
+                                        {queueHistory.length === 0 ? (
+                                            <span className="text-[10px] text-gray-400 self-center w-full text-center">aguardando dados...</span>
+                                        ) : (() => {
+                                            const max = Math.max(...queueHistory, 1);
+                                            return queueHistory.map((val, i) => (
+                                                <div
+                                                    key={i}
+                                                    className="flex-1 rounded-t transition-all duration-500"
+                                                    style={{
+                                                        height: `${Math.max(4, (val / max) * 36)}px`,
+                                                        background: i === queueHistory.length - 1
+                                                            ? 'linear-gradient(to top, #f59e0b, #fbbf24)'
+                                                            : 'linear-gradient(to top, #374151, #4b5563)',
+                                                        opacity: 0.4 + (i / queueHistory.length) * 0.6,
+                                                    }}
+                                                    title={`${val} na fila`}
+                                                />
+                                            ));
+                                        })()}
+                                    </div>
+                                    <span className="text-[10px] text-amber-500 font-semibold">{queue.length} agora na fila</span>
+                                </div>
+
+                            </div>
+
+                            {/* ── Main Grid ── */}
+                            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 flex-grow min-h-0">
                                 {/* Column 1: Queue */}
                                 <div className="xl:col-span-1 h-full overflow-hidden">
                                     <QueueDisplay
@@ -1863,6 +1946,7 @@ export const HomePage: React.FC = () => {
                                         )}
                                     </div>
                                 </div>
+                            </div>
                             </div>
                         )}
 
