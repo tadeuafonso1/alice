@@ -1484,7 +1484,7 @@ export const HomePage: React.FC = () => {
             if (isPolling) {
                 await fetchAndProcessMessages();
                 // Agenda a próxima busca apenas após terminar a atual
-                timeoutId = setTimeout(poll, 25000);
+                timeoutId = setTimeout(poll, 9000);
             }
         };
 
