@@ -103,7 +103,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <button
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center px-6 py-3 transition-all relative group ${activeTab === item.id
+                            className={`w-full flex items-center transition-all relative group ${
+                                isOpen ? 'px-6 py-3 gap-0' : 'justify-center py-3'
+                            } ${activeTab === item.id
                                 ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 border-r-4 border-cyan-500'
                                 : 'hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white'
                                 }`}
