@@ -1,27 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-    BotIcon,
     SettingsIcon,
     MessageSquareIcon,
     LayoutIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
     LogOutIcon,
-    SunIcon,
-    MoonIcon,
-    RefreshCwIcon,
     TimerIcon,
     GlobeIcon,
     CopyIcon,
     ThumbsUpIcon,
-    RocketIcon,
-    UsersIcon,
-    AnchorIcon,
-    ExternalLinkIcon,
     YoutubeIcon,
     ShieldIcon
 } from './Icons';
-import { LikeGoalWidget } from './LikeGoalWidget';
 import { useSession } from '../src/contexts/SessionContext';
 
 interface SidebarProps {
@@ -34,170 +25,229 @@ interface SidebarProps {
     onSignOut: () => void;
 }
 
+const menuItems = [
+    { id: 'dashboard', label: 'Painel de Controle', icon: LayoutIcon },
+    { id: 'commands', label: 'Comandos do Bot', icon: MessageSquareIcon },
+    { id: 'settings', label: 'Configurações', icon: SettingsIcon },
+    { id: 'youtube', label: 'YouTube Chat', icon: YoutubeIcon },
+    { id: 'timer', label: 'Timer de Inatividade', icon: TimerIcon },
+    { id: 'likes', label: 'Contador de Likes', icon: ThumbsUpIcon },
+    { id: 'blocked', label: 'Usuários Bloqueados', icon: ShieldIcon },
+];
+
 export const Sidebar: React.FC<SidebarProps> = ({
     activeTab,
     setActiveTab,
     isOpen,
     setIsOpen,
-    theme,
-    toggleTheme,
     onSignOut,
 }) => {
     const { session } = useSession();
-    const userId = session?.user?.id;
-
-    // Menu items configuration
-    const menuItems = [
-        { id: 'dashboard', label: 'Painel de controle', icon: LayoutIcon },
-        { id: 'commands', label: 'Comandos do Bot', icon: MessageSquareIcon },
-        { id: 'settings', label: 'Configurações', icon: SettingsIcon },
-        {
-            id: 'youtube', label: 'YouTube Chat', icon: (props: any) => {
-                const newProps = { ...props, className: props.className?.replace('w-6 h-6', 'w-8 h-8') };
-                return <YoutubeIcon {...newProps} />;
-            }
-        },
-        { id: 'timer', label: 'Timer Inatividade', icon: TimerIcon },
-        { id: 'likes', label: 'Contador de Likes', icon: ThumbsUpIcon },
-        { id: 'blocked', label: 'Usuários Bloqueados', icon: ShieldIcon },
-    ];
 
     return (
         <aside
-            className={`sticky top-0 h-screen flex-shrink-0 flex flex-col bg-white dark:bg-[#0f172a] text-gray-600 dark:text-gray-300 transition-all duration-300 ease-in-out border-r border-gray-200 dark:border-gray-800 ${isOpen ? 'w-64' : 'w-20'}`}
+            style={{ backgroundColor: '#0a0e1a', borderRight: '1px solid #131d35' }}
+            className={`sticky top-0 h-screen flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out ${isOpen ? 'w-60' : 'w-[72px]'}`}
         >
-            {/* Logo Section */}
-            <div className={`flex items-center h-16 border-b border-gray-200 dark:border-gray-800 ${isOpen ? 'justify-between px-6' : 'justify-center'}`}>
-                <div className={`flex items-center gap-3 overflow-hidden ${!isOpen && 'justify-center'}`}>
-                    <BotIcon className="w-8 h-8 text-cyan-500 flex-shrink-0" />
+            {/* ── Logo / Brand ── */}
+            <div
+                style={{ borderBottom: '1px solid #131d35', height: '64px' }}
+                className={`flex items-center flex-shrink-0 ${isOpen ? 'px-5 justify-between' : 'justify-center'}`}
+            >
+                <div className="flex items-center gap-3 overflow-hidden">
+                    {/* Gradient "A" monogram */}
+                    <div
+                        className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center font-black text-lg text-white select-none"
+                        style={{ background: 'linear-gradient(135deg, #00c8ff 0%, #0070f3 100%)', boxShadow: '0 0 16px rgba(0,200,255,0.3)' }}
+                    >
+                        A
+                    </div>
                     {isOpen && (
-                        <span className="text-xl font-bold text-gray-900 dark:text-white whitespace-nowrap">Alice</span>
+                        <span className="text-white font-bold text-lg tracking-tight whitespace-nowrap">
+                            Alice <span style={{ color: '#00c8ff' }}>Bot</span>
+                        </span>
                     )}
                 </div>
+
                 {isOpen && (
                     <button
                         onClick={() => setIsOpen(false)}
-                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors hidden md:block text-gray-400"
+                        title="Recolher menu"
+                        style={{ color: '#3a5070' }}
+                        className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
                     >
-                        <ChevronLeftIcon className="w-5 h-5" />
-                    </button>
-                )}
-                {!isOpen && (
-                    <button
-                        onClick={() => setIsOpen(true)}
-                        className="hidden md:flex p-1 text-gray-400 hover:text-cyan-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-                    >
-                        <ChevronRightIcon className="w-4 h-4" />
+                        <ChevronLeftIcon className="w-4 h-4" />
                     </button>
                 )}
             </div>
 
-            {/* Navigation Section */}
-            <div className="flex-grow flex flex-col overflow-y-auto py-4 custom-scrollbar">
-                <nav className="space-y-1 mb-4">
-                    {menuItems.map((item) => (
+            {/* ── Navigation ── */}
+            <nav className="flex-grow py-3 overflow-y-auto overflow-x-hidden flex flex-col gap-0.5 px-2">
+                {menuItems.map((item) => {
+                    const isActive = activeTab === item.id;
+                    return (
                         <button
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center transition-all relative group ${
-                                isOpen ? 'px-6 py-3 gap-0' : 'justify-center py-3'
-                            } ${activeTab === item.id
-                                ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 border-r-4 border-cyan-500'
-                                : 'hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white'
-                                }`}
+                            title={!isOpen ? item.label : undefined}
+                            className={`relative group w-full flex items-center gap-3 rounded-lg transition-all duration-150 ${
+                                isOpen ? 'px-3 py-2.5' : 'justify-center py-3'
+                            } ${
+                                isActive
+                                    ? 'text-white'
+                                    : 'hover:text-white'
+                            }`}
+                            style={isActive ? {
+                                backgroundColor: 'rgba(0,200,255,0.08)',
+                                color: '#ffffff',
+                            } : {
+                                color: '#3a5a7a',
+                            }}
                         >
-                            <item.icon className={`w-6 h-6 flex-shrink-0 ${activeTab === item.id ? 'text-cyan-400' : 'text-gray-400 group-hover:text-cyan-400'}`} />
-                            {isOpen && (
-                                <span className="ml-4 text-sm font-medium whitespace-nowrap">{item.label}</span>
+                            {/* Active left accent bar */}
+                            {isActive && (
+                                <span
+                                    className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r"
+                                    style={{ backgroundColor: '#00c8ff' }}
+                                />
                             )}
+
+                            <item.icon
+                                className="w-5 h-5 flex-shrink-0 transition-colors"
+                                style={{ color: isActive ? '#00c8ff' : undefined }}
+                            />
+
+                            {isOpen && (
+                                <span className="text-sm font-medium whitespace-nowrap">
+                                    {item.label}
+                                </span>
+                            )}
+
+                            {/* Tooltip when collapsed */}
                             {!isOpen && (
-                                <div className="absolute left-16 bg-gray-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                <div
+                                    className="absolute left-14 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none z-50 shadow-xl"
+                                    style={{
+                                        backgroundColor: '#1a2540',
+                                        color: '#e0eaff',
+                                        border: '1px solid #253560',
+                                    }}
+                                >
                                     {item.label}
                                 </div>
                             )}
                         </button>
-                    ))}
-                </nav>
-            </div>
+                    );
+                })}
+            </nav>
 
-            {/* Bottom Section */}
-            <div className="border-t border-gray-200 dark:border-gray-800">
-                {isOpen && (
-                    <div className="p-4">
-                        <div className="mb-3 p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-cyan-500 mb-2">Página de Comandos</p>
+            {/* ── Bottom Section ── */}
+            <div style={{ borderTop: '1px solid #131d35' }} className="flex-shrink-0">
+                {isOpen ? (
+                    <div className="p-3 flex flex-col gap-2">
+                        {/* Commands page shortcut */}
+                        <div
+                            className="p-3 rounded-xl flex flex-col gap-2"
+                            style={{ backgroundColor: 'rgba(0,200,255,0.04)', border: '1px solid rgba(0,200,255,0.08)' }}
+                        >
+                            <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#00c8ff' }}>
+                                Página de Comandos
+                            </p>
                             <div className="flex gap-2">
                                 <a
                                     href="/comandos"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex-1 flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white p-2 rounded-lg text-xs font-bold transition-all shadow-lg shadow-cyan-900/20 active:scale-95"
+                                    className="flex-1 flex items-center justify-center gap-1.5 text-white text-xs font-bold py-1.5 rounded-lg transition-all active:scale-95"
+                                    style={{ backgroundColor: '#0070f3' }}
+                                    onMouseOver={e => (e.currentTarget.style.backgroundColor = '#0060d3')}
+                                    onMouseOut={e => (e.currentTarget.style.backgroundColor = '#0070f3')}
                                 >
                                     <GlobeIcon className="w-3.5 h-3.5" />
                                     Visualizar
                                 </a>
                                 <button
                                     onClick={() => {
-                                        const url = `${window.location.origin}/comandos`;
-                                        navigator.clipboard.writeText(url);
-                                        alert('Link copiado para a área de transferência!');
+                                        navigator.clipboard.writeText(`${window.location.origin}/comandos`);
+                                        alert('Link copiado!');
                                     }}
-                                    className="p-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-all active:scale-95"
-                                    title="Copiar Link"
+                                    title="Copiar link"
+                                    className="p-1.5 rounded-lg transition-all active:scale-95"
+                                    style={{ backgroundColor: '#1a2540', color: '#4a7090' }}
+                                    onMouseOver={e => (e.currentTarget.style.color = '#00c8ff')}
+                                    onMouseOut={e => (e.currentTarget.style.color = '#4a7090')}
                                 >
                                     <CopyIcon className="w-3.5 h-3.5" />
                                 </button>
                             </div>
                         </div>
 
+                        {/* Sign out */}
                         <button
                             onClick={onSignOut}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-red-500 hover:bg-red-500/10 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-300"
-                            title="Desconectar"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150"
+                            style={{ color: '#ff4d4d' }}
+                            onMouseOver={e => (e.currentTarget.style.backgroundColor = 'rgba(255,77,77,0.08)')}
+                            onMouseOut={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                         >
-                            <LogOutIcon className="w-5 h-5 flex-shrink-0" />
-                            <span className="font-bold whitespace-nowrap">Sair do Sistema</span>
+                            <LogOutIcon className="w-4 h-4 flex-shrink-0" />
+                            <span className="text-sm font-semibold">Sair do Sistema</span>
                         </button>
 
-                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800 flex flex-col gap-1">
-                            <a
-                                href="/privacy"
-                                className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-cyan-500 transition-colors"
-                                target="_blank"
-                                rel="noopener noreferrer"
+                        {/* Legal links */}
+                        <div className="flex gap-3 px-1">
+                            <a href="/privacy" target="_blank" rel="noopener noreferrer"
+                                className="text-[10px] font-semibold uppercase tracking-wider transition-colors"
+                                style={{ color: '#2a4060' }}
+                                onMouseOver={e => (e.currentTarget.style.color = '#00c8ff')}
+                                onMouseOut={e => (e.currentTarget.style.color = '#2a4060')}
                             >
-                                Política de Privacidade
+                                Privacidade
                             </a>
-                            <a
-                                href="/terms"
-                                className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-cyan-500 transition-colors"
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            <a href="/terms" target="_blank" rel="noopener noreferrer"
+                                className="text-[10px] font-semibold uppercase tracking-wider transition-colors"
+                                style={{ color: '#2a4060' }}
+                                onMouseOver={e => (e.currentTarget.style.color = '#00c8ff')}
+                                onMouseOut={e => (e.currentTarget.style.color = '#2a4060')}
                             >
-                                Termos de Uso
+                                Termos
                             </a>
                         </div>
                     </div>
-                )}
-
-                {!isOpen && (
-                    <div className="flex flex-col items-center gap-1 py-3">
+                ) : (
+                    /* Collapsed bottom icons */
+                    <div className="flex flex-col items-center gap-1 py-3 px-2">
+                        <button
+                            onClick={() => setIsOpen(true)}
+                            title="Expandir menu"
+                            className="w-full flex items-center justify-center p-2.5 rounded-lg transition-all group"
+                            style={{ color: '#3a5070' }}
+                            onMouseOver={e => (e.currentTarget.style.color = '#00c8ff')}
+                            onMouseOut={e => (e.currentTarget.style.color = '#3a5070')}
+                        >
+                            <ChevronRightIcon className="w-4 h-4" />
+                        </button>
                         <button
                             onClick={() => {
-                                const url = `${window.location.origin}/comandos`;
-                                navigator.clipboard.writeText(url);
+                                navigator.clipboard.writeText(`${window.location.origin}/comandos`);
                             }}
-                            className="w-full flex items-center justify-center p-3 text-cyan-500 hover:bg-cyan-500/10 transition-all"
                             title="Copiar Link de Comandos"
+                            className="w-full flex items-center justify-center p-2.5 rounded-lg transition-all"
+                            style={{ color: '#3a5070' }}
+                            onMouseOver={e => (e.currentTarget.style.color = '#00c8ff')}
+                            onMouseOut={e => (e.currentTarget.style.color = '#3a5070')}
                         >
-                            <GlobeIcon className="w-5 h-5" />
+                            <GlobeIcon className="w-4 h-4" />
                         </button>
                         <button
                             onClick={onSignOut}
-                            className="w-full flex items-center justify-center p-3 text-red-400 hover:bg-red-500/10 transition-all"
-                            title="Desconectar"
+                            title="Sair do Sistema"
+                            className="w-full flex items-center justify-center p-2.5 rounded-lg transition-all"
+                            style={{ color: '#3a5070' }}
+                            onMouseOver={e => (e.currentTarget.style.color = '#ff4d4d')}
+                            onMouseOut={e => (e.currentTarget.style.color = '#3a5070')}
                         >
-                            <LogOutIcon className="w-5 h-5" />
+                            <LogOutIcon className="w-4 h-4" />
                         </button>
                     </div>
                 )}
