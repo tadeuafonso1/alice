@@ -1724,21 +1724,26 @@ export const HomePage: React.FC = () => {
 
                                 {/* Column 3: Chat */}
                                 <div className="xl:col-span-1 h-full overflow-hidden">
-                                    <div className={`bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl overflow-hidden flex flex-col transition-all duration-300 h-full`}>
+                                    <div
+                                        className="flex flex-col h-full overflow-hidden rounded-2xl transition-all duration-300"
+                                        style={{ backgroundColor: '#0d1526', border: '1px solid #1a2540' }}
+                                    >
                                         <div
-                                            className="p-4 bg-gray-50 dark:bg-[#162036] border-b border-gray-200 dark:border-gray-800 flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-[#1f2937] transition-colors flex-shrink-0"
+                                            className="px-4 py-3 flex items-center justify-between cursor-pointer flex-shrink-0 select-none transition-colors"
+                                            style={{ borderBottom: '1px solid #1a2540' }}
                                             onClick={() => setIsChatVisible(!isChatVisible)}
                                         >
-                                            <div className="flex items-center gap-2 font-black text-gray-900 dark:text-white text-[10px] uppercase tracking-[0.2em]">
-                                                <MessageSquareIcon className="w-4 h-4 text-cyan-400" />
-                                                <span>Chat Alice</span>
+                                            <div className="flex items-center gap-2">
+                                                <MessageSquareIcon className="w-4 h-4 flex-shrink-0" style={{ color: '#00c8ff' }} />
+                                                <h2 className="text-sm font-bold text-white">Chat Alice</h2>
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                                             </div>
-                                            <button className="text-gray-400 hover:text-cyan-500 transition-colors">
+                                            <button className="p-1 rounded-lg transition-colors" style={{ color: '#3a5a7a' }}>
                                                 {isChatVisible ? <ChevronDownIcon className="w-4 h-4" /> : <ChevronUpIcon className="w-4 h-4" />}
                                             </button>
                                         </div>
                                         {isChatVisible && (
-                                            <div className="flex-grow overflow-hidden flex flex-col bg-gray-100 dark:bg-[#0f111a]">
+                                            <div className="flex-grow overflow-hidden flex flex-col" style={{ backgroundColor: '#080d18' }}>
                                                 <ChatWindow
                                                     messages={messages}
                                                     currentUser={currentUser}
