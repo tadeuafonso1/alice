@@ -114,38 +114,59 @@ serve(async (req) => {
                 } else {
                     const { data: tokenData, error: dbError } = await supabaseClient
                         .from('youtube_tokens')
-                        .select('refresh_token')
+                        .select('access_token, expires_at, refresh_token')
                         .eq('user_id', user.id)
                         .maybeSingle();
 
-                    if (dbError || !tokenData?.refresh_token) {
-                        renewalLog.push(dbError ? `Erro DB: ${dbError.message}` : "Refresh Token não achado no DB");
+                    if (dbError || !tokenData) {
+                        renewalLog.push(dbError ? `Erro DB: ${dbError.message}` : "Tokens não achados no DB");
                     } else {
-                        try {
-                            renewalLog.push("Renovando token via Google...");
-                            const newTokenData = await getNewToken(tokenData.refresh_token);
-                            const newAccessToken = newTokenData.access_token;
-
-                            if (newAccessToken) {
-                                renewalLog.push("Token renovado com sucesso");
-                                // Salva novo token e expiração
-                                await supabaseClient.from('youtube_tokens').update({
-                                    access_token: newAccessToken,
-                                    expires_at: new Date(Date.now() + (newTokenData.expires_in * 1000)).toISOString()
-                                }).eq('user_id', user.id);
-
-                                // Tenta enviar novamente com o novo token
-                                response = await sendMessage(newAccessToken);
-                                if (response.ok) {
-                                    renewalLog.push("Envio com novo token: SUCESSO");
-                                } else {
-                                    renewalLog.push(`Envio com novo token: FALHA (${response.status})`);
-                                }
+                        // Tenta usar o access_token existente no banco se ele for diferente do providerToken já tentado
+                        let dbTokenSucceeded = false;
+                        if (tokenData.access_token && tokenData.access_token !== providerToken) {
+                            renewalLog.push("Tentando access_token salvo no banco...");
+                            const dbTokenRes = await sendMessage(tokenData.access_token);
+                            if (dbTokenRes.ok) {
+                                response = dbTokenRes;
+                                dbTokenSucceeded = true;
+                                renewalLog.push("Sucesso com access_token do banco");
                             } else {
-                                renewalLog.push("Google não retornou access_token");
+                                renewalLog.push(`access_token do banco falhou (${dbTokenRes.status})`);
                             }
-                        } catch (e: any) {
-                            renewalLog.push(`Exceção na renovação: ${e.message}`);
+                        }
+
+                        // Se ainda não teve sucesso, tenta renovar via Google usando o refresh_token
+                        if (!dbTokenSucceeded) {
+                            if (!tokenData.refresh_token) {
+                                renewalLog.push("Refresh Token não achado no DB");
+                            } else {
+                                try {
+                                    renewalLog.push("Renovando token via Google...");
+                                    const newTokenData = await getNewToken(tokenData.refresh_token);
+                                    const newAccessToken = newTokenData.access_token;
+
+                                    if (newAccessToken) {
+                                        renewalLog.push("Token renovado com sucesso");
+                                        // Salva novo token e expiração
+                                        await supabaseClient.from('youtube_tokens').update({
+                                            access_token: newAccessToken,
+                                            expires_at: new Date(Date.now() + (newTokenData.expires_in * 1000)).toISOString()
+                                        }).eq('user_id', user.id);
+
+                                        // Tenta enviar novamente com o novo token
+                                        response = await sendMessage(newAccessToken);
+                                        if (response.ok) {
+                                            renewalLog.push("Envio com novo token: SUCESSO");
+                                        } else {
+                                            renewalLog.push(`Envio com novo token: FALHA (${response.status})`);
+                                        }
+                                    } else {
+                                        renewalLog.push("Google não retornou access_token");
+                                    }
+                                } catch (e: any) {
+                                    renewalLog.push(`Exceção na renovação: ${e.message}`);
+                                }
+                            }
                         }
                     }
                 }
@@ -155,9 +176,14 @@ serve(async (req) => {
         // Caso onde providerToken era null e não conseguimos renovar (response ainda undefined)
         if (!response) {
             console.error("Falha: Sem token e sem refresh success");
+            let userFriendlyError = "Erro de Autenticação com o YouTube: não foi possível validar o token de acesso.";
+            const logStr = renewalLog.join(' -> ');
+            if (logStr.includes('unauthorized_client')) {
+                userFriendlyError = "Sua sessão do YouTube expirou. Por favor, clique em Reconectar ou reconecte nas configurações.";
+            }
             return new Response(JSON.stringify({
                 success: false,
-                error: `Erro de Autenticação: Token ausente e falha na renovação. Detalhes: ${renewalLog.join(' -> ')}`
+                error: `${userFriendlyError} (Detalhes: ${logStr})`
             }), {
                 status: 200, // Retornamos 200 pro front tratar o erro JSON
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },

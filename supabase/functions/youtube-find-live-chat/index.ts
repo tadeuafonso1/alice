@@ -132,34 +132,54 @@ serve(async (req) => {
           renewalLog.push(`Usuário: ${user.id.substring(0, 5)}...`);
           const { data: tokenData, error: dbError } = await supabaseClient
             .from('youtube_tokens')
-            .select('refresh_token')
+            .select('access_token, expires_at, refresh_token')
             .eq('user_id', user.id)
             .maybeSingle();
 
           if (dbError) {
             renewalLog.push(`Erro DB: ${dbError.message}`);
-          } else if (!tokenData?.refresh_token) {
-            renewalLog.push("Erro: Refresh Token não encontrado no banco.");
+          } else if (!tokenData) {
+            renewalLog.push("Erro: Tokens não encontrados no banco.");
           } else {
-            try {
-              renewalLog.push("Solicitando novo token ao Google...");
-              const newTokenData = await getNewToken(tokenData.refresh_token);
-              providerToken = newTokenData.access_token;
-              renewalLog.push("Novo token OK! Salvando...");
+            let dbTokenOk = false;
+            if (tokenData.access_token && tokenData.access_token !== providerToken) {
+              renewalLog.push("Tentando access_token do banco...");
+              const dbRes = await findLiveChat(tokenData.access_token);
+              if (dbRes.ok) {
+                response = dbRes;
+                dbTokenOk = true;
+                providerToken = tokenData.access_token;
+                renewalLog.push("Sucesso com access_token do banco!");
+              } else {
+                renewalLog.push(`access_token do banco falhou (${dbRes.status})`);
+              }
+            }
 
-              await supabaseClient
-                .from('youtube_tokens')
-                .update({
-                  access_token: providerToken,
-                  expires_at: new Date(Date.now() + newTokenData.expires_in * 1000).toISOString()
-                })
-                .eq('user_id', user.id);
+            if (!dbTokenOk) {
+              if (!tokenData.refresh_token) {
+                renewalLog.push("Erro: Refresh Token não encontrado no banco.");
+              } else {
+                try {
+                  renewalLog.push("Solicitando novo token ao Google...");
+                  const newTokenData = await getNewToken(tokenData.refresh_token);
+                  providerToken = newTokenData.access_token;
+                  renewalLog.push("Novo token OK! Salvando...");
 
-              renewalLog.push("Banco atualizado. Re-tentando YouTube...");
-              response = await findLiveChat(providerToken!);
-              if (!response.ok) renewalLog.push(`Re-tentativa falhou (${response.status})`);
-            } catch (renewalError: any) {
-              renewalLog.push(`Falha crítica Google: ${renewalError.message}`);
+                  await supabaseClient
+                    .from('youtube_tokens')
+                    .update({
+                      access_token: providerToken,
+                      expires_at: new Date(Date.now() + newTokenData.expires_in * 1000).toISOString()
+                    })
+                    .eq('user_id', user.id);
+
+                  renewalLog.push("Banco atualizado. Re-tentando YouTube...");
+                  response = await findLiveChat(providerToken!);
+                  if (!response.ok) renewalLog.push(`Re-tentativa falhou (${response.status})`);
+                } catch (renewalError: any) {
+                  renewalLog.push(`Falha crítica Google: ${renewalError.message}`);
+                }
+              }
             }
           }
         }

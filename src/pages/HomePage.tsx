@@ -263,6 +263,52 @@ export const HomePage: React.FC = () => {
         addBotMessageRef.current = addBotMessage;
     });
 
+    const getValidYouTubeToken = useCallback(async (): Promise<string | null> => {
+        try {
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+
+            // 1. Se veio na sessão atual do Supabase, armazena no cache local
+            if (currentSession?.provider_token) {
+                localStorage.setItem('alice_yt_provider_token', currentSession.provider_token);
+                const expiresIn = (currentSession as any).expires_in || 3600;
+                localStorage.setItem('alice_yt_token_expires_at', String(Date.now() + expiresIn * 1000));
+                return currentSession.provider_token;
+            }
+
+            // 2. Se não veio na sessão, verifica o cache local (com margem de 60s)
+            const cachedToken = localStorage.getItem('alice_yt_provider_token');
+            const cachedExpiresAt = Number(localStorage.getItem('alice_yt_token_expires_at') || '0');
+            if (cachedToken && cachedExpiresAt > Date.now() + 60000) {
+                return cachedToken;
+            }
+
+            // 3. Se expirou ou não está no localStorage, busca no banco da tabela youtube_tokens
+            if (currentSession?.user?.id) {
+                const { data: tokenRecord } = await supabase
+                    .from('youtube_tokens')
+                    .select('access_token, expires_at')
+                    .eq('user_id', currentSession.user.id)
+                    .maybeSingle();
+
+                if (tokenRecord?.access_token) {
+                    const exp = tokenRecord.expires_at ? new Date(tokenRecord.expires_at).getTime() : 0;
+                    if (!exp || exp > Date.now() + 60000) {
+                        localStorage.setItem('alice_yt_provider_token', tokenRecord.access_token);
+                        if (exp) localStorage.setItem('alice_yt_token_expires_at', String(exp));
+                        return tokenRecord.access_token;
+                    }
+                }
+            }
+
+            // Fallback: se ainda existir algum cachedToken, tenta mesmo sem validar expiração estrita
+            if (cachedToken) return cachedToken;
+        } catch (e) {
+            console.error('[getValidYouTubeToken] Erro ao obter token:', e);
+        }
+
+        return null;
+    }, []);
+
     const sendToYouTubeChat = useCallback(async (text: string) => {
         console.log('[sendToYouTubeChat] Tentando enviar mensagem:', text);
         console.log('[sendToYouTubeChat] liveChatId:', liveChatId);
@@ -273,15 +319,13 @@ export const HomePage: React.FC = () => {
             return;
         }
 
-        // Busca a sessão mais recente para garantir o token
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        const token = currentSession?.provider_token;
+        // Busca token válido da sessão, cache local ou banco de dados
+        const token = await getValidYouTubeToken();
 
-        console.log('[sendToYouTubeChat] provider_token presente:', !!token);
+        console.log('[sendToYouTubeChat] token presente:', !!token);
 
         if (!token) {
-            console.warn('[sendToYouTubeChat] provider_token ausente. Tentando enviar mesmo assim para que o Backend tente o Refresh Token...');
-            // NÃO retornamos mais aqui. Deixamos o backend tentar renovar.
+            console.warn('[sendToYouTubeChat] token ausente. O backend tentará renovar via banco/Google...');
         }
 
         console.log('[sendToYouTubeChat] Enviando para YouTube API...');
@@ -1305,25 +1349,24 @@ export const HomePage: React.FC = () => {
     }, [isPolling, liveChatId, addBotMessage]);
 
     const handleFindLiveChat = async (channelIdToUse?: string | any, silent: boolean = false) => {
-        // Busca a sessão mais recente diretamente do Supabase para evitar closures estáticas
+        // Busca o token válido (sessão, localStorage ou banco)
+        const token = await getValidYouTubeToken();
         const { data: { session: currentSession } } = await supabase.auth.getSession();
 
         // Se channelIdToUse for um evento (no onClick), ignoramos e usamos localStorage/settings
         const cleanChannelId = typeof channelIdToUse === 'string' ? channelIdToUse : null;
         const storedChannelId = cleanChannelId || appSettings.youtubeChannelId || localStorage.getItem('alice_yt_channel_id');
 
-        if (!currentSession?.provider_token && !storedChannelId) {
+        if (!token && !storedChannelId) {
             const identities = currentSession?.user?.identities?.map(id => id.provider).join(', ') || 'nenhuma';
             console.warn("Token do Google ausente e nenhum Channel ID salvo. Identidades vinculadas:", identities);
 
-            // AQUI MUDOU: Se tiver Channel ID, deixamos passar para tentar conexão anônima ou via refresh token no backend
-            // Se NÃO tiver channel ID e nem token, aí sim falhamos
             if (!storedChannelId) {
                 const hasGoogleIdentity = currentSession?.user?.identities?.some(id => id.provider === 'google');
                 if (hasGoogleIdentity && !silent) {
                     addBotMessage("Sessão expirada e canal não identificado. Tente reconectar nas configurações.");
                 } else if (!hasGoogleIdentity && !silent) {
-                    addBotMessage(`Erro: Nenhuma conta do YouTube vinculada.Identidades: ${identities}.`);
+                    addBotMessage(`Erro: Nenhuma conta do YouTube vinculada. Identidades: ${identities}.`);
                 }
                 return;
             }
@@ -1332,7 +1375,7 @@ export const HomePage: React.FC = () => {
         setIsFindingChat(true);
         setCanAutoConnect(true);
         if (!silent) {
-            addBotMessage(storedChannelId && !currentSession?.provider_token
+            addBotMessage(storedChannelId && !token
                 ? "Buscando sua live automaticamente via Channel ID..."
                 : "Buscando sua transmissão ao vivo ativa...");
         }
@@ -1341,7 +1384,7 @@ export const HomePage: React.FC = () => {
             const response = await supabase.functions.invoke('youtube-find-live-chat', {
                 body: {
                     channelId: storedChannelId,
-                    youtubeToken: currentSession?.provider_token
+                    youtubeToken: token
                 }
             });
 
@@ -1399,37 +1442,39 @@ export const HomePage: React.FC = () => {
             // Se ainda está carregando as configurações do banco, esperamos
             if (isLoadingSettings) return;
 
-            if (window.location.hash || window.location.search.includes('code=')) {
-                console.log("Detectado redirect de autenticação, atualizando sessão...");
-                await supabase.auth.refreshSession();
-            }
-
             const { data: { session: currentSession } } = await supabase.auth.getSession();
             const storedChannelId = appSettings.youtubeChannelId || localStorage.getItem('alice_yt_channel_id');
 
-            // Sincronizar tokens APENAS se tivermos um refresh_token (geralmente logo após login/redirect)
+            // Salvar no localStorage sempre que tivermos provider_token novo
+            if (currentSession?.provider_token) {
+                localStorage.setItem('alice_yt_provider_token', currentSession.provider_token);
+                const expiresIn = (currentSession as any).expires_in || 3600;
+                localStorage.setItem('alice_yt_token_expires_at', String(Date.now() + expiresIn * 1000));
+            }
+
             const refreshToken = (currentSession as any)?.provider_refresh_token;
 
-            if (currentSession?.provider_token && refreshToken) {
+            // Sincronizar tokens: SEMPRE que provider_token estiver disponível, sincronizamos com o banco
+            if (currentSession?.provider_token) {
                 console.log("Sincronizando tokens do YouTube com o banco de dados...");
                 try {
                     await supabase.functions.invoke('youtube-token-sync', {
                         body: {
                             access_token: currentSession.provider_token,
-                            refresh_token: refreshToken,
-                            expires_in: (currentSession as any).expires_in,
+                            refresh_token: refreshToken || undefined,
+                            expires_in: (currentSession as any).expires_in || 3600,
                             channelId: storedChannelId
                         }
                     });
                 } catch (syncError) {
                     console.error("Erro ao sincronizar tokens:", syncError);
                 }
-            } else if (currentSession?.provider_token) {
-                console.log("Sessão carregada (sem refresh token novo).");
             }
 
+            const hasActiveToken = currentSession?.provider_token || localStorage.getItem('alice_yt_provider_token');
+
             if (!liveChatId && !isFindingChat && !hasAutoSearchedRef.current) {
-                if (currentSession?.provider_token) {
+                if (hasActiveToken) {
                     console.log("Iniciando auto-busca de live chat via Token...");
                     hasAutoSearchedRef.current = true;
                     handleFindLiveChat(undefined, true); // SILENT por padrão no início

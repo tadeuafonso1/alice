@@ -67,7 +67,9 @@ serve(async (req) => {
     let goalUpdated = false;
 
     try {
+        // @ts-ignore
         const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+        // @ts-ignore
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
         const supabaseClient = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
 
