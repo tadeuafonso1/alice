@@ -8,7 +8,6 @@ import { SettingsModal } from '@/components/SettingsModal';
 import { YouTubeSettings } from '@/components/YouTubeSettings';
 import { TimerSettings } from '@/components/TimerSettings';
 import { GiveawayRoulette } from '@/components/GiveawayRoulette';
-import { LoyaltySettings } from '@/components/LoyaltySettings';
 import { LikesTab } from '@/components/LikesTab';
 import { BlockedUsersTab } from '@/components/BlockedUsersTab';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings, CommandSetting } from '@/types';
@@ -66,13 +65,6 @@ const defaultSettings: AppSettings = {
         queueIsClosed: { text: '❌ @{user}, a fila está fechada no momento.', enabled: true },
     },
     customCommands: [],
-    loyalty: {
-        enabled: true,
-        pointsPerMessage: 10,
-        pointsPerInterval: 50,
-        intervalMinutes: 5,
-        requireOnline: true,
-    },
     youtubeChannelId: '',
     autoSyncYoutube: true,
     isQueueOpen: true,
@@ -430,12 +422,6 @@ export const HomePage: React.FC = () => {
                     }
                 }
 
-                if (dbSettings.loyalty) {
-                    mergedSettings.loyalty = {
-                        ...mergedSettings.loyalty,
-                        ...dbSettings.loyalty
-                    };
-                }
                 mergedSettings.customCommands = dbSettings.customCommands || [];
                 if (dbSettings.youtubeChannelId) mergedSettings.youtubeChannelId = dbSettings.youtubeChannelId;
                 if (typeof dbSettings.autoSyncYoutube === 'boolean') mergedSettings.autoSyncYoutube = dbSettings.autoSyncYoutube;
@@ -885,18 +871,7 @@ export const HomePage: React.FC = () => {
             [author]: Date.now()
         }));
 
-        // Sistema de Lealdade: Ganhar pontos por mensagem
-        if (appSettings.loyalty.enabled) {
-            supabase.rpc('increment_loyalty_points', {
-                p_username: author,
-                p_points: appSettings.loyalty.pointsPerMessage,
-                p_owner_id: session?.user?.id
-            }).then(({ error }) => {
-                if (error) console.error('Error incrementing points for message:', error);
-            });
-        }
-
-        const { commands, customCommands, loyalty } = appSettings;
+        const { commands, customCommands } = appSettings;
 
         const checkCommand = (text: string, cmd: string) => {
             const normalizedCmd = normalizeText(cmd);
@@ -909,7 +884,6 @@ export const HomePage: React.FC = () => {
         const isNickCommand = commandText.startsWith(normalizeText(commands.nick.command));
         const isOpenQueueCommand = checkCommand(commandText, commands.openQueue.command);
         const isCloseQueueCommand = checkCommand(commandText, commands.closeQueue.command);
-        const isPointsCommand = loyalty.enabled && (commandText === '!pontos' || commandText === '!points' || commandText.startsWith('!pontos ') || commandText.startsWith('!points '));
 
         // Admin Commands
         if (author.toLowerCase() === adminName.toLowerCase()) {
@@ -920,86 +894,6 @@ export const HomePage: React.FC = () => {
             if (isCloseQueueCommand) {
                 if (appSettings.isQueueOpen) toggleQueueStatus();
                 return;
-            }
-        }
-
-        // Verificar custo de comando se o sistema de lealdade estiver ativo
-        console.log(`[Loyalty Debug] author: "${author}", adminName: "${adminName}", isAdmin: ${author === adminName}`);
-        if (loyalty.enabled) {
-            console.log('[Loyalty] Sistema de lealdade ativo, verificando custo do comando...');
-
-            // Tenta encontrar se o texto é algum comando existente
-            let commandToExecute: CommandSetting | null = null;
-            let commandName = '';
-
-            if (isJoinCommand) {
-                commandToExecute = commands.join;
-                commandName = 'join';
-            } else if (isLeaveCommand) {
-                commandToExecute = commands.leave;
-                commandName = 'leave';
-            } else if (isPositionCommand) {
-                commandToExecute = commands.position;
-                commandName = 'position';
-            } else if (isNickCommand) {
-                commandToExecute = commands.nick;
-                commandName = 'nick';
-            } else if (commandText === commands.queueList.command) {
-                commandToExecute = commands.queueList;
-                commandName = 'queueList';
-            } else if (commandText === commands.playingList.command) {
-                commandToExecute = commands.playingList;
-                commandName = 'playingList';
-            } else if (commandText === commands.participate.command) {
-                commandToExecute = commands.participate;
-                commandName = 'participate';
-            }
-
-            if (commandToExecute && commandToExecute.enabled && (commandToExecute.cost || 0) > 0) {
-                const cost = commandToExecute.cost || 0;
-                console.log(`[Loyalty] Comando "${commandName}" detectado com custo de ${cost} pontos para @${author}`);
-
-                const { data: userPointsData, error: fetchError } = await supabase
-                    .from('loyalty_points')
-                    .select('points')
-                    .eq('username', author)
-                    .eq('owner_id', session?.user?.id)
-                    .maybeSingle();
-
-                if (fetchError) {
-                    console.error('[Loyalty] Erro ao buscar pontos do usuário:', fetchError);
-                }
-
-                const currentPoints = userPointsData?.points || 0;
-                console.log(`[Loyalty] Pontos atuais de @${author}: ${currentPoints}`);
-
-                if (currentPoints < cost) {
-                    console.log(`[Loyalty] ❌ Pontos insuficientes! Necessário: ${cost}, Disponível: ${currentPoints}`);
-                    sendBotMessage('insufficientPoints', { user: author, cost, points: currentPoints });
-                    return;
-                }
-
-                // Deduzir pontos
-                console.log(`[Loyalty] Deduzindo ${cost} pontos de @${author}...`);
-                const { error: deductError } = await supabase.rpc('increment_loyalty_points', {
-                    p_username: author,
-                    p_points: -cost,
-                    p_owner_id: session?.user?.id
-                });
-
-                if (deductError) {
-                    console.error('[Loyalty] ❌ Erro ao deduzir pontos:', deductError);
-                    addBotMessage(`Erro ao processar custo do comando para @${author}.`);
-                    return;
-                }
-
-                const newBalance = currentPoints - cost;
-                console.log(`[Loyalty] ✅ Pontos deduzidos com sucesso! Novo saldo de @${author}: ${newBalance}`);
-
-                // Mensagem de confirmação ao usuário (opcional, pode comentar se preferir silencioso)
-                addBotMessage(`💰 ${cost} pontos deduzidos de @${author}. Saldo: ${newBalance} pontos.`, true);
-            } else if (commandToExecute && commandToExecute.enabled) {
-                console.log(`[Loyalty] Comando "${commandName}" não tem custo configurado`);
             }
         }
 
@@ -1212,18 +1106,7 @@ export const HomePage: React.FC = () => {
             }
         }
 
-        // Comando !pontos (sempre disponível se lealdade ativa)
-        if (loyalty.enabled && isPointsCommand) {
-            const { data: userPointsData } = await supabase
-                .from('loyalty_points')
-                .select('points')
-                .eq('username', author)
-                .eq('owner_id', session?.user?.id)
-                .maybeSingle();
 
-            const points = userPointsData?.points || 0;
-            sendBotMessage('userPoints', { user: author, points });
-        }
     }, [adminName, queue, playingUsers, isTimerActive, timeoutMinutes, addBotMessage, appSettings, warningSentUsers, handleNextUser, activateTimer, deactivateTimer, sendBotMessage, updateUserTimer, session?.user?.id, blockedChannelIds, blockedUsernames]);
 
     const handleSendMessageRef = useRef(handleSendMessage);
@@ -1681,38 +1564,7 @@ export const HomePage: React.FC = () => {
         return () => clearInterval(intervalId);
     }, [isTimerActive]);
 
-    // Sistema de Lealdade: Ganhar pontos por intervalo
-    useEffect(() => {
-        if (!appSettings.loyalty.enabled || !session?.user?.id) return;
 
-        // Se a opção de exigir online estiver ativa, verifica se está fazendo polling (conectado)
-        if (appSettings.loyalty.requireOnline && !isPolling) {
-            return;
-        }
-
-        const intervalId = setInterval(() => {
-            const now = Date.now();
-            const intervalMs = appSettings.loyalty.intervalMinutes * 60 * 1000;
-            const activeUsers = Object.entries(activeChatters)
-                .filter(([_, lastSeen]) => (now - lastSeen) < intervalMs)
-                .map(([username]) => username);
-
-            if (activeUsers.length > 0) {
-                console.log(`[Loyalty] Granting periodic points to ${activeUsers.length} users:`, activeUsers);
-                activeUsers.forEach(username => {
-                    supabase.rpc('increment_loyalty_points', {
-                        p_username: username,
-                        p_points: appSettings.loyalty.pointsPerInterval,
-                        p_owner_id: session.user.id
-                    }).then(({ error }) => {
-                        if (error) console.error(`Error granting interval points to ${username}:`, error);
-                    });
-                });
-            }
-        }, 60000); // Verifica a cada 1 minuto
-
-        return () => clearInterval(intervalId);
-    }, [appSettings.loyalty, activeChatters, session?.user?.id, isPolling]);
 
     const handleReconnectGoogle = async () => {
         try {
@@ -1760,19 +1612,17 @@ export const HomePage: React.FC = () => {
                                         activeTab === 'commands' ? 'Comandos do Bot' :
                                             activeTab === 'youtube' ? 'Conexão YouTube' :
                                                 activeTab === 'timer' ? 'Timer' :
-                                                    activeTab === 'loyalty' ? 'Sistema de Lealdade' :
-                                                        activeTab === 'likes' ? 'Contador de Likes' :
-                                                            activeTab === 'giveaway' ? 'Sorteio' : 
-                                                                activeTab === 'alerts' ? 'Alertas na Tela' : 'Alice Bot'}
+                                                    activeTab === 'likes' ? 'Contador de Likes' :
+                                                        activeTab === 'giveaway' ? 'Sorteio' : 
+                                                            activeTab === 'alerts' ? 'Alertas na Tela' : 'Alice Bot'}
                             </h2>
                             <p className="text-[10px] text-gray-500 font-medium">
                                 {activeTab === 'dashboard' ? 'Gerencie sua fila e interação com o bot.' :
                                     activeTab === 'settings' ? 'Personalize o comportamento da Alice.' :
                                         activeTab === 'youtube' ? 'Gerencie a conexão com o chat da live.' :
                                             activeTab === 'timer' ? 'Configuração de inatividade automática.' :
-                                                activeTab === 'loyalty' ? 'Configure pontos e recompensas.' :
-                                                    activeTab === 'alerts' ? 'Configure os banners que aparecem no seu OBS.' :
-                                                    'Painel administrativo.'}
+                                                activeTab === 'alerts' ? 'Configure os banners que aparecem no seu OBS.' :
+                                                'Painel administrativo.'}
                             </p>
                         </div>
 
@@ -2023,12 +1873,7 @@ export const HomePage: React.FC = () => {
                             />
                         )}
 
-                        {activeTab === 'loyalty' && (
-                            <LoyaltySettings
-                                settings={appSettings}
-                                onSave={handleSettingsSave}
-                            />
-                        )}
+
 
                         {activeTab === 'likes' && <LikesTab />}
                         {activeTab === 'blocked' && <BlockedUsersTab />}

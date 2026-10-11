@@ -92,7 +92,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
     }));
   };
 
-  const handleCommandChange = (key: CommandKey, field: 'command' | 'enabled' | 'cost', value: string | boolean | number) => {
+  const handleCommandChange = (key: CommandKey, field: 'command' | 'enabled', value: string | boolean) => {
     setLocalSettings(prev => ({
       ...prev,
       commands: {
@@ -212,18 +212,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
           className="w-full bg-gray-50 dark:bg-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={!commandSetting.enabled}
         />
-        {commandSetting.enabled && (
-          <div className="mt-2 flex items-center gap-2">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Custo (Pontos):</label>
-            <input
-              type="number"
-              value={commandSetting.cost || 0}
-              onChange={(e) => handleCommandChange(key, 'cost', parseInt(e.target.value) || 0)}
-              className="w-20 bg-gray-50 dark:bg-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md py-1 px-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-xs"
-              min="0"
-            />
-          </div>
-        )}
       </div>
     );
   };

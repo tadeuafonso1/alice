@@ -86,7 +86,7 @@ export interface AppSettings {
   commands: CommandSettings;
   messages: MessageSettings;
   customCommands: CustomCommand[];
-  loyalty: LoyaltySettings;
+  loyalty?: LoyaltySettings;
   youtubeChannelId?: string;
   autoSyncYoutube?: boolean;
   isQueueOpen: boolean;
