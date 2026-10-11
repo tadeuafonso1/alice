@@ -13,7 +13,6 @@ import {
     TimerIcon,
     GlobeIcon,
     CopyIcon,
-    GiftIcon,
     ThumbsUpIcon,
     RocketIcon,
     UsersIcon,
@@ -60,7 +59,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         },
         { id: 'timer', label: 'Timer Inatividade', icon: TimerIcon },
         { id: 'likes', label: 'Contador de Likes', icon: ThumbsUpIcon },
-        { id: 'giveaway', label: 'Sorteio', icon: GiftIcon },
         { id: 'blocked', label: 'Usuários Bloqueados', icon: ShieldIcon },
     ];
 

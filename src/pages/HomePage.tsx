@@ -7,7 +7,6 @@ import { PlayingDisplay } from '@/components/PlayingDisplay';
 import { SettingsModal } from '@/components/SettingsModal';
 import { YouTubeSettings } from '@/components/YouTubeSettings';
 import { TimerSettings } from '@/components/TimerSettings';
-import { GiveawayRoulette } from '@/components/GiveawayRoulette';
 import { LikesTab } from '@/components/LikesTab';
 import { BlockedUsersTab } from '@/components/BlockedUsersTab';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings, CommandSetting } from '@/types';
@@ -31,7 +30,6 @@ const defaultSettings: AppSettings = {
         reset: { command: '!resetar', enabled: true },
         queueList: { command: '!fila', enabled: true },
         playingList: { command: '!jogando', enabled: true },
-        participate: { command: '!participar', enabled: true },
         openQueue: { command: '!abrir', enabled: true },
         closeQueue: { command: '!fechar', enabled: true },
     },
@@ -57,9 +55,6 @@ const defaultSettings: AppSettings = {
         queueListEmpty: { text: 'A fila de espera está vazia.', enabled: true },
         playingList: { text: 'Jogando agora: {list}', enabled: true },
         playingListEmpty: { text: 'Ninguém está jogando no momento.', enabled: true },
-        userParticipating: { text: '✅ @{user}, você entrou no sorteio!', enabled: true },
-        userPoints: { text: '💰 @{user}, você tem {points} pontos.', enabled: true },
-        insufficientPoints: { text: '❌ @{user}, você precisa de {cost} pontos para usar esse comando (Saldo: {points}).', enabled: true },
         queueClosed: { text: '🚫 A fila está fechada agora!', enabled: true },
         queueOpened: { text: '✅ A fila está aberta agora! Digite {join} para entrar.', enabled: true },
         queueIsClosed: { text: '❌ @{user}, a fila está fechada no momento.', enabled: true },
@@ -86,8 +81,6 @@ export const HomePage: React.FC = () => {
     const [isChatVisible, setIsChatVisible] = useState(true);
     const [appSettings, setAppSettings] = useState<AppSettings>(defaultSettings);
     const [warningSentUsers, setWarningSentUsers] = useState<Set<string>>(new Set());
-    const [activeChatters, setActiveChatters] = useState<Record<string, number>>({});
-    const [giveawayParticipants, setGiveawayParticipants] = useState<Set<string>>(new Set());
     const [blockedChannelIds, setBlockedChannelIds] = useState<Set<string>>(new Set());
     const [blockedUsernames, setBlockedUsernames] = useState<Set<string>>(new Set());
     const isInitialLoad = useRef(true);
@@ -95,22 +88,6 @@ export const HomePage: React.FC = () => {
     // Session Statistics
     const [sessionStats, setSessionStats] = useState({ totalJoined: 0, peakQueue: 0, totalPlayed: 0 });
     const [queueHistory, setQueueHistory] = useState<number[]>([]);
-
-    // Persistence: Load giveaway participants
-    useEffect(() => {
-        const saved = localStorage.getItem('alice_giveaway_external');
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                if (Array.isArray(parsed)) setGiveawayParticipants(new Set(parsed));
-            } catch (e) { console.error('Error loading giveaway state', e); }
-        }
-    }, []);
-
-    // Persistence: Save giveaway participants
-    useEffect(() => {
-        localStorage.setItem('alice_giveaway_external', JSON.stringify(Array.from(giveawayParticipants)));
-    }, [giveawayParticipants]);
 
     // Estado para a conexão com o YouTube
     const [liveChatId, setLiveChatId] = useState<string>('');
@@ -177,7 +154,6 @@ export const HomePage: React.FC = () => {
                 localStorage.removeItem('alice_queue_state');
                 localStorage.removeItem('alice_active_tab');
                 localStorage.removeItem('alice_sidebar_open');
-                localStorage.removeItem('alice_giveaway_external');
 
                 alert('Todos os seus dados foram apagados. Você será desconectado.');
                 await handleSignOut();
@@ -457,12 +433,6 @@ export const HomePage: React.FC = () => {
                 return acc;
             }, {} as Record<string, number>);
             setUserTimers(initialTimers);
-
-            const initialActive = [...queueData, ...playingData].reduce((acc, u) => {
-                acc[u.username] = Date.now();
-                return acc;
-            }, {} as Record<string, number>);
-            setActiveChatters(prev => ({ ...initialActive, ...prev }));
 
             const warningsSet = new Set<string>();
             queueData.forEach(q => {
@@ -865,12 +835,6 @@ export const HomePage: React.FC = () => {
             }
         }
 
-        // Rastreia como chatter ativo - Incluído Admin para facilitar testes
-        setActiveChatters(prev => ({
-            ...prev,
-            [author]: Date.now()
-        }));
-
         const { commands, customCommands } = appSettings;
 
         const checkCommand = (text: string, cmd: string) => {
@@ -1086,15 +1050,6 @@ export const HomePage: React.FC = () => {
             } else {
                 sendBotMessage('playingListEmpty');
             }
-        } else if (commands.participate.enabled && commandText === commands.participate.command) {
-            setGiveawayParticipants(prev => {
-                const next = new Set(prev);
-                if (!next.has(author)) {
-                    next.add(author);
-                    sendBotMessage('userParticipating', { user: author });
-                }
-                return next;
-            });
         } else {
             const customCommand = customCommands.find(c => {
                 const normalizedCmd = normalizeText(c.command);
@@ -1613,7 +1568,6 @@ export const HomePage: React.FC = () => {
                                             activeTab === 'youtube' ? 'Conexão YouTube' :
                                                 activeTab === 'timer' ? 'Timer' :
                                                     activeTab === 'likes' ? 'Contador de Likes' :
-                                                        activeTab === 'giveaway' ? 'Sorteio' : 
                                                             activeTab === 'alerts' ? 'Alertas na Tela' : 'Alice Bot'}
                             </h2>
                             <p className="text-[10px] text-gray-500 font-medium">
@@ -1877,22 +1831,6 @@ export const HomePage: React.FC = () => {
 
                         {activeTab === 'likes' && <LikesTab />}
                         {activeTab === 'blocked' && <BlockedUsersTab />}
-
-                        {activeTab === 'giveaway' && (
-                            <GiveawayRoulette
-                                activeChatters={activeChatters}
-                                externalParticipants={Array.from(giveawayParticipants)}
-                                onClearExternalParticipants={() => setGiveawayParticipants(new Set())}
-                                onRemoveExternalParticipant={(name) => {
-                                    setGiveawayParticipants(prev => {
-                                        const next = new Set(prev);
-                                        next.delete(name);
-                                        return next;
-                                    });
-                                }}
-                            />
-                        )}
-
 
                     </div>
 

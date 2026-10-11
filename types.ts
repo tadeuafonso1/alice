@@ -28,7 +28,6 @@ export interface CommandSettings {
   timerOff: CommandSetting;
   queueList: CommandSetting;
   playingList: CommandSetting;
-  participate: CommandSetting;
   openQueue: CommandSetting;
   closeQueue: CommandSetting;
 }
@@ -60,9 +59,6 @@ export interface MessageSettings {
   queueListEmpty: MessageSetting;
   playingList: MessageSetting;
   playingListEmpty: MessageSetting;
-  userParticipating: MessageSetting;
-  userPoints: MessageSetting;
-  insufficientPoints: MessageSetting;
   queueClosed: MessageSetting;
   queueOpened: MessageSetting;
   queueIsClosed: MessageSetting;
