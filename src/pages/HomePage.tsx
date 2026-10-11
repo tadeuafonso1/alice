@@ -1559,82 +1559,94 @@ export const HomePage: React.FC = () => {
 
                 <main className="flex-grow flex flex-col h-screen overflow-hidden">
                     {/* Header */}
-                    <header className="h-20 bg-white dark:bg-[#131b2e] border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-8 sticky top-0 z-40 flex-shrink-0">
+                    <header
+                        className="h-16 flex items-center justify-between px-6 sticky top-0 z-40 flex-shrink-0"
+                        style={{ backgroundColor: '#0a0e1a', borderBottom: '1px solid #131d35' }}
+                    >
+                        {/* Left: page title */}
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">
-                                {activeTab === 'dashboard' ? 'Painel De Controle' :
+                            <h2 className="text-base font-bold text-white tracking-tight">
+                                {activeTab === 'dashboard' ? 'Painel de Controle' :
                                     activeTab === 'settings' ? 'Configurações' :
                                         activeTab === 'commands' ? 'Comandos do Bot' :
                                             activeTab === 'youtube' ? 'Conexão YouTube' :
-                                                activeTab === 'timer' ? 'Timer' :
+                                                activeTab === 'timer' ? 'Timer de Inatividade' :
                                                     activeTab === 'likes' ? 'Contador de Likes' :
-                                                            activeTab === 'alerts' ? 'Alertas na Tela' : 'Alice Bot'}
+                                                        activeTab === 'blocked' ? 'Usuários Bloqueados' : 'Alice Bot'}
                             </h2>
-                            <p className="text-[10px] text-gray-500 font-medium">
+                            <p className="text-[11px] font-medium" style={{ color: '#3a5a7a' }}>
                                 {activeTab === 'dashboard' ? 'Gerencie sua fila e interação com o bot.' :
                                     activeTab === 'settings' ? 'Personalize o comportamento da Alice.' :
-                                        activeTab === 'youtube' ? 'Gerencie a conexão com o chat da live.' :
-                                            activeTab === 'timer' ? 'Configuração de inatividade automática.' :
-                                                activeTab === 'alerts' ? 'Configure os banners que aparecem no seu OBS.' :
-                                                'Painel administrativo.'}
+                                        activeTab === 'commands' ? 'Configure os comandos do chat.' :
+                                            activeTab === 'youtube' ? 'Gerencie a conexão com o chat da live.' :
+                                                activeTab === 'timer' ? 'Configuração de inatividade automática.' :
+                                                    activeTab === 'likes' ? 'Acompanhe os likes da sua live.' :
+                                                        activeTab === 'blocked' ? 'Gerencie usuários bloqueados.' :
+                                                            'Painel administrativo.'}
                             </p>
                         </div>
 
+                        {/* Right: YouTube status + user */}
+                        <div className="flex items-center gap-4">
 
-                        <div className="flex items-center gap-6">
-                            {/* YouTube Controls */}
-                            <div className={`hidden md:flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300 border ${isPolling ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-gray-50 dark:bg-[#162036] border-gray-200 dark:border-gray-800'}`}>
+                            {/* YouTube badge */}
+                            <div className="hidden md:flex items-center gap-3">
                                 {googleConnected ? (
                                     <>
-                                        <div className="flex items-center gap-2">
-                                            <div className="relative flex items-center">
-                                                <YoutubeIcon className="w-8 h-8" />
-                                                {isPolling && (
-                                                    <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 ring-1 ring-white dark:ring-[#131b2e]"></span>
+                                        {/* Status pill */}
+                                        <div
+                                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+                                            style={isPolling
+                                                ? { backgroundColor: 'rgba(0,230,118,0.08)', border: '1px solid rgba(0,230,118,0.2)' }
+                                                : { backgroundColor: '#0d1526', border: '1px solid #1a2540' }
+                                            }
+                                        >
+                                            <YoutubeIcon className="w-5 h-5 flex-shrink-0" />
+                                            <span className="text-xs font-semibold" style={{ color: '#c8d8e8' }}>YouTube</span>
+                                            {isPolling ? (
+                                                <span className="flex items-center gap-1.5">
+                                                    <span className="relative flex h-2 w-2">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: '#00e676' }}></span>
+                                                        <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: '#00e676' }}></span>
                                                     </span>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                                <span className="text-sm font-bold text-gray-900 dark:text-white tracking-tight" style={{ fontFamily: '"Roboto", sans-serif' }}>
-                                                    YouTube
+                                                    <span className="text-xs font-bold" style={{ color: '#00e676' }}>Ao Vivo</span>
                                                 </span>
-                                                <span className={`text-sm font-medium ${isPolling ? 'text-emerald-500 animate-pulse' : 'text-gray-400 dark:text-gray-500'}`}>
-                                                    {isPolling ? 'Ao Vivo' : 'Conectado'}
-                                                </span>
-                                            </div>
+                                            ) : (
+                                                <span className="text-xs font-medium" style={{ color: '#3a5a7a' }}>Conectado</span>
+                                            )}
                                         </div>
 
-                                        <div className="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 mx-1"></div>
-
+                                        {/* Action button */}
                                         {isPolling ? (
                                             <button
                                                 onClick={stopPolling}
-                                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all group shadow-sm"
-                                                title="Parar Sincronização"
+                                                title="Parar sincronização"
+                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all group"
+                                                style={{ backgroundColor: 'rgba(0,230,118,0.06)', color: '#00e676', border: '1px solid rgba(0,230,118,0.15)' }}
+                                                onMouseOver={e => {
+                                                    e.currentTarget.style.backgroundColor = 'rgba(255,77,77,0.1)';
+                                                    e.currentTarget.style.color = '#ff4d4d';
+                                                    e.currentTarget.style.borderColor = 'rgba(255,77,77,0.2)';
+                                                }}
+                                                onMouseOut={e => {
+                                                    e.currentTarget.style.backgroundColor = 'rgba(0,230,118,0.06)';
+                                                    e.currentTarget.style.color = '#00e676';
+                                                    e.currentTarget.style.borderColor = 'rgba(0,230,118,0.15)';
+                                                }}
                                             >
-                                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse group-hover:hidden" />
-                                                <svg className="w-3 h-3 fill-current hidden group-hover:block" viewBox="0 0 24 24">
-                                                    <rect x="6" y="6" width="12" height="12" rx="2" />
-                                                </svg>
-                                                Sincronizado
+                                                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'currentColor' }} />
+                                                Parar
                                             </button>
                                         ) : (
                                             <button
                                                 onClick={handleFindLiveChat}
                                                 disabled={isFindingChat}
-                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all
-                                                    ${isFindingChat
-                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                        : 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 active:scale-95'
-                                                    }`}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 disabled:opacity-50"
+                                                style={{ backgroundColor: '#0070f3', color: '#ffffff' }}
+                                                onMouseOver={e => !isFindingChat && (e.currentTarget.style.backgroundColor = '#0060d3')}
+                                                onMouseOut={e => (e.currentTarget.style.backgroundColor = '#0070f3')}
                                             >
-                                                {isFindingChat ? (
-                                                    <RefreshCwIcon className="w-3 h-3 animate-spin" />
-                                                ) : (
-                                                    <RefreshCwIcon className="w-3 h-3" />
-                                                )}
+                                                <RefreshCwIcon className={`w-3.5 h-3.5 ${isFindingChat ? 'animate-spin' : ''}`} />
                                                 {isFindingChat ? 'Buscando...' : 'Sincronizar'}
                                             </button>
                                         )}
@@ -1642,23 +1654,32 @@ export const HomePage: React.FC = () => {
                                 ) : (
                                     <button
                                         onClick={() => setActiveTab('youtube')}
-                                        className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors py-1 px-2"
+                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                                        style={{ backgroundColor: '#0d1526', color: '#3a5a7a', border: '1px solid #1a2540' }}
+                                        onMouseOver={e => { e.currentTarget.style.color = '#ff4d4d'; e.currentTarget.style.borderColor = 'rgba(255,77,77,0.3)'; }}
+                                        onMouseOut={e => { e.currentTarget.style.color = '#3a5a7a'; e.currentTarget.style.borderColor = '#1a2540'; }}
                                     >
-                                        <YoutubeIcon className="w-8 h-8" />
-                                        <span className="text-[10px] font-bold uppercase tracking-wider">Conectar YouTube</span>
+                                        <YoutubeIcon className="w-4 h-4" />
+                                        Conectar YouTube
                                     </button>
                                 )}
                             </div>
 
-                            <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-800 hidden md:block"></div>
+                            {/* Divider */}
+                            <div className="hidden md:block h-6 w-px" style={{ backgroundColor: '#131d35' }} />
 
-                            <div className="flex items-center gap-4">
-                                <div className="flex flex-col items-end">
-                                    <span className="text-xs font-bold text-gray-900 dark:text-white">{currentUser}</span>
-                                    <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Administrador</span>
+                            {/* User info */}
+                            <div className="flex items-center gap-3">
+                                <div className="hidden sm:flex flex-col items-end">
+                                    <span className="text-xs font-semibold text-white leading-tight">{currentUser}</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#3a5a7a' }}>Admin</span>
                                 </div>
-                                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-black shadow-lg border-2 border-gray-800 overflow-hidden">
-                                    {currentUser.charAt(0).toUpperCase()}
+                                {/* Avatar circle with gradient */}
+                                <div
+                                    className="w-9 h-9 rounded-full flex items-center justify-center text-white font-black text-sm flex-shrink-0"
+                                    style={{ background: 'linear-gradient(135deg, #0070f3 0%, #00c8ff 100%)', boxShadow: '0 0 12px rgba(0,200,255,0.25)' }}
+                                >
+                                    {currentUser.charAt(0).toUpperCase() || 'A'}
                                 </div>
                             </div>
                         </div>
