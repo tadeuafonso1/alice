@@ -114,35 +114,42 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
                             {/* Info */}
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-semibold text-white truncate leading-tight">{playingUser.user}</p>
-                                <div className="flex items-center gap-1.5 mt-0.5">
+                                <div className="flex items-center gap-2 mt-1">
                                     <span
-                                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                        className="w-2 h-2 rounded-full flex-shrink-0"
                                         style={{ backgroundColor: '#00e676' }}
                                     />
-                                    <p className="text-[10px] font-semibold" style={{ color: '#00e676' }}>
+                                    <span
+                                        className="text-sm font-bold truncate tracking-tight"
+                                        style={{ color: '#00e676' }}
+                                    >
                                         {playingUser.nickname || 'Jogando'}
-                                    </p>
+                                    </span>
+                                    {playingUser.nickname && (
+                                        <button
+                                            onClick={() => handleCopy(playingUser.nickname!, playingUser.user)}
+                                            title="Copiar apelido"
+                                            className="p-1.5 rounded-lg transition-all active:scale-90 flex items-center justify-center flex-shrink-0"
+                                            style={{
+                                                backgroundColor: copiedUser === playingUser.user ? 'rgba(16,185,129,0.2)' : 'rgba(0,230,118,0.12)',
+                                                color: copiedUser === playingUser.user ? '#10b981' : '#00e676',
+                                                border: `1px solid ${copiedUser === playingUser.user ? 'rgba(16,185,129,0.35)' : 'rgba(0,230,118,0.25)'}`
+                                            }}
+                                            onMouseOver={e => {
+                                                if (copiedUser !== playingUser.user) e.currentTarget.style.backgroundColor = 'rgba(0,230,118,0.22)';
+                                            }}
+                                            onMouseOut={e => {
+                                                if (copiedUser !== playingUser.user) e.currentTarget.style.backgroundColor = 'rgba(0,230,118,0.12)';
+                                            }}
+                                        >
+                                            {copiedUser === playingUser.user ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
                             {/* Actions */}
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                                <button
-                                    onClick={() => handleCopy(playingUser.nickname || playingUser.user, playingUser.user)}
-                                    title="Copiar nome/apelido"
-                                    className="p-1.5 rounded-lg transition-all active:scale-90"
-                                    style={{
-                                        backgroundColor: copiedUser === playingUser.user ? 'rgba(16,185,129,0.15)' : '#1a2540',
-                                        color: copiedUser === playingUser.user ? '#10b981' : '#3a5a7a',
-                                    }}
-                                    onMouseOver={e => { if (copiedUser !== playingUser.user) { e.currentTarget.style.color = '#00c8ff'; } }}
-                                    onMouseOut={e => { if (copiedUser !== playingUser.user) { e.currentTarget.style.color = '#3a5a7a'; } }}
-                                >
-                                    {copiedUser === playingUser.user
-                                        ? <CheckIcon className="w-3.5 h-3.5" />
-                                        : <CopyIcon className="w-3.5 h-3.5" />
-                                    }
-                                </button>
                                 <button
                                     onClick={() => onMoveBackToQueue(playingUser.user)}
                                     title="Voltar para a fila"

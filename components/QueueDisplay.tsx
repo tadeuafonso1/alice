@@ -118,21 +118,33 @@ const QueueItem: React.FC<{
             {/* Info */}
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white truncate leading-tight">{queueUser.user}</p>
-                <div className="flex items-center gap-2 mt-0.5">
+                <div className="flex items-center gap-2 mt-1">
                     {queueUser.nickname ? (
-                        <div className="flex items-center gap-1">
-                            <p className="text-xs truncate font-medium" style={{ color: '#00c8ff' }}>{queueUser.nickname}</p>
-                            <button onClick={handleCopy} title="Copiar apelido"
-                                className="p-0.5 rounded transition-colors"
-                                style={{ color: isCopied ? '#10b981' : '#3a5a7a' }}
-                                onMouseOver={e => (e.currentTarget.style.color = '#00c8ff')}
-                                onMouseOut={e => (e.currentTarget.style.color = isCopied ? '#10b981' : '#3a5a7a')}
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold truncate tracking-tight" style={{ color: '#00c8ff' }}>
+                                {queueUser.nickname}
+                            </span>
+                            <button
+                                onClick={handleCopy}
+                                title="Copiar apelido"
+                                className="p-1.5 rounded-lg transition-all active:scale-90 flex items-center justify-center flex-shrink-0"
+                                style={{
+                                    backgroundColor: isCopied ? 'rgba(16,185,129,0.2)' : 'rgba(0,200,255,0.12)',
+                                    color: isCopied ? '#10b981' : '#00c8ff',
+                                    border: `1px solid ${isCopied ? 'rgba(16,185,129,0.35)' : 'rgba(0,200,255,0.25)'}`
+                                }}
+                                onMouseOver={e => {
+                                    if (!isCopied) e.currentTarget.style.backgroundColor = 'rgba(0,200,255,0.22)';
+                                }}
+                                onMouseOut={e => {
+                                    if (!isCopied) e.currentTarget.style.backgroundColor = 'rgba(0,200,255,0.12)';
+                                }}
                             >
-                                {isCopied ? <CheckIcon className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}
+                                {isCopied ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
                             </button>
                         </div>
                     ) : (
-                        <p className="text-[10px] font-medium" style={{ color: '#2a4060' }}>Na fila de espera</p>
+                        <p className="text-xs font-medium" style={{ color: '#3a5a7a' }}>Na fila de espera</p>
                     )}
                     {isTimerActive && (
                         <span
