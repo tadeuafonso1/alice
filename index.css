@@ -9,17 +9,18 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #1e293b;
+    background: #1a2540;
     border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #334155;
+    background: #2a3b60;
 }
 
 /* Global Dark Mode Adjustments */
 body {
-    background-color: #0f172a;
+    background-color: #080d18;
+    color: #f1f5f9;
     transition: background-color 0.3s ease;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -28,7 +29,7 @@ body {
 }
 
 .dark body {
-    background-color: #020617;
+    background-color: #080d18;
 }
 
 /* Animations */

@@ -1545,8 +1545,8 @@ export const HomePage: React.FC = () => {
 
 
     return (
-        <div className="flex justify-center min-h-screen bg-[#F3F4F6] dark:bg-[#0F172A] transition-colors duration-300">
-            <div className="flex w-full max-w-[1800px]">
+        <div className="flex justify-center min-h-screen" style={{ backgroundColor: '#080d18' }}>
+            <div className="flex w-full">
                 <Sidebar
                     activeTab={activeTab}
                     setActiveTab={setActiveTab}
@@ -1557,7 +1557,7 @@ export const HomePage: React.FC = () => {
                     onSignOut={handleSignOut}
                 />
 
-                <main className="flex-grow flex flex-col h-screen overflow-hidden">
+                <main className="flex-grow flex flex-col h-screen overflow-hidden" style={{ backgroundColor: '#080d18' }}>
                     {/* Header */}
                     <header
                         className="h-16 flex items-center justify-between px-6 sticky top-0 z-40 flex-shrink-0"
@@ -1685,10 +1685,9 @@ export const HomePage: React.FC = () => {
                         </div>
                     </header>
 
-                    <div className="p-6 md:p-10 max-w-[1600px] mx-auto w-full flex-grow overflow-y-auto custom-scrollbar">
+                    <div className="p-4 md:p-6 w-full flex-grow overflow-y-auto custom-scrollbar" style={{ backgroundColor: '#080d18' }}>
                         {activeTab === 'dashboard' && (
-
-                            <div className="flex flex-col gap-4 h-[calc(100vh-140px)]">
+                            <div className="flex flex-col gap-4 h-[calc(100vh-112px)]">
 
 
 
