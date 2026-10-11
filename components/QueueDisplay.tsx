@@ -16,21 +16,51 @@ interface QueueDisplayProps {
     onRefresh?: () => void;
 }
 
+// Paleta de gradientes para avatares — cada usuário ganha uma cor consistente
+const AVATAR_GRADIENTS = [
+    'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+    'linear-gradient(135deg, #ec4899 0%, #f43f5e 100%)',
+    'linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%)',
+    'linear-gradient(135deg, #f97316 0%, #ef4444 100%)',
+    'linear-gradient(135deg, #84cc16 0%, #10b981 100%)',
+    'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+    'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)',
+    'linear-gradient(135deg, #d946ef 0%, #8b5cf6 100%)',
+];
+
+const getAvatarGradient = (name: string) => {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length];
+};
+
 const TimerBar: React.FC<{ timeLeft: number; totalSeconds: number }> = ({ timeLeft, totalSeconds }) => {
     const percentage = Math.max(0, Math.min(100, (timeLeft / totalSeconds) * 100));
-
-    let barColor = 'bg-cyan-500';
-    if (percentage < 50) barColor = 'bg-yellow-500';
-    if (percentage < 25) barColor = 'bg-red-500';
+    let barColor = '#00c8ff';
+    if (percentage < 50) barColor = '#f59e0b';
+    if (percentage < 25) barColor = '#ef4444';
 
     return (
-        <div className="w-full bg-gray-800/50 rounded-full h-1.5 mt-2 overflow-hidden">
+        <div className="w-full rounded-full h-1 mt-2.5 overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}>
             <div
-                className={`h-full transition-all duration-1000 ease-linear ${barColor}`}
-                style={{ width: `${percentage}%` }}
-            ></div>
+                className="h-full rounded-full transition-all duration-1000 ease-linear"
+                style={{ width: `${percentage}%`, backgroundColor: barColor }}
+            />
         </div>
     );
+};
+
+const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+};
+
+const getRankStyle = (idx: number): React.CSSProperties => {
+    if (idx === 0) return { color: '#fbbf24' };  // gold
+    if (idx === 1) return { color: '#94a3b8' };  // silver
+    if (idx === 2) return { color: '#f97316' };  // bronze
+    return { color: '#3a5a7a' };
 };
 
 const QueueItem: React.FC<{
@@ -48,15 +78,11 @@ const QueueItem: React.FC<{
 
     useEffect(() => {
         if (!isTimerActive || !startTime) return;
-
         const updateTimer = () => {
-            const now = Date.now();
-            const elapsedSeconds = Math.floor((now - startTime) / 1000);
-            const remaining = (timeoutMinutes * 60) - elapsedSeconds;
-            setTimeLeft(Math.max(0, remaining));
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            setTimeLeft(Math.max(0, timeoutMinutes * 60 - elapsed));
         };
-
-        updateTimer(); // Initial call
+        updateTimer();
         const interval = setInterval(updateTimer, 1000);
         return () => clearInterval(interval);
     }, [isTimerActive, startTime, timeoutMinutes]);
@@ -69,117 +95,143 @@ const QueueItem: React.FC<{
         }
     };
 
-    const getRankColor = (idx: number) => {
-        if (idx === 0) return "text-yellow-400";
-        if (idx === 1) return "text-gray-300";
-        if (idx === 2) return "text-orange-400";
-        return "text-gray-500";
-    };
-
-    const formatTime = (seconds: number) => {
-        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const s = (seconds % 60).toString().padStart(2, '0');
-        return `${m}:${s}`;
-    };
-
     return (
-        <div className="group bg-[#1e2947]/40 hover:bg-[#1e2947]/60 border border-gray-800 hover:border-gray-700 p-4 rounded-xl transition-all">
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <span className={`font-black text-xl italic flex-shrink-0 w-8 ${getRankColor(index)}`}>
-                        #{index + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                        <p className="font-bold text-white truncate text-base">{queueUser.user}</p>
+        <div
+            className="group flex items-center gap-3 p-3 rounded-xl transition-all duration-150 cursor-default"
+            style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}
+            onMouseOver={e => (e.currentTarget.style.backgroundColor = 'rgba(0,200,255,0.04)')}
+            onMouseOut={e => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)')}
+        >
+            {/* Rank number */}
+            <span className="text-sm font-black w-6 text-center flex-shrink-0 italic" style={getRankStyle(index)}>
+                {index + 1}
+            </span>
 
-                        <div className="flex items-center gap-4 mt-1">
-                            {queueUser.nickname ? (
-                                <div className="flex items-center gap-2">
-                                    <p className="text-sm text-cyan-400 font-semibold truncate">
-                                        {queueUser.nickname}
-                                    </p>
-                                    <button
-                                        onClick={handleCopy}
-                                        className="hover:bg-cyan-500/20 p-1.5 rounded-md transition-colors group"
-                                        title="Copiar Apelido"
-                                    >
-                                        {isCopied ? (
-                                            <CheckIcon className="w-4 h-4 text-lime-400" />
-                                        ) : (
-                                            <CopyIcon className="w-4 h-4 text-cyan-500/70 group-hover:text-cyan-400" />
-                                        )}
-                                    </button>
-                                </div>
-                            ) : (
-                                <p className="text-[10px] text-gray-500 uppercase font-medium">Na fila de espera</p>
-                            )}
-
-                            {/* Timer Moved Here */}
-                            {isTimerActive && (
-                                <div className="font-mono text-xl font-black text-white tracking-widest pl-2 border-l-2 border-gray-700">
-                                    {formatTime(timeLeft)}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {index > 0 && (
-                        <button
-                            onClick={onMoveToTop}
-                            className="bg-gray-800 hover:bg-cyan-600 text-gray-400 hover:text-white p-2 rounded-lg transition-all active:scale-90 active:brightness-110"
-                            title="Mover para o topo"
-                        >
-                            <ArrowUpCircleIcon className="w-4 h-4" />
-                        </button>
-                    )}
-                    <button
-                        onClick={onMoveToPlaying}
-                        className="bg-gray-800 hover:bg-lime-600 text-gray-400 hover:text-white p-2 rounded-lg transition-all active:scale-90 active:brightness-110"
-                        title="Subir para o Jogo"
-                    >
-                        <ArrowRightCircleIcon className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={onRemoveUser}
-                        className="bg-gray-800 hover:bg-red-600 text-gray-400 hover:text-white p-2 rounded-lg transition-all active:scale-90 active:brightness-110"
-                        title="Remover"
-                    >
-                        <TrashIcon className="w-4 h-4" />
-                    </button>
-                </div>
+            {/* Avatar */}
+            <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-white font-black text-sm flex-shrink-0 select-none"
+                style={{ background: getAvatarGradient(queueUser.user) }}
+            >
+                {queueUser.user.charAt(0).toUpperCase()}
             </div>
-            {isTimerActive && <TimerBar timeLeft={timeLeft} totalSeconds={timeoutMinutes * 60} />}
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white truncate leading-tight">{queueUser.user}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                    {queueUser.nickname ? (
+                        <div className="flex items-center gap-1">
+                            <p className="text-xs truncate font-medium" style={{ color: '#00c8ff' }}>{queueUser.nickname}</p>
+                            <button onClick={handleCopy} title="Copiar apelido"
+                                className="p-0.5 rounded transition-colors"
+                                style={{ color: isCopied ? '#10b981' : '#3a5a7a' }}
+                                onMouseOver={e => (e.currentTarget.style.color = '#00c8ff')}
+                                onMouseOut={e => (e.currentTarget.style.color = isCopied ? '#10b981' : '#3a5a7a')}
+                            >
+                                {isCopied ? <CheckIcon className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}
+                            </button>
+                        </div>
+                    ) : (
+                        <p className="text-[10px] font-medium" style={{ color: '#2a4060' }}>Na fila de espera</p>
+                    )}
+                    {isTimerActive && (
+                        <span
+                            className="font-mono text-xs font-bold ml-auto pl-2 flex-shrink-0"
+                            style={{ color: timeLeft < 60 ? '#ef4444' : timeLeft < 120 ? '#f59e0b' : '#3a5a7a', borderLeft: '1px solid #1a2540' }}
+                        >
+                            {formatTime(timeLeft)}
+                        </span>
+                    )}
+                </div>
+                {isTimerActive && <TimerBar timeLeft={timeLeft} totalSeconds={timeoutMinutes * 60} />}
+            </div>
+
+            {/* Action buttons — appear on hover */}
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                {index > 0 && (
+                    <button
+                        onClick={onMoveToTop}
+                        title="Mover para o topo"
+                        className="p-1.5 rounded-lg transition-all active:scale-90"
+                        style={{ backgroundColor: '#1a2540', color: '#3a5a7a' }}
+                        onMouseOver={e => { e.currentTarget.style.backgroundColor = 'rgba(0,200,255,0.15)'; e.currentTarget.style.color = '#00c8ff'; }}
+                        onMouseOut={e => { e.currentTarget.style.backgroundColor = '#1a2540'; e.currentTarget.style.color = '#3a5a7a'; }}
+                    >
+                        <ArrowUpCircleIcon className="w-4 h-4" />
+                    </button>
+                )}
+                <button
+                    onClick={onMoveToPlaying}
+                    title="Mover para Jogando"
+                    className="p-1.5 rounded-lg transition-all active:scale-90"
+                    style={{ backgroundColor: '#1a2540', color: '#3a5a7a' }}
+                    onMouseOver={e => { e.currentTarget.style.backgroundColor = 'rgba(0,230,118,0.15)'; e.currentTarget.style.color = '#00e676'; }}
+                    onMouseOut={e => { e.currentTarget.style.backgroundColor = '#1a2540'; e.currentTarget.style.color = '#3a5a7a'; }}
+                >
+                    <ArrowRightCircleIcon className="w-4 h-4" />
+                </button>
+                <button
+                    onClick={onRemoveUser}
+                    title="Remover da fila"
+                    className="p-1.5 rounded-lg transition-all active:scale-90"
+                    style={{ backgroundColor: '#1a2540', color: '#3a5a7a' }}
+                    onMouseOver={e => { e.currentTarget.style.backgroundColor = 'rgba(255,77,77,0.15)'; e.currentTarget.style.color = '#ff4d4d'; }}
+                    onMouseOut={e => { e.currentTarget.style.backgroundColor = '#1a2540'; e.currentTarget.style.color = '#3a5a7a'; }}
+                >
+                    <TrashIcon className="w-4 h-4" />
+                </button>
+            </div>
         </div>
     );
 };
 
-export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, isTimerActive, timeoutMinutes, adminName, onMoveToPlaying, onRemoveUser, onMoveToTop, onNext, onReset, onRefresh }) => {
+export const QueueDisplay: React.FC<QueueDisplayProps> = ({
+    queue, userTimers, isTimerActive, timeoutMinutes, adminName,
+    onMoveToPlaying, onRemoveUser, onMoveToTop, onNext, onReset, onRefresh
+}) => {
     return (
-        <div className="bg-white dark:bg-[#131b2e] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl flex flex-col h-full overflow-hidden">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#162036] flex items-center justify-between gap-2 overflow-hidden">
-                <h2 className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] flex items-center gap-2 flex-shrink-0">
-                    <UsersIcon className="w-4 h-4 text-cyan-400" />
-                    <span className="hidden sm:inline">Fila</span>
-                </h2>
+        <div
+            className="flex flex-col h-full overflow-hidden rounded-2xl"
+            style={{ backgroundColor: '#0d1526', border: '1px solid #1a2540' }}
+        >
+            {/* Header */}
+            <div
+                className="flex items-center justify-between gap-2 px-4 py-3 flex-shrink-0"
+                style={{ borderBottom: '1px solid #1a2540' }}
+            >
+                <div className="flex items-center gap-2">
+                    <UsersIcon className="w-4 h-4 flex-shrink-0" style={{ color: '#00c8ff' } as any} />
+                    <h2 className="text-sm font-bold text-white">Fila de Espera</h2>
+                    <span
+                        className="text-xs font-bold px-2 py-0.5 rounded-full"
+                        style={{ backgroundColor: 'rgba(0,200,255,0.1)', color: '#00c8ff', border: '1px solid rgba(0,200,255,0.15)' }}
+                    >
+                        {queue.length}
+                    </span>
+                </div>
 
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-1.5">
                     {onNext && (
                         <button
                             onClick={onNext}
-                            className="bg-cyan-500 hover:bg-cyan-400 text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-lg active:scale-90 active:brightness-110 flex items-center gap-1.5 flex-shrink-0"
                             title="Próximo"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95"
+                            style={{ backgroundColor: '#00c8ff', color: '#000d1a' }}
+                            onMouseOver={e => (e.currentTarget.style.backgroundColor = '#00aada')}
+                            onMouseOut={e => (e.currentTarget.style.backgroundColor = '#00c8ff')}
                         >
-                            <SkipForwardIcon className="w-3 h-3" />
+                            <SkipForwardIcon className="w-3.5 h-3.5" />
                             <span className="hidden md:inline">Próximo</span>
                         </button>
                     )}
                     {onRefresh && (
                         <button
                             onClick={onRefresh}
-                            className="bg-transparent border border-gray-600 hover:border-cyan-400 text-gray-400 hover:text-cyan-400 p-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all active:scale-90 flex items-center gap-1.5 flex-shrink-0"
                             title="Atualizar"
+                            className="p-1.5 rounded-lg transition-all active:scale-95"
+                            style={{ backgroundColor: '#1a2540', color: '#3a5a7a' }}
+                            onMouseOver={e => { e.currentTarget.style.color = '#00c8ff'; }}
+                            onMouseOut={e => { e.currentTarget.style.color = '#3a5a7a'; }}
                         >
                             <RefreshCwIcon className="w-3.5 h-3.5" />
                         </button>
@@ -187,21 +239,21 @@ export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, i
                     {onReset && (
                         <button
                             onClick={onReset}
-                            className="bg-transparent border border-gray-600 hover:border-gray-400 text-white px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all active:scale-90 flex items-center gap-1.5 flex-shrink-0"
-                            title="Resetar"
+                            title="Resetar fila"
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95"
+                            style={{ backgroundColor: '#1a2540', color: '#3a5a7a', border: '1px solid #253560' }}
+                            onMouseOver={e => { e.currentTarget.style.color = '#ff4d4d'; e.currentTarget.style.borderColor = 'rgba(255,77,77,0.3)'; }}
+                            onMouseOut={e => { e.currentTarget.style.color = '#3a5a7a'; e.currentTarget.style.borderColor = '#253560'; }}
                         >
                             <RefreshCwIcon className="w-3.5 h-3.5" />
                             <span className="hidden md:inline">Resetar</span>
                         </button>
                     )}
                 </div>
-
-                <span className="bg-cyan-500/10 text-cyan-400 text-sm font-black px-4 py-1 rounded-full border border-cyan-500/20 uppercase tracking-tighter flex-shrink-0">
-                    {queue.length} <span className="hidden lg:inline">Total</span>
-                </span>
             </div>
 
-            <div className="p-6 space-y-3 overflow-y-auto custom-scrollbar flex-grow bg-gray-100 dark:bg-[#0f111a]">
+            {/* List */}
+            <div className="flex-grow overflow-y-auto p-3 space-y-1 custom-scrollbar" style={{ backgroundColor: '#080d18' }}>
                 {queue.length > 0 ? (
                     queue.map((queueUser, index) => (
                         <QueueItem
@@ -217,9 +269,11 @@ export const QueueDisplay: React.FC<QueueDisplayProps> = ({ queue, userTimers, i
                         />
                     ))
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full gap-4 py-20 grayscale opacity-40">
-                        <UsersIcon className="w-16 h-16 text-gray-500" />
-                        <p className="text-gray-500 font-bold uppercase tracking-wider text-xs">Fila está vazia por enquanto</p>
+                    <div className="flex flex-col items-center justify-center h-full gap-3 py-20 opacity-25">
+                        <UsersIcon className="w-12 h-12" style={{ color: '#3a5a7a' } as any} />
+                        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#3a5a7a' }}>
+                            Fila vazia
+                        </p>
                     </div>
                 )}
             </div>
