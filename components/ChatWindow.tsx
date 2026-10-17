@@ -177,7 +177,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ messages, currentUser, s
 
     return (
         <div
-            className={`flex-grow ${small ? 'p-3' : 'p-4'} overflow-y-auto custom-scrollbar`}
+            className={`flex-grow flex-1 min-h-0 ${small ? 'p-3' : 'p-4'} overflow-y-auto custom-scrollbar`}
             style={{ backgroundColor: '#080d18' }}
         >
             {messages.length === 0 ? (

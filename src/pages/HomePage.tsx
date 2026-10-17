@@ -1685,16 +1685,14 @@ export const HomePage: React.FC = () => {
                         </div>
                     </header>
 
-                    <div className="p-4 md:p-6 w-full flex-grow overflow-y-auto custom-scrollbar" style={{ backgroundColor: '#080d18' }}>
+                    <div className={`w-full flex-grow flex-1 min-h-0 flex flex-col ${activeTab === 'dashboard' ? 'p-3 md:p-4 overflow-hidden' : 'p-4 md:p-6 overflow-y-auto custom-scrollbar'}`} style={{ backgroundColor: '#080d18' }}>
                         {activeTab === 'dashboard' && (
-                            <div className="flex flex-col gap-4 h-[calc(100vh-112px)]">
-
-
+                            <div className="flex flex-col flex-grow flex-1 min-h-0 h-full">
 
                             {/* ── Main Grid ── */}
-                            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 flex-grow min-h-0">
+                            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-5 flex-grow flex-1 min-h-0 h-full">
                                 {/* Column 1: Queue */}
-                                <div className="xl:col-span-1 h-full overflow-hidden">
+                                <div className="xl:col-span-1 h-full min-h-0 overflow-hidden flex flex-col">
                                     <QueueDisplay
                                         queue={queue}
                                         userTimers={userTimers}
@@ -1711,7 +1709,7 @@ export const HomePage: React.FC = () => {
                                 </div>
 
                                 {/* Column 2: Playing */}
-                                <div className="xl:col-span-1 h-full overflow-hidden">
+                                <div className="xl:col-span-1 h-full min-h-0 overflow-hidden flex flex-col">
                                     <PlayingDisplay
                                         playingUsers={playingUsers}
                                         onRemoveUser={handleRemovePlayingUser}
@@ -1722,9 +1720,9 @@ export const HomePage: React.FC = () => {
                                 </div>
 
                                 {/* Column 3: Chat */}
-                                <div className="xl:col-span-1 h-full overflow-hidden">
+                                <div className="xl:col-span-1 h-full min-h-0 overflow-hidden flex flex-col">
                                     <div
-                                        className="flex flex-col h-full overflow-hidden rounded-2xl transition-all duration-300"
+                                        className="flex flex-col h-full min-h-0 overflow-hidden rounded-2xl transition-all duration-300"
                                         style={{ backgroundColor: '#0d1526', border: '1px solid #1a2540' }}
                                     >
                                         <div
@@ -1742,7 +1740,7 @@ export const HomePage: React.FC = () => {
                                             </button>
                                         </div>
                                         {isChatVisible && (
-                                            <div className="flex-grow overflow-hidden flex flex-col" style={{ backgroundColor: '#080d18' }}>
+                                            <div className="flex-grow flex-1 min-h-0 overflow-hidden flex flex-col" style={{ backgroundColor: '#080d18' }}>
                                                 <ChatWindow
                                                     messages={messages}
                                                     currentUser={currentUser}

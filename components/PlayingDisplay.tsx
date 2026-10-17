@@ -90,7 +90,7 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
             </div>
 
             {/* List */}
-            <div className="flex-grow overflow-y-auto custom-scrollbar" style={{ backgroundColor: '#080d18' }}>
+            <div className="flex-grow flex-1 min-h-0 overflow-y-auto custom-scrollbar" style={{ backgroundColor: '#080d18' }}>
                 {playingUsers.length > 0 ? (
                     playingUsers.map((playingUser) => {
                         const primaryName = playingUser.nickname || playingUser.user;
