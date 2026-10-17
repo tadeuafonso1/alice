@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import type { CommandSettings } from '../types';
 
 interface MessageInputProps {
@@ -9,6 +9,7 @@ interface MessageInputProps {
 
 export const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, commands, small }) => {
     const [text, setText] = useState('');
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -16,6 +17,12 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, comma
             onSendMessage(text);
             setText('');
         }
+    };
+
+    const handleCommandClick = (cmd: string) => {
+        const valueToSet = cmd.toLowerCase().includes('nick') ? `${cmd} ` : cmd;
+        setText(valueToSet);
+        inputRef.current?.focus();
     };
 
     const activeCommands = [commands.join, commands.leave, commands.position, commands.nick]
@@ -32,6 +39,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, comma
         >
             <form onSubmit={handleSubmit} className="flex items-center gap-2">
                 <input
+                    ref={inputRef}
                     type="text"
                     value={text}
                     onChange={(e) => setText(e.target.value)}
@@ -68,17 +76,30 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, comma
                         Comandos:
                     </span>
                     {activeCommands.map(cmd => (
-                        <span
+                        <button
                             key={cmd}
-                            className="px-1.5 py-0.5 rounded font-mono font-medium"
+                            type="button"
+                            onClick={() => handleCommandClick(cmd)}
+                            title={`Clique para autocompletar ${cmd}`}
+                            className="px-2 py-0.5 rounded font-mono font-medium transition-all active:scale-95 cursor-pointer"
                             style={{
-                                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                                color: '#3a5a7a',
-                                border: '1px solid rgba(255, 255, 255, 0.04)'
+                                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                                color: '#38bdf8',
+                                border: '1px solid rgba(56, 189, 248, 0.2)'
+                            }}
+                            onMouseOver={e => {
+                                e.currentTarget.style.backgroundColor = 'rgba(0, 200, 255, 0.15)';
+                                e.currentTarget.style.color = '#00c8ff';
+                                e.currentTarget.style.borderColor = 'rgba(0, 200, 255, 0.4)';
+                            }}
+                            onMouseOut={e => {
+                                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+                                e.currentTarget.style.color = '#38bdf8';
+                                e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.2)';
                             }}
                         >
                             {cmd}
-                        </span>
+                        </button>
                     ))}
                 </div>
             )}
