@@ -125,6 +125,21 @@ const QueueItem: React.FC<{
                     <p className="text-sm font-semibold text-white truncate leading-tight">
                         {primaryName}
                     </p>
+                    {queueUser.isOwner && (
+                        <span className="text-[9px] font-black uppercase px-1 py-0.5 rounded tracking-wider bg-red-500/15 text-red-400 border border-red-500/30" title="Criador do Canal">
+                            👑 DONO
+                        </span>
+                    )}
+                    {queueUser.isModerator && !queueUser.isOwner && (
+                        <span className="text-[9px] font-black uppercase px-1 py-0.5 rounded tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/30" title="Moderador">
+                            🛡️ MOD
+                        </span>
+                    )}
+                    {queueUser.isSponsor && (
+                        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" title="Membro do Canal">
+                            ⭐ MEMBRO
+                        </span>
+                    )}
                     {/* Botão de copiar discreto ao lado do apelido */}
                     <button
                         onClick={handleCopy}

@@ -809,7 +809,7 @@ export const HomePage: React.FC = () => {
         }
     }, [appSettings, settingsId, sendBotMessage]);
 
-    const handleSendMessage = useCallback(async (author: string, text: string, authorChannelId?: string) => {
+    const handleSendMessage = useCallback(async (author: string, text: string, authorChannelId?: string, authorMeta?: { isSponsor?: boolean; isModerator?: boolean; isOwner?: boolean }) => {
         if (!text.trim()) return;
 
         // Normalização do autor e ID
@@ -821,7 +821,15 @@ export const HomePage: React.FC = () => {
         const commandText = normalizeText(text.trim());
 
         // SEMPRE adiciona a mensagem ao chat local para "uso normal"
-        const userMessage: Message = { author, text, type: 'user', authorChannelId: trimmedChannelId };
+        const userMessage: Message = {
+            author,
+            text,
+            type: 'user',
+            authorChannelId: trimmedChannelId,
+            isSponsor: authorMeta?.isSponsor,
+            isModerator: authorMeta?.isModerator,
+            isOwner: authorMeta?.isOwner,
+        };
         setMessages(prev => [...prev, userMessage]);
 
         // Verificar se usuário está bloqueado para COMANDOS
@@ -940,7 +948,13 @@ export const HomePage: React.FC = () => {
                     return;
                 }
 
-                const newUser = { user: author, nickname };
+                const newUser: QueueUser = {
+                    user: author,
+                    nickname,
+                    isSponsor: authorMeta?.isSponsor,
+                    isModerator: authorMeta?.isModerator,
+                    isOwner: authorMeta?.isOwner
+                };
 
                 setQueue(prev => {
                     const updated = [...prev, newUser];
@@ -960,6 +974,9 @@ export const HomePage: React.FC = () => {
 
                     const baseMessage = appSettings.messages.userJoined;
                     let noticeText = baseMessage.text.replace('{user}', author).replace('{position}', String(pos));
+                    if (authorMeta?.isSponsor) {
+                        noticeText = `⭐ [MEMBRO] ${noticeText}`;
+                    }
 
                     const timerMessage = appSettings.messages.joinWithTimer;
                     if (isTimerActive && timerMessage.enabled) {
@@ -1147,11 +1164,13 @@ export const HomePage: React.FC = () => {
                         const author = item.authorDetails.displayName;
                         const text = item.snippet.displayMessage || "";
                         const authorChannelId = item.authorDetails.channelId;
-                        
+                        const isSponsor = Boolean(item.authorDetails.isChatSponsor);
+                        const isModerator = Boolean(item.authorDetails.isChatModerator);
+                        const isOwner = Boolean(item.authorDetails.isChatOwner);
 
                         // Somente passa para o chatbot as mensagens de texto normais ou superchat (que contém texto)
                         if (type === 'textMessageEvent' || type === 'superChatEvent') {
-                            await handleSendMessageRef.current(author, text, authorChannelId);
+                            await handleSendMessageRef.current(author, text, authorChannelId, { isSponsor, isModerator, isOwner });
                         }
                     }
                 } else {

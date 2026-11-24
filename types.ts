@@ -3,12 +3,18 @@ export interface Message {
   text: string;
   type: 'user' | 'bot';
   authorChannelId?: string;
+  isSponsor?: boolean;
+  isModerator?: boolean;
+  isOwner?: boolean;
 }
 
 export interface QueueUser {
   user: string;
   nickname?: string;
   started_at?: string;
+  isSponsor?: boolean;
+  isModerator?: boolean;
+  isOwner?: boolean;
 }
 
 export interface CommandSetting {

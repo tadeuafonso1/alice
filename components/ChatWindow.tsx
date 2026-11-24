@@ -119,6 +119,33 @@ const MessageItem: React.FC<{
                     >
                         {author}
                     </span>
+                    {message.isOwner && (
+                        <span
+                            className="text-[9px] font-black uppercase px-1 py-0.5 rounded tracking-wider flex items-center gap-0.5"
+                            style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+                            title="Criador do Canal"
+                        >
+                            👑 DONO
+                        </span>
+                    )}
+                    {message.isModerator && !message.isOwner && (
+                        <span
+                            className="text-[9px] font-black uppercase px-1 py-0.5 rounded tracking-wider flex items-center gap-0.5"
+                            style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)' }}
+                            title="Moderador"
+                        >
+                            🛡️ MOD
+                        </span>
+                    )}
+                    {message.isSponsor && (
+                        <span
+                            className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded tracking-wider flex items-center gap-0.5"
+                            style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' }}
+                            title="Membro / Patrocinador do Canal"
+                        >
+                            ⭐ MEMBRO
+                        </span>
+                    )}
                     {isCurrentUser && (
                         <span
                             className="text-[9px] font-semibold uppercase px-1 rounded text-white"

@@ -122,6 +122,21 @@ export const PlayingDisplay: React.FC<PlayingDisplayProps> = ({
                                         <p className="text-sm font-semibold text-white truncate leading-tight">
                                             {primaryName}
                                         </p>
+                                        {playingUser.isOwner && (
+                                            <span className="text-[9px] font-black uppercase px-1 py-0.5 rounded tracking-wider bg-red-500/15 text-red-400 border border-red-500/30" title="Criador do Canal">
+                                                👑 DONO
+                                            </span>
+                                        )}
+                                        {playingUser.isModerator && !playingUser.isOwner && (
+                                            <span className="text-[9px] font-black uppercase px-1 py-0.5 rounded tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/30" title="Moderador">
+                                                🛡️ MOD
+                                            </span>
+                                        )}
+                                        {playingUser.isSponsor && (
+                                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" title="Membro do Canal">
+                                                ⭐ MEMBRO
+                                            </span>
+                                        )}
                                         <button
                                             onClick={() => handleCopy(playingUser.nickname || playingUser.user, playingUser.user)}
                                             title="Copiar apelido"
