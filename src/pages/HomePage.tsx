@@ -95,6 +95,7 @@ export const HomePage: React.FC = () => {
     const [blockedUsernames, setBlockedUsernames] = useState<Set<string>>(new Set());
     const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(() => soundAlerts.isEnabled());
     const [soundVolume, setSoundVolume] = useState<number>(() => soundAlerts.getVolume());
+    const userCommandCooldowns = useRef<Map<string, number>>(new Map());
     const isInitialLoad = useRef(true);
 
     // Session Statistics
@@ -862,6 +863,38 @@ export const HomePage: React.FC = () => {
             const normalizedCmd = normalizeText(cmd);
             return text === normalizedCmd || text.startsWith(normalizedCmd + ' ');
         };
+
+        // Anti-spam / Cooldown por usuário (20 segundos) para evitar flood de comandos públicos
+        const isSpamSensitiveCommand =
+            checkCommand(commandText, commands.position.command) ||
+            commandText === '!posicao' || commandText === '!posição' ||
+            checkCommand(commandText, commands.queueList.command) ||
+            checkCommand(commandText, commands.playingList.command);
+
+        if (isSpamSensitiveCommand && author.toLowerCase() !== adminName.toLowerCase()) {
+            const userKey = (trimmedChannelId || author).toLowerCase();
+            const lastCommandTime = userCommandCooldowns.current.get(userKey) || 0;
+            const cooldownMs = 20000; // 20 segundos
+
+            if (now - lastCommandTime < cooldownMs) {
+                const remainingSecs = Math.ceil((cooldownMs - (now - lastCommandTime)) / 1000);
+                console.log(`[AntiSpam] Comando ignorado para @${author}. Cooldown restante: ${remainingSecs}s.`);
+                return;
+            }
+
+            // Registra tempo do comando autorizado
+            userCommandCooldowns.current.set(userKey, now);
+
+            // Limpa entradas muito antigas do Map (> 5 minutos) para evitar acúmulo
+            if (userCommandCooldowns.current.size > 200) {
+                const fiveMinAgo = now - 300000;
+                for (const [key, timestamp] of userCommandCooldowns.current.entries()) {
+                    if (timestamp < fiveMinAgo) {
+                        userCommandCooldowns.current.delete(key);
+                    }
+                }
+            }
+        }
 
         const isJoinCommand = checkCommand(commandText, commands.join.command);
         const isLeaveCommand = checkCommand(commandText, commands.leave.command);
