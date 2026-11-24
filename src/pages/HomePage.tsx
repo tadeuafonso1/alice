@@ -10,7 +10,7 @@ import { TimerSettings } from '@/components/TimerSettings';
 import { LikesTab } from '@/components/LikesTab';
 import { BlockedUsersTab } from '@/components/BlockedUsersTab';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings, CommandSetting } from '@/types';
-import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon, RocketIcon } from '@/components/Icons';
+import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon, RocketIcon, TrashIcon } from '@/components/Icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/src/contexts/SessionContext';
 import { useTheme } from '@/src/contexts/ThemeContext';
@@ -71,7 +71,16 @@ export const HomePage: React.FC = () => {
     const { saveQueueState, loadQueueState, updateUserTimer, markWarningAsSent } = useQueuePersistence();
     const [adminName, setAdminName] = useState<string>('Admin');
     const [currentUser, setCurrentUser] = useState<string>('');
-    const [messages, setMessages] = useState<Message[]>([]);
+    const [messages, setMessages] = useState<Message[]>(() => {
+        try {
+            const savedChatId = localStorage.getItem('alice_yt_last_chat_id');
+            const key = savedChatId ? `alice_chat_history_${savedChatId}` : 'alice_chat_history_current';
+            const saved = localStorage.getItem(key);
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    });
     const [queue, setQueue] = useState<QueueUser[]>([]);
     const [playingUsers, setPlayingUsers] = useState<QueueUser[]>([]);
     const [userTimers, setUserTimers] = useState<Record<string, number>>({});
@@ -1074,7 +1083,16 @@ export const HomePage: React.FC = () => {
         setIsPolling(false);
         setCanAutoConnect(false);
         addBotMessage("Desconectado do chat do YouTube.");
-    }, [isPolling, addBotMessage]);
+        // Limpar histórico da live ao encerrar a sessão
+        try {
+            if (liveChatId) {
+                localStorage.removeItem(`alice_chat_history_${liveChatId}`);
+            }
+            localStorage.removeItem('alice_chat_history_current');
+        } catch (e) {
+            console.error('Erro ao limpar histórico da live encerrada:', e);
+        }
+    }, [isPolling, addBotMessage, liveChatId]);
 
     const fetchAndProcessMessages = useCallback(async () => {
         if (!liveChatId || isFetchingRef.current) return;
@@ -1366,6 +1384,65 @@ export const HomePage: React.FC = () => {
             clearInterval(autoSyncInterval);
         };
     }, [isLoadingSettings, isPolling, isFindingChat, handleFindLiveChat, googleConnected, liveChatId, appSettings.autoSyncYoutube]);
+
+    // Persistir histórico de mensagens no localStorage por live
+    useEffect(() => {
+        try {
+            const key = liveChatId ? `alice_chat_history_${liveChatId}` : 'alice_chat_history_current';
+            // Manter no máximo as últimas 150 mensagens para eficiência
+            const recentMessages = messages.slice(-150);
+            localStorage.setItem(key, JSON.stringify(recentMessages));
+        } catch (e) {
+            console.error('Erro ao salvar histórico do chat:', e);
+        }
+    }, [messages, liveChatId]);
+
+    // Carregar histórico quando o liveChatId mudar
+    useEffect(() => {
+        if (!liveChatId) return;
+        try {
+            const key = `alice_chat_history_${liveChatId}`;
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    setMessages(parsed);
+                }
+            }
+        } catch (e) {
+            console.error('Erro ao carregar histórico da live:', e);
+        }
+    }, [liveChatId]);
+
+    // Recuperação imediata ao voltar para a aba se estiver em segundo plano
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && isPolling && liveChatId && !isFetchingRef.current) {
+                console.log('[VisibilityChange] Aba voltou ao foco, buscando mensagens recentes...');
+                fetchAndProcessMessages();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [isPolling, liveChatId, fetchAndProcessMessages]);
+
+    // Função para limpar histórico manualmente
+    const handleClearChatHistory = useCallback(() => {
+        if (window.confirm("Deseja realmente limpar o histórico do chat desta live?")) {
+            setMessages([]);
+            try {
+                if (liveChatId) {
+                    localStorage.removeItem(`alice_chat_history_${liveChatId}`);
+                }
+                localStorage.removeItem('alice_chat_history_current');
+            } catch (e) {
+                console.error('Erro ao limpar histórico:', e);
+            }
+        }
+    }, [liveChatId]);
 
     // Auto-conectar quando encontrar o liveChatId
     useEffect(() => {
@@ -1735,9 +1812,24 @@ export const HomePage: React.FC = () => {
                                                 <h2 className="text-sm font-bold text-white">Chat Alice</h2>
                                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                                             </div>
-                                            <button className="p-1 rounded-lg transition-colors" style={{ color: '#3a5a7a' }}>
-                                                {isChatVisible ? <ChevronDownIcon className="w-4 h-4" /> : <ChevronUpIcon className="w-4 h-4" />}
-                                            </button>
+                                            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                                {messages.length > 0 && (
+                                                    <button
+                                                        onClick={handleClearChatHistory}
+                                                        title="Limpar histórico do chat"
+                                                        className="p-1 rounded-lg transition-colors hover:text-red-400 text-slate-500 hover:bg-red-500/10"
+                                                    >
+                                                        <TrashIcon className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => setIsChatVisible(!isChatVisible)}
+                                                    className="p-1 rounded-lg transition-colors"
+                                                    style={{ color: '#3a5a7a' }}
+                                                >
+                                                    {isChatVisible ? <ChevronDownIcon className="w-4 h-4" /> : <ChevronUpIcon className="w-4 h-4" />}
+                                                </button>
+                                            </div>
                                         </div>
                                         {isChatVisible && (
                                             <div className="flex-grow flex-1 min-h-0 overflow-hidden flex flex-col" style={{ backgroundColor: '#080d18' }}>
