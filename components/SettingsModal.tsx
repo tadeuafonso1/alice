@@ -57,6 +57,7 @@ const translations = {
     queueClosed: 'Mensagem: Fila Fechada',
     queueOpened: 'Mensagem: Fila Aberta',
     queueIsClosed: 'Mensagem: Usuário tenta entrar na fila fechada',
+    welcomeMessage: 'Boas-vindas para nova pessoa no chat',
   },
 };
 

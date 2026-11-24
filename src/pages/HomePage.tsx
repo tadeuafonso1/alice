@@ -59,6 +59,7 @@ const defaultSettings: AppSettings = {
         queueClosed: { text: '🚫 A fila está fechada agora!', enabled: true },
         queueOpened: { text: '✅ A fila está aberta agora! Digite {join} para entrar.', enabled: true },
         queueIsClosed: { text: '❌ @{user}, a fila está fechada no momento.', enabled: true },
+        welcomeMessage: { text: '👋 Seja bem-vindo(a) à live, @{user}!', enabled: true },
     },
     customCommands: [],
     youtubeChannelId: '',
@@ -96,6 +97,7 @@ export const HomePage: React.FC = () => {
     const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(() => soundAlerts.isEnabled());
     const [soundVolume, setSoundVolume] = useState<number>(() => soundAlerts.getVolume());
     const userCommandCooldowns = useRef<Map<string, number>>(new Map());
+    const greetedUsers = useRef<Set<string>>(new Set());
     const isInitialLoad = useRef(true);
 
     // Session Statistics
@@ -837,6 +839,19 @@ export const HomePage: React.FC = () => {
         };
         setMessages(prev => [...prev, userMessage]);
 
+        // Boas-vindas para nova pessoa interagindo pela primeira vez na live
+        const welcomeConfig = appSettings.messages.welcomeMessage;
+        const isNotAdmin = author.toLowerCase() !== adminName.toLowerCase();
+        const userIdentifier = (trimmedChannelId || author).toLowerCase();
+
+        if (welcomeConfig?.enabled && isNotAdmin && isPolling && !greetedUsers.current.has(userIdentifier)) {
+            greetedUsers.current.add(userIdentifier);
+            const welcomeTemplate = welcomeConfig.text || '👋 Seja bem-vindo(a) à live, @{user}!';
+            const welcomeText = welcomeTemplate.replace('{user}', author);
+            // Envia para o chat local e para a live
+            addBotMessage(welcomeText, true);
+        }
+
         // Verificar se usuário está bloqueado para COMANDOS
         const isUserBlockedById = trimmedChannelId && blockedChannelIds.has(trimmedChannelId);
         const isUserBlockedByName = blockedUsernames.has(author.toLowerCase().trim());
@@ -1139,6 +1154,7 @@ export const HomePage: React.FC = () => {
         setIsPolling(false);
         setCanAutoConnect(false);
         addBotMessage("Desconectado do chat do YouTube.");
+        greetedUsers.current.clear();
         // Limpar histórico da live ao encerrar a sessão
         try {
             if (liveChatId) {
