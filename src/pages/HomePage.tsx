@@ -10,12 +10,13 @@ import { TimerSettings } from '@/components/TimerSettings';
 import { LikesTab } from '@/components/LikesTab';
 import { BlockedUsersTab } from '@/components/BlockedUsersTab';
 import type { Message, AppSettings, QueueUser, MessageSettings, CommandSettings, CommandSetting } from '@/types';
-import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon, RocketIcon, TrashIcon } from '@/components/Icons';
+import { BotIcon, SettingsIcon, SunIcon, MoonIcon, LogOutIcon, ChevronDownIcon, ChevronUpIcon, MessageSquareIcon, LayoutIcon, ChevronLeftIcon, ChevronRightIcon, SkipForwardIcon, RefreshCwIcon, YoutubeIcon, RocketIcon, TrashIcon, Volume2Icon, VolumeXIcon } from '@/components/Icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/src/contexts/SessionContext';
 import { useTheme } from '@/src/contexts/ThemeContext';
 import { Sidebar } from '@/components/Sidebar';
 import { useQueuePersistence } from '@/src/hooks/useQueuePersistence';
+import { soundAlerts } from '@/src/utils/soundAlerts';
 
 const defaultSettings: AppSettings = {
     botName: 'Alice',
@@ -92,6 +93,8 @@ export const HomePage: React.FC = () => {
     const [warningSentUsers, setWarningSentUsers] = useState<Set<string>>(new Set());
     const [blockedChannelIds, setBlockedChannelIds] = useState<Set<string>>(new Set());
     const [blockedUsernames, setBlockedUsernames] = useState<Set<string>>(new Set());
+    const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(() => soundAlerts.isEnabled());
+    const [soundVolume, setSoundVolume] = useState<number>(() => soundAlerts.getVolume());
     const isInitialLoad = useRef(true);
 
     // Session Statistics
@@ -660,6 +663,7 @@ export const HomePage: React.FC = () => {
             return;
         }
         const [nextUserObj] = queue;
+        soundAlerts.playNextUser();
         await handleMoveToPlaying(nextUserObj.user);
     }, [queue, sendBotMessage, handleMoveToPlaying]);
 
@@ -955,6 +959,8 @@ export const HomePage: React.FC = () => {
                     isModerator: authorMeta?.isModerator,
                     isOwner: authorMeta?.isOwner
                 };
+
+                soundAlerts.playJoinQueue();
 
                 setQueue(prev => {
                     const updated = [...prev, newUser];
@@ -1601,6 +1607,7 @@ export const HomePage: React.FC = () => {
             });
 
             if (usersToWarn.length > 0) {
+                soundAlerts.playWarning();
                 usersToWarn.forEach(user => {
                     sendBotMessageRef.current('thirtySecondWarning', { user });
                 });
@@ -1758,6 +1765,44 @@ export const HomePage: React.FC = () => {
                                         <YoutubeIcon className="w-4 h-4" />
                                         Conectar YouTube
                                     </button>
+                                )}
+                            </div>
+
+                            {/* Divider */}
+                            <div className="hidden md:block h-6 w-px" style={{ backgroundColor: '#131d35' }} />
+
+                            {/* Sound alert control */}
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{ backgroundColor: '#0d1526', border: '1px solid #1a2540' }}>
+                                <button
+                                    onClick={() => {
+                                        const nextState = !isSoundEnabled;
+                                        setIsSoundEnabled(nextState);
+                                        soundAlerts.setEnabled(nextState);
+                                        if (nextState) {
+                                            soundAlerts.playJoinQueue();
+                                        }
+                                    }}
+                                    title={isSoundEnabled ? "Alertas sonoros ativados (Clique para silenciar)" : "Alertas sonoros desativados (Clique para ativar)"}
+                                    className="p-1 rounded transition-colors"
+                                    style={{ color: isSoundEnabled ? '#00e676' : '#64748b' }}
+                                >
+                                    {isSoundEnabled ? <Volume2Icon className="w-4 h-4" /> : <VolumeXIcon className="w-4 h-4" />}
+                                </button>
+                                {isSoundEnabled && (
+                                    <input
+                                        type="range"
+                                        min="0.1"
+                                        max="1"
+                                        step="0.05"
+                                        value={soundVolume}
+                                        onChange={(e) => {
+                                            const val = parseFloat(e.target.value);
+                                            setSoundVolume(val);
+                                            soundAlerts.setVolume(val);
+                                        }}
+                                        title={`Volume dos alertas: ${Math.round(soundVolume * 100)}%`}
+                                        className="w-14 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                                    />
                                 )}
                             </div>
 
