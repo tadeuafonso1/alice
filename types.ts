@@ -68,7 +68,6 @@ export interface MessageSettings {
   queueClosed: MessageSetting;
   queueOpened: MessageSetting;
   queueIsClosed: MessageSetting;
-  welcomeMessage?: MessageSetting;
 }
 
 export interface LoyaltySettings {
